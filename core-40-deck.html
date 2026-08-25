@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Core 40 — Interview Deck</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#111815; --line:#1e2a24; --line2:#2a3a32;
+    --fg:#d6e4dc; --dim:#7d9288; --dim2:#5c6f66;
+    --acc:#4ade80; --acc-dim:#22c55e; --warn:#fbbf24; --bad:#f87171;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--fg); font-family:var(--mono);
+    font-size:15px; line-height:1.55; padding:0 0 60px;
+    padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right);
+  }
+  header{
+    position:sticky; top:0; z-index:20; background:rgba(11,15,13,.94);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+    padding:14px 16px 10px; padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  h1{font-size:15px;margin:0 0 2px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:600}
+  .sub{font-size:11.5px;color:var(--dim2);margin-bottom:10px;letter-spacing:.02em}
+  .controls{display:flex;gap:8px;align-items:center}
+  input[type=search]{
+    flex:1;min-width:0;background:var(--panel);border:1px solid var(--line2);color:var(--fg);
+    font-family:var(--mono);font-size:14px;padding:8px 11px;border-radius:7px;outline:none;
+  }
+  input[type=search]:focus{border-color:var(--acc-dim)}
+  input[type=search]::placeholder{color:var(--dim2)}
+  .revealbtn{
+    background:var(--panel);border:1px solid var(--line2);color:var(--dim);
+    font-family:var(--mono);font-size:11.5px;padding:8px 11px;border-radius:7px;cursor:pointer;white-space:nowrap;
+  }
+  .revealbtn.on{color:var(--acc);border-color:var(--acc-dim)}
+  .cats{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{
+    background:transparent;border:1px solid var(--line2);color:var(--dim);
+    font-family:var(--mono);font-size:11.5px;padding:5px 10px;border-radius:20px;
+    cursor:pointer;white-space:nowrap;flex:none;
+  }
+  .cat.on{background:var(--acc);border-color:var(--acc);color:#06120b;font-weight:600}
+  main{padding:16px 16px 0;max-width:820px;margin:0 auto}
+  .group{margin:0 0 8px}
+  .grouphead{
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);
+    margin:22px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--line);
+  }
+  .grouphead:first-child{margin-top:2px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    margin-bottom:9px;overflow:hidden;
+  }
+  .q{
+    display:flex;gap:11px;align-items:flex-start;padding:13px 14px;cursor:pointer;user-select:none;
+  }
+  .q:active{background:#141d19}
+  .num{color:var(--dim2);font-size:12px;flex:none;min-width:26px;padding-top:1px}
+  .qt{flex:1;font-size:14.5px;line-height:1.45}
+  .chev{color:var(--dim2);font-size:11px;flex:none;padding-top:3px;transition:transform .15s}
+  .card.open .chev{transform:rotate(90deg);color:var(--acc)}
+  .card.open .qt{color:var(--acc)}
+  .a{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+  .card.open .a{display:block}
+  .a p{margin:12px 0 0;font-size:14px;color:#c3d4cb}
+  .note{
+    margin:11px 0 0;padding:9px 11px;background:#16211c;border-left:2px solid var(--warn);
+    border-radius:0 5px 5px 0;font-size:12.5px;color:#c9b98a;
+  }
+  .mine{
+    margin:11px 0 0;padding:9px 11px;background:#132018;border-left:2px solid var(--acc);
+    border-radius:0 5px 5px 0;font-size:12.5px;color:#a7d8ba;
+  }
+  .mine b,.note b{color:#e6f5ec;font-weight:600}
+  .ref{
+    margin:12px 0 0;font-size:11.5px;color:var(--dim2);
+    padding-top:9px;border-top:1px dashed var(--line2);word-break:break-word;
+  }
+  .ref b{color:var(--dim);font-weight:400}
+  .badge{
+    font-size:10px;padding:1px 6px;border-radius:10px;flex:none;margin-top:2px;
+    border:1px solid var(--line2);color:var(--dim2);
+  }
+  .badge.y{border-color:#6b5a1f;color:var(--warn)}
+  .empty{color:var(--dim2);text-align:center;padding:44px 0;font-size:13px}
+  footer{max-width:820px;margin:26px auto 0;padding:16px;border-top:1px solid var(--line);color:var(--dim2);font-size:11.5px;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <h1>Core 40 — Interview Deck</h1>
+  <div class="sub">Tap a question → answer. Say it out loud in English before you open it.</div>
+  <div class="controls">
+    <input type="search" id="s" placeholder="search…" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="revealbtn" id="rv">open all</button>
+  </div>
+  <div class="cats" id="cats"></div>
+</header>
+<main><div id="list"></div></main>
+<footer>
+  Short answers = the 60–90 second version. <b>Deep dives live in <code>reference/</code></b> in your superhuman folder — each card says which file and section.<br><br>
+  Answers here are mine, not yours. As you drill an item, replace it with your own wording in <code>concepts.md</code> — that's the version that survives an interview.
+</footer>
+<script>
+const D=[
+{n:1,c:"JS/TS",q:"What runs first — setTimeout(0) or Promise.resolve().then()?",a:"The promise. Microtasks drain completely before the event loop takes the next macrotask, and setTimeout is a macrotask — it waits for the entire microtask queue to empty first. Order per tick: run a macrotask → drain all microtasks → render → next macrotask.",r:"reference/answers-js-ts.md §#1"},
+{n:2,c:"JS/TS",q:"What is a closure, and show me one that causes a bug.",a:"A function that keeps access to its outer scope after that scope has returned. The classic bug: <code>var</code> in a loop with setTimeout — every callback shares one binding and all print the final value. <code>let</code> creates a fresh binding per iteration and fixes it.",r:"reference/answers-js-ts.md §#2"},
+{n:3,c:"JS/TS",q:"Promise.all vs allSettled vs race vs any?",a:"<b>all</b> rejects on the first failure and you lose the successful results. <b>allSettled</b> always resolves and gives you status per item. <b>race</b> settles with the first to settle, success or failure. <b>any</b> resolves with the first to succeed and ignores rejections.",r:"reference/answers-js-ts.md §#3"},
+{n:4,c:"JS/TS",q:"Why doesn't forEach wait for await?",a:"forEach ignores the promise its callback returns, so the loop finishes immediately while the async work is still pending. <code>for...of</code> awaits sequentially. <code>Promise.all(items.map(...))</code> runs them in parallel and waits for all.",r:"reference/answers-js-ts.md §#4"},
+{n:5,c:"JS/TS",q:"Explain `this` binding.",a:"Four rules, in precedence order: <b>new</b> > <b>explicit</b> (call/apply/bind) > <b>implicit</b> (the object before the dot) > <b>default</b> (undefined in strict mode). Arrow functions have no own <code>this</code> — they inherit it lexically, which is why they can't be methods relying on the caller, or constructors.",r:"reference/answers-js-ts.md §#5"},
+{n:6,c:"JS/TS",q:"Implement Pick<T, K> by hand.",a:"<code>type Pick&lt;T, K extends keyof T&gt; = { [P in K]: T[P] }</code> — a mapped type over a constrained key union. Related: <code>infer</code> extracts a type inside a conditional, e.g. <code>type Awaited&lt;T&gt; = T extends Promise&lt;infer U&gt; ? U : T</code>.",r:"reference/answers-js-ts.md §#6"},
+{n:7,c:"JS/TS",q:"Walk me through the TS utility types you use.",a:"<b>Partial</b> all optional · <b>Required</b> all mandatory · <b>Pick</b> keep listed keys · <b>Omit</b> drop listed keys · <b>Record&lt;K,V&gt;</b> build a map type · <b>ReturnType&lt;F&gt;</b> a function's return type · <b>Awaited&lt;T&gt;</b> unwrap a promise.",r:"reference/answers-js-ts.md §#7"},
+{n:8,c:"JS/TS",q:"What's a discriminated union and why use one?",a:"A union where every member shares a literal field — the discriminant. Switching on it narrows the type, so the compiler knows <code>data</code> exists only on the <code>ok: true</code> branch. Add a <code>never</code> exhaustiveness check so adding a variant breaks the build instead of failing silently.",r:"reference/answers-js-ts.md §#8"},
+
+{n:9,c:"React",q:"Why can't hooks go inside conditions or loops?",a:"React tracks hooks by <b>call order</b>, not by name — it's a positional list per component. A conditional hook shifts every later index, so state lands on the wrong hook. Hence: top level only, never in conditions, loops, or nested functions.",r:"reference/answers-react.md §#9"},
+{n:10,c:"React",q:"When does useEffect cleanup run, and what breaks without it?",a:"On unmount <b>and</b> before every re-run of the effect. Without it, subscriptions, intervals and listeners stack up on each render — memory leaks plus stale handlers firing. React 18 Strict Mode double-mounts in dev specifically to expose missing cleanup.",r:"reference/answers-react.md §#10"},
+{n:11,c:"React",q:"useMemo vs useCallback — when do you actually need them?",a:"useMemo caches a <b>value</b>, useCallback caches a <b>function</b>. Genuinely needed when the computation is expensive, or when the reference feeds a memoized child or another hook's deps. Wrapping everything by default costs more than it saves — and React Compiler now does most of it automatically.",r:"reference/answers-react.md §#11"},
+{n:12,c:"React",q:"How do useEffect dependencies behave?",a:"No array → every render. Empty array → mount only. With deps → when one changes by <code>Object.is</code>. Objects and arrays are new references every render, so they retrigger constantly — that's the usual bug. Lying about deps to silence the lint gives you stale closures.",r:"reference/answers-react.md §#12"},
+{n:13,c:"React",q:"Why is key={index} bad?",a:"React diffs siblings by key. With an index, the key describes <i>position</i>, so after a reorder or insert React reuses the wrong DOM node and internal state leaks between rows — a typed input follows the wrong item. Keys must be stable, unique, and tied to data identity.",r:"reference/answers-react.md §#13"},
+{n:14,c:"React",q:"What is Suspense for?",a:"A boundary that renders a fallback while its children aren't ready. On the server it enables streaming SSR — the shell ships immediately and slower segments stream in as they resolve. On the client it works with a data source that suspends.",r:"reference/answers-react.md §#14"},
+{n:15,c:"React",q:"RSC vs SSR — what's the difference?",a:"Server Components run on the server, ship <b>zero JS</b>, and can be async and hit the DB directly — but no hooks, no state, no event handlers, no browser APIs. SSR renders a <i>client</i> component to HTML and still ships its JS for hydration. RSC never ships the component at all.",r:"reference/answers-react.md §#15"},
+{n:16,c:"React",q:"What changed in React 19?",a:"<b>Actions</b> — async functions wired into transitions with pending and error handled for you. <b>useActionState</b> for form state, <b>useFormStatus</b> for pending inside a child, <b>useOptimistic</b> for instant UI, <b>use()</b> to read a promise or context conditionally. And <code>ref</code> as a plain prop — no more forwardRef.",r:"reference/answers-react.md §#16"},
+
+{n:17,c:"LLM",q:"What is a token, and why does an engineer care?",a:"The smallest chunk of text a model <b>reads or produces</b> in one step — a subword unit from a fixed vocabulary built by byte-pair encoding. Roughly 4 characters of English, ~0.75 of a word; in Russian often only 1–2 characters, so the same text costs 2–4x more.<br><br>Three consequences: <b>cost</b> (you pay both sides; output runs 3–5x input because it's generated sequentially), <b>latency</b> (input size drives time-to-first-token, output size drives total time), <b>context budget</b> (everything competes for the window — system prompt, history, retrieved docs, tool definitions, tool results).",
+ mine:"Твоя формулировка 11 авг: «минимальный кусок текста, который модель читает и создаёт за один раз; в английском ~4 символа, в других 1–2». Определение — зачёт. Три следствия пока не твои — перепиши их своими словами в concepts.md.",
+ note:"Ловушка: не говори <b>«a token is a symbol»</b>. Русское «символ» = character. Говори <b>subword unit</b> или <b>chunk of text</b>.",
+ r:"reference/answers-llm.md §#17 · lesson-01-tokens-context.md §1.1–1.2",s:"y"},
+{n:18,c:"LLM",q:"You're near the context limit and you send the request. What happens, and when?",a:"The API <b>rejects it upfront with an error, before generation starts</b> — not silent truncation, not dropping old messages. Fail fast, not silent.<br><br>The trap: the window must fit <b>input + max_tokens</b>. A 195k prompt with max_tokens 8000 against a 200k window fails even though the prompt alone fits. Defensively: <code>max_tokens = min(desired, window − input − margin)</code>.<br><br>Mitigation ladder, cheapest first: sliding window → summarization → RAG → hierarchical/map-reduce → prompt caching.",
+ note:"Повторяющаяся ошибка (май + июль): ты говорил «обрежет». Нет — <b>падает с ошибкой ДО генерации</b>.",
+ r:"reference/answers-llm.md §#18 · lesson-01-tokens-context.md §1.3–1.5",s:"y"},
+{n:19,c:"LLM",q:"Temperature vs top_p?",a:"Temperature reshapes the probability distribution before sampling — low is sharp and repeatable, high is flat and diverse. top_p is nucleus sampling: keep the smallest set of tokens whose probabilities sum to p. Tune one, not both. And temperature 0 is <i>near</i>-deterministic, not guaranteed — batching and float non-determinism still move it.",r:"reference/answers-llm.md §#19"},
+{n:20,c:"LLM",q:"System prompt vs user prompt — why is system more injection-resistant?",a:"System sets role, rules and constraints; the model is trained to weight it above user content, so it survives contradicting instructions better. User carries the actual request. Keep untrusted data out of the system prompt entirely, and when it must appear in the user turn, label it explicitly as data, not instruction.",r:"reference/answers-llm.md §#20"},
+{n:21,c:"LLM",q:"How does the tool-use loop actually work?",a:"The model <b>never calls anything</b>. It returns a structured intent — tool name plus arguments. You execute it yourself, append the outcome back as a tool_result message, and call the model again. That loop repeats until it returns a normal text answer instead of a tool call.",r:"reference/answers-agents.md Q3 · reference/answers-llm.md §#21"},
+{n:22,c:"LLM",q:"How does SSE streaming work end to end?",a:"Server sends <code>text/event-stream</code>, chunks framed as <code>data: {...}\\n\\n</code>. Client reads <code>response.body</code> as a ReadableStream, decodes with TextDecoder, buffers until a blank line, parses the JSON. It doesn't reduce total time — it makes time-to-first-token visible, which is the entire UX win.",r:"reference/answers-llm.md §#22"},
+{n:23,c:"LLM",q:"How do you guarantee structured output?",a:"Prompt-only (\"return JSON\") is unreliable. OpenAI JSON mode guarantees valid JSON but not your shape; Structured Outputs with a schema guarantees the shape. With Anthropic you use tool use as the schema mechanism. Either way, validate with Zod at the boundary — model output is untrusted input.",r:"reference/answers-llm.md §#23"},
+{n:24,c:"LLM",q:"Our LLM costs tripled. First four hypotheses, in order?",a:"1. <b>Model selection</b> — did something route to Opus? Biggest single lever. 2. <b>Output verbosity</b> — output is 3–5x input, so \"answer in one sentence\" beats trimming the prompt. 3. <b>Unbounded history growth</b> — long conversations quietly compounding. 4. <b>No prompt caching</b> on a long repeated prefix. Then: is anything interactive that could move to the batch API?",r:"reference/answers-llm.md §#24"},
+{n:25,c:"LLM",q:"What is prompt injection and how do you defend?",a:"Untrusted text gets read as instructions. <b>Indirect</b> injection is worse — the payload sits inside a page or document your agent retrieves. No single fix exists: isolate and label untrusted content, keep per-tool privileges minimal, validate output, require confirmation for destructive actions, and never treat retrieved text as instruction.",r:"reference/answers-llm.md §#25"},
+{n:26,c:"LLM",q:"How do you choose between Opus, Sonnet and Haiku?",a:"Opus for the hardest reasoning, Sonnet as the default balance, Haiku for high-volume cheap classification and extraction. Routing by task is usually the single biggest cost lever — most production traffic doesn't need the top model, and saying that unprompted signals you've run something real.",r:"reference/answers-llm.md §#26"},
+
+{n:27,c:"RAG",q:"Why RAG instead of just putting everything in context?",a:"The corpus is bigger than the window, most of it is irrelevant to any single question, and stuffing costs money and degrades attention (lost-in-the-middle). Retrieval sends only what's relevant, updates without retraining, and gives you citations. If the corpus is small and stable, you may not need RAG at all — say that too.",r:"reference/answers-rag.md §#27 / Q1"},
+{n:28,c:"RAG",q:"How do you chunk documents?",a:"Fixed-size, sentence/paragraph, semantic, or structure-aware. Typical: <b>200–500 tokens with ~50 token overlap</b> so a fact split across a boundary survives in one piece. Too small loses context; too big dilutes the embedding and drags noise into the answer.",r:"reference/answers-rag.md §#28 / Q2-Q3"},
+{n:29,c:"RAG",q:"Explain embeddings and similarity metrics.",a:"A vector where distance encodes meaning. <b>Cosine</b> compares direction and ignores magnitude — the default. <b>Dot product</b> includes magnitude, and equals cosine when vectors are normalised. Dimensions: 1536 OpenAI, 1024 Voyage. Never mix embedding models across one corpus — the spaces aren't comparable.",r:"reference/answers-rag.md §#29 / Q4 · models §#30 · vector DBs §#31 · pgvector HNSW vs IVFFlat §#32"},
+{n:30,c:"RAG",q:"What top-k do you use, and why not just raise it?",a:"Usually 5–20. Raising k adds noise faster than signal, burns context, and pushes relevant chunks into the weak middle. The strong pattern: <b>retrieve wide</b> (k≈50) with cheap vector search → <b>rerank</b> with a cross-encoder (Cohere, Voyage) → keep top 3–5. Reranking costs latency, so it pays off where precision matters.",r:"reference/answers-rag.md §#33 / Q8 · §#34 / Q9"},
+{n:31,c:"RAG",q:"How does a RAG system fail, and how do you evaluate it?",a:"Bad chunking, embedding mismatch between how the query and the document are phrased, retriever miss, and the model ignoring context it was given. Evaluate the stages separately: retrieval recall and precision, then <b>faithfulness</b> (is the answer grounded in the retrieved text) and relevance. Without stage-level evals you can't tell what broke.",r:"reference/answers-rag.md — RAG failure modes (#38)"},
+
+{n:32,c:"Agents",q:"Explain the ReAct pattern.",a:"Interleave reasoning and acting: <b>think → act → observe → think</b>. The observation from the real world enters the next reasoning step, which is what keeps it from hallucinating a result. It's the minimal agent architecture — a loop, tools, and a stop condition.",r:"reference/answers-agents.md Q2"},
+{n:33,c:"Agents",q:"What goes into a tool definition?",a:"Name, description, and a JSON Schema for parameters. The <b>description is the critical part</b> — it's the only thing the model uses to decide whether to call it. Write it as documentation for a competent stranger: what it does, when to use it, and explicitly when not to.",r:"reference/answers-agents.md Q3"},
+{n:34,c:"Agents",q:"How do you stop an agent loop?",a:"Final answer returned, max iterations reached, unrecoverable error, or a human checkpoint. Always set a hard iteration cap <i>and</i> a token/cost budget — without one, an agent whose tool keeps failing will retry until the money is gone. Log why it stopped; that's your debugging signal.",r:"reference/answers-agents.md Q4"},
+
+{n:35,c:"Sys design",q:"Design a streaming chat UI for an AI assistant.",a:"Route handler returns a streamed response; client consumes <code>response.body</code> as a ReadableStream and appends deltas to message state. Optimistic user message, then a placeholder assistant message you fill in. Needs: abort, error state with retry, and history persisted separately from the live stream. Failure modes: dropped connection mid-stream, and unbounded history growing the context every turn.",r:"reference/answers-system-design.md #SD1 · #SD8"},
+{n:36,c:"Sys design",q:"Design a RAG system end to end.",a:"upload → parse → chunk → embed → store (pgvector) → retrieve top-k → rerank → generate with citations. Bottlenecks: ingestion is slow and batchy, retrieval is the quality ceiling, generation is the cost. Version your embeddings so you can re-index when you change model. Cite chunk IDs so answers are auditable.",r:"reference/answers-system-design.md #SD2 · reference/answers-rag.md"},
+{n:37,c:"Sys design",q:"Cut the cost of an LLM-heavy product.",a:"In order: model routing (Opus→Sonnet→Haiku), shorter output, exact-match cache, semantic cache with a high similarity threshold, prompt caching for long stable prefixes, batch API for anything non-interactive. Measure per-request cost <b>before</b> optimising — the intuition about where the money goes is usually wrong.",r:"reference/answers-system-design.md #SD7 · reference/answers-llm.md §#24"},
+
+{n:38,c:"Behavioral",q:"Tell me about yourself. (60–90 sec)",a:"Three parts, ~20 seconds each: where you are now and the scale you work at (senior frontend, 10 years, product shipped across 50+ countries) → what pulled you into AI and what you've actually built → what you're looking for and why this company. Rehearsed out loud, never read.",r:"reference/answers-behavioral.md Q1 · english-pack.md"},
+{n:39,c:"Behavioral",q:"Why are you moving from frontend to AI?",a:"Structure: <b>observation → action → conviction.</b> Never \"passion\". Your own line: frontend has largely become boilerplate that is being automated away, and AI is where the interesting engineering moved. Then back it with what you built — the agent project, in public, with dates.",r:"reference/answers-behavioral.md Q2 · english-pack.md"},
+{n:40,c:"Behavioral",q:"Your three STAR stories.",a:"<b>A — technical depth:</b> App Router migration + i18n across 50+ countries. <b>B — pivot proof:</b> what you built with agents and why you chose raw SDK over a framework. <b>C — failure/learning:</b> still a skeleton, it needs one real incident from your career. 60–90 sec each: Situation, Task, Action, Result.",
+ note:"Story C всё ещё пустая. Один реальный факт от тебя — и она собирается за десять минут.",r:"reference/answers-behavioral.md — STAR Stories · english-pack.md"}
+];
+const CATS=["All","JS/TS","React","LLM","RAG","Agents","Sys design","Behavioral"];
+let cat="All",qs="",allOpen=false;
+const list=document.getElementById("list"),cats=document.getElementById("cats"),
+      s=document.getElementById("s"),rv=document.getElementById("rv");
+CATS.forEach(c=>{const b=document.createElement("button");b.className="cat"+(c===cat?" on":"");
+  b.textContent=c==="All"?"All 40":c;b.onclick=()=>{cat=c;[...cats.children].forEach(x=>x.classList.remove("on"));b.classList.add("on");render()};cats.appendChild(b)});
+s.oninput=e=>{qs=e.target.value.toLowerCase().trim();render()};
+rv.onclick=()=>{allOpen=!allOpen;rv.classList.toggle("on",allOpen);rv.textContent=allOpen?"hide all":"open all";render()};
+const strip=h=>h.replace(/<[^>]+>/g," ");
+function render(){
+  const items=D.filter(d=>(cat==="All"||d.c===cat)&&(!qs||(d.q+" "+strip(d.a)+" "+d.c+" #"+d.n).toLowerCase().includes(qs)));
+  if(!items.length){list.innerHTML='<div class="empty">nothing matches</div>';return}
+  let h="",last="";
+  items.forEach(d=>{
+    if(d.c!==last){h+=`<div class="grouphead">${d.c}</div>`;last=d.c}
+    h+=`<div class="card${allOpen?" open":""}" data-n="${d.n}">
+      <div class="q"><span class="num">#${d.n}</span><span class="qt">${d.q}</span>${d.s==="y"?'<span class="badge y">🟡</span>':""}<span class="chev">▶</span></div>
+      <div class="a"><p>${d.a}</p>${d.mine?`<div class="mine">${d.mine}</div>`:""}${d.note?`<div class="note">${d.note}</div>`:""}<div class="ref"><b>→ ${d.r}</b></div></div>
+    </div>`;
+  });
+  list.innerHTML=h;
+  list.querySelectorAll(".q").forEach(q=>q.onclick=()=>q.parentElement.classList.toggle("open"));
+}
+render();
+</script>
+</body>
+</html>
