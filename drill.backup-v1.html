@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>drill — core-40</title>
+<style>
+  :root{--bg:#0b0f0d;--panel:#111815;--panel2:#0e1512;--line:#1e2a24;--line2:#2a3a32;--fg:#d6e4dc;--dim:#7d9288;--dim2:#5c6f66;
+    --acc:#4ade80;--acc2:#22c55e;--bad:#f87171;--warn:#fab219;--good:#0ca30c;--crit:#d03b3b;--blue:#3987e5;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:15px;line-height:1.5;padding:0 0 80px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px}
+  header{display:flex;align-items:center;gap:12px;padding:16px 0 12px;padding-top:calc(14px + env(safe-area-inset-top));border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+  header h1{font-size:14px;margin:0;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);font-weight:600;cursor:pointer}
+  .stat{font-size:12px;color:var(--dim)}.stat b{color:var(--fg);font-weight:600}
+  .spacer{flex:1}
+  button{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:8px;cursor:pointer;background:var(--panel);border:1px solid var(--line2);color:var(--fg)}
+  button:active{transform:translateY(1px)}button:disabled{opacity:.4;cursor:default}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#06120b;font-weight:600}
+  button.ghost{color:var(--dim)}button.sm{padding:6px 10px;font-size:12px}
+  .lang{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}.lang button{border:0;border-radius:0;padding:7px 11px;background:transparent;color:var(--dim);font-size:12px}.lang button.on{background:var(--acc);color:#06120b;font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:14px}
+  h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:22px 0 8px;font-weight:600}
+  .muted{color:var(--dim)}.dim2{color:var(--dim2)}
+  .banner{background:#1d1a12;border:1px solid #3a3320;color:#e8d9a8;border-radius:8px;padding:9px 12px;font-size:12px;margin-top:12px}
+  .item{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}.item:first-child{border-top:0}
+  .item .t{flex:1 1 220px;min-width:0}.item .t b{font-weight:600}.item .t small{display:block;color:var(--dim2);font-size:11.5px}
+  .modes{display:flex;gap:6px;flex-wrap:wrap}.modes button{padding:6px 9px;font-size:12px}
+  .st{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:1px;border:1px solid var(--line2)}
+  .st.green{background:var(--good);border-color:var(--good)}.st.yellow{background:var(--warn);border-color:var(--warn)}.st.red{background:var(--crit);border-color:var(--crit)}.st.new{border-style:dashed}
+  .wall{display:flex;flex-wrap:wrap;gap:4px}.wall .sec{width:100%;font-size:11px;color:var(--dim2);margin-top:8px}
+  .cell{width:40px;height:32px;border-radius:4px;border:1px solid var(--line2);background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim);cursor:pointer;position:relative}
+  .cell.green{background:var(--good);border-color:var(--good);color:#07300a}.cell.yellow{background:var(--warn);border-color:var(--warn);color:#3a2a00}.cell.red{background:var(--crit);border-color:var(--crit);color:#fff}
+  .cell.new{border-style:dashed}.cell.parked{background:repeating-linear-gradient(135deg,var(--panel) 0 4px,var(--line) 4px 6px);color:var(--dim2)}
+  .cell.due::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.9}
+  .heat{display:flex;gap:3px;margin-top:8px}.week{display:flex;flex-direction:column;gap:3px}.day{width:11px;height:11px;border-radius:2px;background:var(--panel2);border:1px solid var(--line)}
+  .day.l1{background:#1c5cab;border-color:#1c5cab}.day.l2{background:#3987e5;border-color:#3987e5}.day.l3{background:#86b6ef;border-color:#86b6ef}.day.today{outline:1px solid var(--fg);outline-offset:1px}
+  /* play */
+  .top{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}.top .prog{flex:1;height:6px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;overflow:hidden}.top .prog i{display:block;height:100%;background:var(--acc);width:0;transition:width .25s}
+  .combo{color:var(--warn);font-weight:600}
+  .stmt{font-size:18px;line-height:1.5;margin:18px 0 6px;min-height:80px}.tag{font-size:11px;color:var(--dim2);letter-spacing:.1em;text-transform:uppercase}
+  .tf{display:flex;gap:10px;margin-top:14px}.tf button{flex:1;padding:16px;font-size:15px}
+  .tf button.true{border-color:var(--acc2)}.tf button.false{border-color:var(--bad)}
+  .flash-ok{animation:ok .35s}.flash-bad{animation:bad .35s}
+  @keyframes ok{0%{background:#123d24}100%{background:var(--panel)}}@keyframes bad{0%{background:#3d1212}50%{transform:translateX(-4px)}100%{background:var(--panel)}}
+  .why{margin-top:12px;padding:10px 12px;background:var(--panel2);border-left:2px solid var(--line2);border-radius:0 6px 6px 0;font-size:13px;color:var(--dim)}.why.bad{border-color:var(--bad);color:#e8b6ae}.why.ok{border-color:var(--acc2)}
+  .cloze{font-size:17px;line-height:2}.cloze input{font-family:var(--mono);font-size:16px;width:150px;background:var(--panel2);border:1px solid var(--line2);border-bottom:2px solid var(--acc);color:var(--fg);padding:4px 8px;border-radius:6px;outline:none;margin:0 3px}
+  .cloze input.ok{border-color:var(--acc2);background:#123d24}.cloze input.bad{border-color:var(--bad);background:#3d1212}
+  .steps{list-style:none;margin:14px 0 0;padding:0}.steps li{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:grab;user-select:none}
+  .steps li.sel{border-color:var(--acc);background:#123d24}.steps li.ok{border-color:var(--acc2)}.steps li.bad{border-color:var(--bad)}
+  .steps li .n{width:22px;height:22px;border-radius:50%;background:var(--panel);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim);flex:none}
+  .steps li .mv{margin-left:auto;display:flex;gap:4px}.steps li .mv button{padding:4px 8px;font-size:12px}
+  .q{font-size:17px;line-height:1.5;margin:10px 0}.qn{font-size:11px;color:var(--dim2);letter-spacing:.1em;text-transform:uppercase}
+  .timer{font-size:22px;color:var(--dim);font-variant-numeric:tabular-nums}.timer.run{color:var(--acc)}.timer.over{color:var(--bad)}
+  .rec{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--bad);margin-right:8px;animation:blink 1s infinite}@keyframes blink{50%{opacity:.2}}
+  .transcript{margin-top:12px;min-height:90px;padding:12px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;font-size:14px;line-height:1.6;color:#c9dad1;white-space:pre-wrap}.transcript .interim{color:var(--dim2)}
+  .ref{margin-top:14px;padding-left:12px;border-left:2px solid var(--line2)}.ref .aq{font-size:12px;color:var(--dim);margin-bottom:6px}.ref p{margin:0 0 14px;font-size:14.5px;line-height:1.65;color:#c9dad1}
+  .kill{padding:10px 12px;background:#1d1512;border-left:2px solid var(--bad);border-radius:0 6px 6px 0;font-size:13px;color:#e8b6ae;line-height:1.6}.kill b{color:#ffd9d2}
+  .score{display:flex;gap:8px;margin-top:14px}.score button{flex:1;padding:14px}.score .g{border-color:var(--good)}.score .y{border-color:var(--warn)}.score .r{border-color:var(--crit)}
+  .done{text-align:center;padding:26px 10px}.done .big{font-size:44px;font-weight:600;color:var(--acc);line-height:1.1}.done .xp{color:var(--warn);font-weight:600;margin-top:6px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  code{background:#0a100d;padding:1px 5px;border-radius:4px;font-size:.92em;color:#a7d8ba}
+  a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1 onclick="location.hash='home'">drill · core-40</h1>
+  <span class="stat" id="streak"></span>
+  <span class="stat" id="xp"></span>
+  <span class="spacer"></span>
+  <button class="ghost sm" id="snd" title="sound">♪</button>
+  <span class="lang"><button id="ru" class="on">RU</button><button id="en">EN</button></span>
+</header>
+<div id="app"></div>
+</div>
+
+<script src="tickets.js"></script>
+<script src="drills.js"></script>
+<script src="state.js"></script>
+<script>
+// ---------- i18n ----------
+const UI={
+ ru:{today:"Сегодня",due:"повторить",newi:"новое",ship:"ship",quick:"Быстрый раунд · 5 мин",quickd:"Правда/ложь и пропуски по тому, что due сегодня. Без выбора, без текста.",
+     wall:"Стена",sessions:"Сессии",offline:"Офлайн: результаты копятся локально. Запусти <code>node today.mjs serve</code> и открой <code>localhost:4040/drill.html</code>, чтобы писать прогресс в queue.json.",
+     pending:"не синхронизировано",true:"Правда",false:"Ложь",check:"Проверить",next:"Дальше",again:"Ещё раз",home:"На главную",
+     tf:"Правда или ложь",gap:"Заполни пропуск",order:"Расставь по порядку",voice:"Голосовое интервью",ticket:"Билет",
+     ask:"Задать вопрос вслух",rec:"Говорить",stop:"Стоп",reveal:"Эталон",selfscore:"Как прошло? Честно, это твоя же метрика.",g:"Сказал уверенно",y:"Шатко",r:"Не смог",
+     norec:"Распознавание речи тут не работает (нужен Chrome). Таймер и эталон работают — говори вслух, потом оцени себя.",
+     transcript:"Что я сказал",reference:"Как это звучит целиком",killh:"На чём валятся",
+     resok:"Верно",resbad:"Мимо",order_hint:"Тапни элемент, потом место, куда его поставить. Или стрелками.",correct:"верно",of:"из",
+     xpgain:"XP",logged:"записано",modes:{tf:"⚡ П/Л",gap:"✍ Пропуск",order:"⇅ Порядок",voice:"🎤 Голос",ticket:"📄 Билет"},
+     roundDone:"Раунд закончен",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это и есть материал на завтра.",
+     statuses:{green:"уверенно",yellow:"шатко",red:"мимо",new:"не открывал",parked:"запарковано"},overdue:"просрочено",days:"д",
+     nothing:"Ничего не due — бери новое.",streak:"серия",xpt:"XP сегодня",more:"Подробнее",explain:"Объяснить иначе",thinking:"думаю…"},
+ en:{today:"Today",due:"revisit",newi:"new",ship:"ship",quick:"Quick round · 5 min",quickd:"True/false and gaps over what's due today. No choosing, no typing essays.",
+     wall:"The wall",sessions:"Sessions",offline:"Offline: results queue locally. Run <code>node today.mjs serve</code> and open <code>localhost:4040/drill.html</code> to write progress into queue.json.",
+     pending:"not synced",true:"True",false:"False",check:"Check",next:"Next",again:"Again",home:"Home",
+     tf:"True or false",gap:"Fill the gap",order:"Put in order",voice:"Voice interview",ticket:"Ticket",
+     ask:"Ask out loud",rec:"Speak",stop:"Stop",reveal:"Reference",selfscore:"How did it go? Honestly — it's your own metric.",g:"Said it cold",y:"Shaky",r:"Couldn't",
+     norec:"Speech recognition isn't available here (needs Chrome). Timer and reference still work — answer out loud, then score yourself.",
+     transcript:"What I said",reference:"How it sounds spoken",killh:"Where people fail",
+     resok:"Correct",resbad:"Miss",order_hint:"Tap an item, then the slot to move it to. Or use the arrows.",correct:"correct",of:"of",
+     xpgain:"XP",logged:"logged",modes:{tf:"⚡ T/F",gap:"✍ Gap",order:"⇅ Order",voice:"🎤 Voice",ticket:"📄 Ticket"},
+     roundDone:"Round over",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",
+     statuses:{green:"cold",yellow:"shaky",red:"missed",new:"never opened",parked:"parked"},overdue:"overdue",days:"d",
+     nothing:"Nothing due — take the new one.",streak:"streak",xpt:"XP today",more:"More",explain:"Explain differently",thinking:"thinking…"}
+};
+const SEC={llm:"LLM",rag:"RAG",agents:"Agents",sysd:"System design",behav:"Behavioral",bonus:"Depth",meta:"Meta",js:"JS/TS (parked)",react:"React (parked)"};
+const INTERVAL={red:1,yellow:3,green:7};
+let lang=localStorage.getItem("drill.lang")||"ru";
+const L=()=>UI[lang];
+const $=s=>document.querySelector(s); const app=$("#app");
+const iso=d=>d.toISOString().slice(0,10); const TODAY=iso(new Date());
+const days=f=>Math.floor((new Date(TODAY)-new Date(f))/864e5);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- state: live (server) or offline (state.js + localStorage) ----------
+let DB=window.STATE||{items:[],history:[]}, live=false;
+let pending=JSON.parse(localStorage.getItem("drill.pending")||"[]");
+async function loadState(){
+  try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){DB=await r.json(); live=true;}}catch{}
+  if(!live){ // apply pending offline results locally so the UI reflects them
+    for(const p of pending) applyLocal(p);
+  }
+}
+function applyLocal(p){
+  const it=DB.items.find(i=>i.id===p.id); if(!it) return;
+  let h=DB.history.find(x=>x.d===p.d); if(!h){h={d:p.d,ids:[],xp:0};DB.history.push(h)}
+  if(!h.ids.includes(p.id)) h.ids.push(p.id); h.xp=(h.xp||0)+(p.xp||0);
+  if(p.st){it.st=p.st; it.last=p.d;}
+}
+async function post(path,body){
+  body.d=TODAY;
+  if(live){try{const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}); if(r.ok){DB=await r.json();return true}}catch{} live=false;}
+  pending.push({...body,path}); localStorage.setItem("drill.pending",JSON.stringify(pending)); applyLocal(body); return false;
+}
+async function flushPending(){
+  if(!live||!pending.length) return;
+  for(const p of pending.slice()){try{const r=await fetch(p.path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(p)}); if(r.ok){DB=await r.json(); pending.shift();}}catch{break}}
+  localStorage.setItem("drill.pending",JSON.stringify(pending));
+}
+const byId=id=>DB.items.find(i=>i.id===id);
+const ticketFor=id=>window.TICKETS.find(t=>(t.core||[]).includes(id));
+const due=()=>DB.items.filter(i=>INTERVAL[i.st]&&i.last).map(i=>({...i,over:days(i.last)-INTERVAL[i.st]})).filter(i=>i.over>=0).sort((a,b)=>b.over-a.over);
+const NEW_ORDER=[38,39,22,25,23,32,27,28,29,30,31,40,35,36,37,42];
+const nextNew=()=>NEW_ORDER.map(byId).find(i=>i&&i.st==="new");
+function streak(){const set=new Set(DB.history.map(h=>h.d));let n=0,d=new Date(TODAY);if(!set.has(TODAY)) d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+const xpToday=()=>(DB.history.find(h=>h.d===TODAY)||{}).xp||0;
+
+// ---------- sound ----------
+let snd=localStorage.getItem("drill.snd")!=="off"; let AC=null;
+function beep(ok){ if(!snd) return; try{AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const t=AC.currentTime;
+  const tone=(f,st,dur,type="sine",g=.08)=>{const o=AC.createOscillator(),v=AC.createGain();o.type=type;o.frequency.value=f;v.gain.setValueAtTime(g,t+st);v.gain.exponentialRampToValueAtTime(.0001,t+st+dur);o.connect(v);v.connect(AC.destination);o.start(t+st);o.stop(t+st+dur)};
+  if(ok){tone(660,0,.09);tone(880,.09,.14)} else tone(180,0,.16,"sawtooth",.05);}catch{} }
+
+// ---------- header ----------
+function header(){ $("#streak").innerHTML=`🔥 <b>${streak()}</b> ${L().streak}`; $("#xp").innerHTML=`<b>${xpToday()}</b> ${L().xpt}`;
+  $("#ru").className=lang==="ru"?"on":""; $("#en").className=lang==="en"?"on":""; $("#snd").style.opacity=snd?1:.4; }
+$("#ru").onclick=()=>{lang="ru";localStorage.setItem("drill.lang",lang);route()};
+$("#en").onclick=()=>{lang="en";localStorage.setItem("drill.lang",lang);route()};
+$("#snd").onclick=()=>{snd=!snd;localStorage.setItem("drill.snd",snd?"on":"off");header();beep(true)};
+
+// ---------- home ----------
+function modesFor(id){
+  const t=ticketFor(id); if(!t) return "";
+  const d=window.DRILLS[t.n]||{};
+  const b=(m,label)=>`<button onclick="location.hash='play/${id}/${m}'">${label}</button>`;
+  return `<div class="modes">${b("voice",L().modes.voice)}${b("tf",L().modes.tf)}${d.cloze?b("gap",L().modes.gap):""}${d.steps?b("order",L().modes.order):""}<button onclick="location.href='exam-tickets.html#t${t.n}'">${L().modes.ticket}</button></div>`;
+}
+function itemRow(i,label){
+  const st=i.st||"new"; const over=i.over!=null?` · ${i.over}${L().days} ${L().overdue}`:"";
+  return `<div class="item"><div class="t"><span class="st ${st}"></span><b>#${i.id}</b> ${esc(i.t)}<small>${label}${over}</small></div>${modesFor(i.id)}</div>`;
+}
+function home(){
+  const d=due(), nn=nextNew(); const top=d.slice(0,2);
+  let h=`<h2>${L().today}</h2><div class="card">`;
+  h+=top.length?top.map(i=>itemRow(i,L().due)).join(""):`<div class="muted">${L().nothing}</div>`;
+  if(nn) h+=itemRow(nn,L().newi);
+  if(DB.today_overrides?.ship) h+=`<div class="item"><div class="t"><span class="st"></span><b>${L().ship}</b> <span class="muted">${esc(DB.today_overrides.ship)}</span></div></div>`;
+  h+=`</div>`;
+  h+=`<div class="card"><button class="primary" onclick="location.hash='quick'">${L().quick}</button><div class="muted" style="margin-top:8px;font-size:12.5px">${L().quickd}</div></div>`;
+  if(!live) h+=`<div class="banner">${L().offline}${pending.length?` · <b>${pending.length}</b> ${L().pending}`:""}</div>`;
+  // wall
+  const secs=["llm","rag","agents","sysd","behav","bonus","meta","js","react"];
+  h+=`<h2>${L().wall}</h2><div class="card"><div class="wall">`;
+  for(const s of secs){const its=DB.items.filter(i=>i.s===s); if(!its.length) continue;
+    h+=`<div class="sec">${SEC[s]}</div>`+its.map(i=>{const dd=i.last&&INTERVAL[i.st]?days(i.last)-INTERVAL[i.st]>=0:false;
+      return `<div class="cell ${i.st}${dd?" due":""}" title="#${i.id} ${esc(i.t)} · ${L().statuses[i.st]}" onclick="location.hash='item/${i.id}'">${i.id}</div>`}).join("");}
+  h+=`</div></div>`;
+  // heat
+  const counts=Object.fromEntries(DB.history.map(x=>[x.d,x.ids.length])); const end=new Date(TODAY); const dow=(end.getDay()+6)%7; const start=new Date(end); start.setDate(end.getDate()-dow-7*11);
+  let cols="";for(let w=0;w<12;w++){let col="";for(let r=0;r<7;r++){const dt=new Date(start);dt.setDate(start.getDate()+w*7+r);const k=iso(dt);const c=counts[k]||0;const lvl=c===0?0:c===1?1:c<=3?2:3;col+=`<div class="day l${lvl}${k===TODAY?" today":""}" title="${k}${c?" · "+c:""}"></div>`}cols+=`<div class="week">${col}</div>`}
+  h+=`<h2>${L().sessions}</h2><div class="card"><div class="heat">${cols}</div></div>`;
+  app.innerHTML=h;
+}
+function itemScreen(id){
+  const i=byId(id); const t=ticketFor(id);
+  app.innerHTML=`<div class="card">${itemRow({...i},L().statuses[i.st])}${t?`<div class="muted" style="margin-top:10px;font-size:12.5px">${esc(t[lang].topic)} · ${esc(t.tag)}</div>`:""}<div class="row"><button class="ghost" onclick="location.hash='home'">← ${L().home}</button></div></div>`;
+}
+
+// ---------- shared play chrome ----------
+let combo=0;
+function playTop(title,i,n){return `<div class="top"><span>${title}</span><div class="prog"><i style="width:${Math.round(i/n*100)}%"></i></div><span>${i}/${n}</span><span class="combo" id="combo">${combo>1?"×"+combo:""}</span></div>`}
+function finish(id,mode,correct,total,xp,extra=""){
+  const pct=total?correct/total:1; const msg=pct===1?L().perfect:pct>=.7?L().good:L().meh;
+  post("/api/log",{id,mode,xp,correct,total}).then(()=>header());
+  app.innerHTML=`<div class="card done"><div class="big">${correct}/${total}</div><div class="muted">${L().roundDone} · ${msg}</div><div class="xp">+${xp} ${L().xpgain}</div>${extra}
+    <div class="row" style="justify-content:center"><button onclick="location.hash='play/${id}/${mode}';route(true)">${L().again}</button><button class="primary" onclick="location.hash='home'">${L().home}</button></div></div>`;
+}
+
+// ---------- "why" block: verdict + More (reference paragraph) + Explain differently (LLM via server) ----------
+function bestPara(t,text){const words=new Set((text.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[]));let best=t[lang].a[0],bs=-1;for(const a of t[lang].a){const w=a.t.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[];const sc=w.filter(x=>words.has(x)).length/Math.sqrt(w.length||1);if(sc>bs){bs=sc;best=a}}return best}
+function whyHTML(ok,verdict,q){return `<div class="why ${ok?"ok":"bad"}">${verdict}<div class="row" style="align-items:center"><button class="primary sm" id="nx">${L().next} →</button><button class="sm" id="more">${L().more}</button>${(DB.explain&&live)?`<button class="sm" id="expl">${L().explain}</button>`:""}<a style="margin-left:auto;font-size:12px" href="exam-tickets.html#t${q.t.n}">${L().ticket} ${q.t.n} →</a></div><div id="moreBox"></div></div>`}
+function wireWhy(q,stmt,next){
+  $("#nx").onclick=next; $("#nx").focus();
+  $("#more").onclick=()=>{const p=bestPara(q.t,stmt);$("#moreBox").insertAdjacentHTML("beforeend",`<div class="ref" style="margin-top:12px"><div class="aq">${esc(p.q)} · ${esc(q.t[lang].topic)}</div><p>${esc(p.t)}</p></div>`);$("#more").disabled=true};
+  const ex=$("#expl"); if(ex) ex.onclick=async()=>{ex.disabled=true;ex.textContent=L().thinking;const p=bestPara(q.t,stmt);
+    try{const r=await fetch("/api/explain",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({stmt,ok:q.ok!==false,topic:q.t[lang].topic,ref:p.t,kill:q.t[lang].kill.replace(/<[^>]+>/g,""),lang})});const j=await r.json();
+      $("#moreBox").insertAdjacentHTML("beforeend",`<div class="ref" style="margin-top:12px;border-color:var(--acc2)"><div class="aq">${L().explain}${j.cached?" · cache":""}</div><p>${esc(j.text||("✗ "+j.error))}</p></div>`);}
+    catch(e){$("#moreBox").insertAdjacentHTML("beforeend",`<div class="why bad">✗ ${esc(e.message)}</div>`)}
+    ex.textContent=L().explain;};
+}
+
+// ---------- true / false ----------
+function sentences(t){return t[lang].a.flatMap(a=>a.t.split(/(?<=[.!?])\s+/)).map(s=>s.trim()).filter(s=>{const w=s.split(/\s+/).length;return w>=8&&w<=28&&/^[A-ZА-ЯЁ]/.test(s)&&!/^(Поэтому|Потому|И |А |Плюс|Отсюда|So |And |But |Because|Which|That's|Plus|Then )/.test(s)})}
+function buildTF(ids,n=10){
+  const ts=ids.map(ticketFor).filter(Boolean); if(!ts.length) return [];
+  const pool=[];
+  for(const t of ts){const d=window.DRILLS[t.n]||{}; (d.lies?.[lang]||[]).forEach(s=>pool.push({s,ok:false,t})); shuffle(sentences(t)).slice(0,6).forEach(s=>pool.push({s,ok:true,t}));}
+  // pad false with lies from same-section tickets
+  const secs=new Set(ts.map(t=>t.sec));
+  const extra=shuffle(window.TICKETS.filter(t=>secs.has(t.sec)&&!ts.includes(t))).slice(0,3);
+  for(const t of extra){(window.DRILLS[t.n]?.lies?.[lang]||[]).slice(0,1).forEach(s=>pool.push({s,ok:false,t}))}
+  const f=shuffle(pool.filter(p=>!p.ok)).slice(0,Math.ceil(n*0.4)); const tr=shuffle(pool.filter(p=>p.ok)).slice(0,n-f.length);
+  return shuffle(f.concat(tr));
+}
+function playTF(id,ids){
+  const qs=buildTF(ids||[id]); let i=0,correct=0,xp=0; combo=0;
+  const step=()=>{ if(i>=qs.length) return finish(id,"tf",correct,qs.length,xp+(correct===qs.length?3:0));
+    const q=qs[i];
+    app.innerHTML=`<div class="card" id="c">${playTop(L().tf,i,qs.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="stmt">${esc(q.s)}</div>
+      <div class="tf"><button class="false" id="f">← ${L().false}</button><button class="true" id="t">${L().true} →</button></div><div id="why"></div></div>`;
+    const answer=v=>{ if($("#why").innerHTML) return; const ok=v===q.ok; beep(ok); combo=ok?combo+1:0; if(ok){correct++;xp+=1}
+      $("#c").classList.add(ok?"flash-ok":"flash-bad"); $("#combo").textContent=combo>1?"×"+combo:"";
+      $("#why").innerHTML=whyHTML(ok,`${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}`,q);
+      wireWhy(q,q.s,()=>{i++;step()}); };
+    $("#t").onclick=()=>answer(true); $("#f").onclick=()=>answer(false);
+    document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Enter"&&$("#nx"))$("#nx").click()};
+  }; step();
+}
+
+// ---------- fill the gap ----------
+function playGap(id,ids){
+  const ts=(ids||[id]).map(ticketFor).filter(Boolean); const qs=shuffle(ts.flatMap(t=>(window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t})))).slice(0,ids?6:3);
+  if(!qs.length) return home(); let i=0,correct=0,total=0,xp=0; combo=0;
+  const step=()=>{ if(i>=qs.length) return finish(id,"gap",correct,total,xp);
+    const q=qs[i]; const answers=[]; let k=0;
+    const html=esc(q.s).replace(/\[\[(.+?)\]\]/g,(_,a)=>{const alts=a.split("|").map(x=>x.trim());answers.push(alts);const w=Math.min(260,Math.max(90,alts[0].length*12+30));return `<input id="g${k++}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${w}px">`});
+    app.innerHTML=`<div class="card" id="c">${playTop(L().gap,i,qs.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="cloze" style="margin-top:14px">${html}</div><div class="row"><button class="primary" id="chk">${L().check}</button></div><div id="why"></div></div>`;
+    $("#g0").focus();
+    const norm=s=>s.toLowerCase().replace(/[«»"'`]/g,"").replace(/\s+/g," ").replace(/[–—]/g,"-").trim();
+    const check=()=>{ if($("#why").innerHTML) return; let all=true;
+      answers.forEach((alts,j)=>{const el=$("#g"+j); const v=norm(el.value); const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1)); el.classList.add(ok?"ok":"bad"); el.disabled=true; total++; if(ok){correct++;xp+=2}else{all=false; el.value=alts[0]}});
+      beep(all); combo=all?combo+1:0; $("#c").classList.add(all?"flash-ok":"flash-bad");
+      $("#why").innerHTML=whyHTML(all,all?L().resok:L().resbad,q); wireWhy(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()}); };
+    $("#chk").onclick=check; document.onkeydown=e=>{if(e.key==="Enter"){if($("#nx"))$("#nx").click();else check()}};
+  }; step();
+}
+
+// ---------- order the steps ----------
+function playOrder(id){
+  const t=ticketFor(id); const st=window.DRILLS[t.n]?.steps?.[lang]; if(!st) return home();
+  let cur=shuffle(st.items.map((s,i)=>i)); if(cur.every((v,i)=>v===i)) cur.reverse(); let sel=null, tries=0; combo=0;
+  const render=(result)=>{
+    app.innerHTML=`<div class="card" id="c">${playTop(L().order,0,1)}<div class="tag">${esc(t[lang].topic)}</div><div class="q">${esc(st.title)}</div><div class="muted" style="font-size:12px">${L().order_hint}</div>
+      <ul class="steps">${cur.map((idx,pos)=>`<li data-pos="${pos}" class="${sel===pos?"sel":""}${result?(idx===pos?" ok":" bad"):""}" draggable="true"><span class="n">${pos+1}</span><span>${esc(st.items[idx])}</span><span class="mv"><button data-up="${pos}">↑</button><button data-dn="${pos}">↓</button></span></li>`).join("")}</ul>
+      <div class="row">${result&&result.ok?`<button class="primary" id="fin">${L().next} →</button>`:`<button class="primary" id="chk">${L().check}</button>`}${result&&!result.ok?`<button id="ret">${L().again}</button>`:""}</div>${result?`<div class="why ${result.ok?"ok":"bad"}">${result.ok?L().resok:L().resbad} · ${result.n} ${L().correct} ${L().of} ${cur.length}<div class="row"><button class="sm" id="more">${L().more}</button></div><div id="moreBox"></div></div>`:""}</div>`;
+    const move=(a,b)=>{if(b<0||b>=cur.length)return;const v=cur.splice(a,1)[0];cur.splice(b,0,v);sel=null;render()};
+    app.querySelectorAll("[data-up]").forEach(b=>b.onclick=e=>{e.stopPropagation();move(+b.dataset.up,+b.dataset.up-1)});
+    app.querySelectorAll("[data-dn]").forEach(b=>b.onclick=e=>{e.stopPropagation();move(+b.dataset.dn,+b.dataset.dn+1)});
+    app.querySelectorAll("li").forEach(li=>{const pos=+li.dataset.pos;
+      li.onclick=()=>{if(result)return; if(sel===null){sel=pos;render()}else if(sel===pos){sel=null;render()}else move(sel,pos)};
+      li.ondragstart=e=>{e.dataTransfer.setData("text",pos)}; li.ondragover=e=>e.preventDefault(); li.ondrop=e=>{e.preventDefault();move(+e.dataTransfer.getData("text"),pos)};});
+    if($("#chk")) $("#chk").onclick=()=>{tries++;const n=cur.filter((v,i)=>v===i).length;const ok=n===cur.length;beep(ok);render({ok,n})};
+    if($("#ret")) $("#ret").onclick=()=>render();
+    if($("#more")) $("#more").onclick=()=>{const p=bestPara(t,st.title);$("#moreBox").innerHTML=`<div class="ref" style="margin-top:12px"><div class="aq">${esc(p.q)}</div><p>${esc(p.t)}</p></div>`;$("#more").disabled=true};
+    if($("#fin")) $("#fin").onclick=()=>finish(id,"order",1,1,tries===1?5:2);
+  }; render();
+}
+
+// ---------- voice interview ----------
+function playVoice(id){
+  const t=ticketFor(id); const d=t[lang]; let qi=0, transcripts=["","",""], rec=null, t0=null, tick=null, final="", interim="";
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+  const speak=txt=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang=lang==="ru"?"ru-RU":"en-US";u.rate=.95;speechSynthesis.speak(u)}catch{}};
+  const stopAll=()=>{if(rec){try{rec.stop()}catch{}rec=null}if(tick){clearInterval(tick);tick=null}};
+  const render=()=>{
+    app.innerHTML=`<div class="card">${playTop(L().voice,qi,3)}<div class="tag">${esc(d.topic)} · ${esc(t.tag)}</div><div class="qn">${lang==="ru"?"Вопрос":"Question"} ${qi+1}/3</div><div class="q">${esc(d.qs[qi])}</div>
+      <div class="row" style="align-items:center"><button id="ask">🔊 ${L().ask}</button><button class="primary" id="rec">🎤 ${L().rec}</button><button id="stp" disabled>${L().stop}</button><span class="spacer"></span><span class="timer" id="tm">0:00</span></div>
+      ${SR?"":`<div class="banner">${L().norec}</div>`}
+      <div class="transcript" id="tr"><span class="dim2">${L().transcript}…</span></div>
+      <div class="row"><button class="ghost" id="nxq">${qi<2?L().next+" →":L().reveal}</button></div></div>`;
+    $("#ask").onclick=()=>speak(d.qs[qi]);
+    $("#rec").onclick=()=>{ final=transcripts[qi]; interim=""; t0=Date.now(); $("#tm").className="timer run"; $("#rec").disabled=true; $("#stp").disabled=false;
+      tick=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$("#tm").textContent=fmt(s);$("#tm").className="timer "+(s>90?"over":"run")},500);
+      $("#tr").innerHTML=`<span class="rec"></span>${esc(final)}`;
+      if(SR){rec=new SR();rec.lang=lang==="ru"?"ru-RU":"en-US";rec.continuous=true;rec.interimResults=true;
+        rec.onresult=e=>{interim="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];if(r.isFinal)final+=r[0].transcript+" ";else interim+=r[0].transcript}transcripts[qi]=final;$("#tr").innerHTML=`<span class="rec"></span>${esc(final)}<span class="interim">${esc(interim)}</span>`};
+        rec.onend=()=>{if(rec&&!$("#stp").disabled){try{rec.start()}catch{}}}; try{rec.start()}catch{}} };
+    $("#stp").onclick=()=>{ $("#stp").disabled=true; $("#rec").disabled=false; stopAll(); transcripts[qi]=final; $("#tr").innerHTML=esc(final)||`<span class="dim2">—</span>`; };
+    $("#nxq").onclick=()=>{ stopAll(); if(qi<2){qi++;render()} else reveal(); };
+  };
+  const reveal=()=>{
+    speechSynthesis.cancel();
+    app.innerHTML=`<div class="card">${playTop(L().voice,3,3)}<div class="tag">${esc(d.topic)}</div>
+      ${d.qs.map((q,k)=>`<div class="qn" style="margin-top:14px">${k+1}. ${esc(q)}</div>${transcripts[k]?`<div class="transcript" style="margin-top:6px"><span class="dim2">${L().transcript}:</span> ${esc(transcripts[k])}</div>`:""}<div class="ref" style="margin-top:8px"><div class="aq">${L().reference}</div><p>${esc(d.a[k].t)}</p></div>`).join("")}
+      <div class="kill"><b>${L().killh}:</b> ${d.kill}</div>
+      <div class="muted" style="margin-top:16px">${L().selfscore}</div>
+      <div class="score"><button class="g" data-s="green">✓ ${L().g}</button><button class="y" data-s="yellow">~ ${L().y}</button><button class="r" data-s="red">✗ ${L().r}</button></div></div>`;
+    app.querySelectorAll(".score button").forEach(b=>b.onclick=async()=>{const st=b.dataset.s; const xp={green:10,yellow:6,red:3}[st]; beep(st!=="red");
+      const ids=t.core.filter(c=>byId(c)&&byId(c).st!=="parked"); if(!ids.length) ids.push(id);
+      for(const cid of ids) await post("/api/done",{id:cid,st,mode:"voice",xp:cid===ids[0]?xp:0,transcript:transcripts.join(" | ").slice(0,600)});
+      header(); app.innerHTML=`<div class="card done"><div class="big">${{green:"✓",yellow:"~",red:"✗"}[st]}</div><div class="muted">#${ids.join(", #")} → ${L().statuses[st]} · ${L().logged}</div><div class="xp">+${xp} ${L().xpgain}</div><div class="row" style="justify-content:center"><button class="primary" onclick="location.hash='home'">${L().home}</button></div></div>`;});
+  };
+  render();
+}
+
+// ---------- quick round ----------
+function quick(){
+  const d=due().slice(0,3).map(i=>i.id); const nn=nextNew(); const ids=d.length?d:(nn?[nn.id]:[17]);
+  // two phases: TF over the ids, then gaps over the ids
+  const id=ids[0]; combo=0;
+  const qs=buildTF(ids,8); let i=0,correct=0,xp=0;
+  const stepTF=()=>{ if(i>=qs.length) return phaseGap();
+    const q=qs[i]; app.innerHTML=`<div class="card" id="c">${playTop(L().quick+" · "+L().tf,i,qs.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="stmt">${esc(q.s)}</div><div class="tf"><button class="false" id="f">← ${L().false}</button><button class="true" id="t">${L().true} →</button></div><div id="why"></div></div>`;
+    const answer=v=>{if($("#why").innerHTML)return;const ok=v===q.ok;beep(ok);combo=ok?combo+1:0;if(ok){correct++;xp++}$("#c").classList.add(ok?"flash-ok":"flash-bad");$("#combo").textContent=combo>1?"×"+combo:"";
+      $("#why").innerHTML=whyHTML(ok,`${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}`,q);wireWhy(q,q.s,()=>{i++;stepTF()})};
+    $("#t").onclick=()=>answer(true);$("#f").onclick=()=>answer(false);document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Enter"&&$("#nx"))$("#nx").click()};
+  };
+  const phaseGap=()=>{ const tfC=correct,tfN=qs.length,tfX=xp; // reuse gap engine with a custom finish
+    const ts=ids.map(ticketFor).filter(Boolean); const gq=shuffle(ts.flatMap(t=>(window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t})))).slice(0,5);
+    let j=0,gc=0,gt=0,gx=0;
+    const step=()=>{ if(j>=gq.length){ for(const cid of ids) post("/api/log",{id:cid,mode:"quick",xp:cid===ids[0]?tfX+gx:0,correct:tfC+gc,total:tfN+gt}); header();
+        const tot=tfN+gt,cor=tfC+gc; return app.innerHTML=`<div class="card done"><div class="big">${cor}/${tot}</div><div class="muted">${L().roundDone} · ${cor===tot?L().perfect:cor/tot>=.7?L().good:L().meh}</div><div class="xp">+${tfX+gx} ${L().xpgain}</div><div class="muted" style="margin-top:10px;font-size:12.5px">#${ids.join(", #")} · ${L().logged}</div><div class="row" style="justify-content:center"><button onclick="location.hash='quick';route(true)">${L().again}</button><button class="primary" onclick="location.hash='home'">${L().home}</button></div></div>`; }
+      const q=gq[j]; const answers=[]; let k=0;
+      const html=esc(q.s).replace(/\[\[(.+?)\]\]/g,(_,a)=>{const alts=a.split("|").map(x=>x.trim());answers.push(alts);const w=Math.min(260,Math.max(90,alts[0].length*12+30));return `<input id="g${k++}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${w}px">`});
+      app.innerHTML=`<div class="card" id="c">${playTop(L().quick+" · "+L().gap,j,gq.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="cloze" style="margin-top:14px">${html}</div><div class="row"><button class="primary" id="chk">${L().check}</button></div><div id="why"></div></div>`; $("#g0").focus();
+      const norm=s=>s.toLowerCase().replace(/[«»"'`]/g,"").replace(/\s+/g," ").replace(/[–—]/g,"-").trim();
+      const check=()=>{if($("#why").innerHTML)return;let all=true;answers.forEach((alts,x)=>{const el=$("#g"+x);const v=norm(el.value);const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1));el.classList.add(ok?"ok":"bad");el.disabled=true;gt++;if(ok){gc++;gx+=2}else{all=false;el.value=alts[0]}});beep(all);$("#c").classList.add(all?"flash-ok":"flash-bad");
+        $("#why").innerHTML=whyHTML(all,all?L().resok:L().resbad,q);wireWhy(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{j++;step()})};
+      $("#chk").onclick=check;document.onkeydown=e=>{if(e.key==="Enter"){if($("#nx"))$("#nx").click();else check()}};
+    }; step(); };
+  stepTF();
+}
+
+// ---------- router ----------
+function route(force){
+  document.onkeydown=null; try{speechSynthesis.cancel()}catch{}
+  header();
+  const h=location.hash.slice(1)||"home"; const [scr,a,b]=h.split("/");
+  if(scr==="play"){const id=+a; const m=b; if(!byId(id)) return home();
+    if(m==="tf") playTF(id); else if(m==="gap") playGap(id); else if(m==="order") playOrder(id); else if(m==="voice") playVoice(id); else home(); return;}
+  if(scr==="quick") return quick();
+  if(scr==="item") return itemScreen(+a);
+  home();
+}
+window.addEventListener("hashchange",()=>route());
+loadState().then(async()=>{await flushPending(); route();});
+</script>
+</body>
+</html>
