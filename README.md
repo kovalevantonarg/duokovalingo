@@ -4,11 +4,13 @@ Private. Contains interview scores, weak spots and job-search material.
 
 ## Start here
 
-```
-node today.mjs serve
-```
+The app lives in `app/` and runs in three places with one codebase:
 
-Opens `drill.html`: today's items with game modes (voice interview, true/false, fill the gap, order the steps), the wall, streak, XP. Every result writes to `queue.json`. Terminal-only version: `node today.mjs`.
+- **Cloud (Vercel):** password-gated, progress in Supabase. Open it from any device, add to the iPhone home screen (it's a PWA). Project `drill` on Vercel; env vars listed in `app/README.md`.
+- **Local:** `node today.mjs serve` → `localhost:4040`, same app, no password, progress in `queue.json`.
+- **Terminal:** `node today.mjs` prints today's card. `node today.mjs pull` copies cloud progress into `queue.json` + `progress.html` (needs `DRILL_URL` and `DRILL_PASSWORD` in `.env`).
+
+Cloud is the source of truth once you use it; `pull` keeps the local files in step.
 
 Two revisits, one new item, one ship task. No deciding what to study — that was the part that kept killing sessions.
 Finished an item: `node today.mjs done <id> <g|y|r>`. Whole picture: `node today.mjs status`.
@@ -28,8 +30,7 @@ Reading-first failed twice. Build-first is the format now.
 | File | What it is |
 |---|---|
 | `today.mjs` + `queue.json` | The dispatcher + state. `serve` runs the app, `done` logs from the terminal, `html` regenerates progress.html. |
-| `drill.html` + `drills.js` | The game: voice interview, true/false, fill the gap, order the steps, quick 5-min round. Reads tickets.js. |
-| `tickets.js` | The 27 tickets as data, shared by drill.html and exam-tickets.html. |
+| `app/` | The game. `index.html` (SPA), `tickets.js` (27 tickets as data), `drills.js` (traps, cloze, step sequences), `exam-tickets.html` (classic mode), `api/[route].js` (Vercel function: login, state, log, done, explain), PWA manifest + icons. |
 | `plan.md` | Current plan. Applications first, drilling around them. |
 | `anton-os.md` | One page. Start Rule, four roles. Never grows. |
 | `learning-log.md` | Every session, every score, every gap. Source of truth. |
