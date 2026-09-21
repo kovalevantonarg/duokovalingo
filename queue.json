@@ -1,0 +1,54 @@
+{
+  "_readme": "State for today.mjs. Statuses: new | red | yellow | green | parked. Intervals: red 1d, yellow 3d, green 7d. Two greens in a row -> retired.",
+  "today_overrides": { "ship": "slice 4 — Haiku distills pages before Sonnet sees them (patch written 2026-09-06, not run)" },
+  "items": [
+    { "id": 1,  "t": "Event loop — micro vs macrotasks",            "s": "js",  "st": "parked", "why": "10y frontend — assumed known, May decision" },
+    { "id": 2,  "t": "Closures",                                     "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 3,  "t": "Promises: all / allSettled / race",            "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 4,  "t": "async/await pitfall — forEach vs for...of",    "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 5,  "t": "this binding — 4 rules + arrow",               "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 6,  "t": "TS generics — extends, infer, conditional",    "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 7,  "t": "TS utility types",                             "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 8,  "t": "Discriminated unions",                         "s": "js",  "st": "parked", "why": "10y frontend" },
+    { "id": 9,  "t": "Hooks rules — tracked by call order",          "s": "react","st": "parked", "why": "10y frontend" },
+    { "id": 10, "t": "useEffect cleanup",                            "s": "react","st": "parked", "why": "10y frontend" },
+    { "id": 11, "t": "useMemo vs useCallback",                       "s": "react","st": "parked", "why": "10y frontend" },
+    { "id": 12, "t": "useEffect dependencies",                       "s": "react","st": "parked", "why": "10y frontend" },
+    { "id": 13, "t": "Reconciliation + keys",                        "s": "react","st": "parked", "why": "10y frontend" },
+    { "id": 14, "t": "Suspense — server vs client, streaming SSR",   "s": "react","st": "parked", "why": "verify in the parked-check rep" },
+    { "id": 15, "t": "React Server Components vs SSR",               "s": "react","st": "parked", "why": "verify in the parked-check rep" },
+    { "id": 16, "t": "React 19 — Actions, useActionState, use()",    "s": "react","st": "parked", "why": "verify in the parked-check rep" },
+
+    { "id": 17, "t": "What is a token",                              "s": "llm", "st": "green",  "last": "2026-09-06" },
+    { "id": 18, "t": "Context window — what happens at the limit",   "s": "llm", "st": "green",  "last": "2026-09-06" },
+    { "id": 19, "t": "Temperature & top_p",                          "s": "llm", "st": "yellow", "last": "2026-09-06" },
+    { "id": 20, "t": "System vs user prompt",                        "s": "llm", "st": "yellow", "last": "2026-09-06" },
+    { "id": 21, "t": "Function calling / tool use loop",             "s": "llm", "st": "yellow", "last": "2026-08-25" },
+    { "id": 22, "t": "Streaming SSE — format + ReadableStream",      "s": "llm", "st": "new" },
+    { "id": 23, "t": "Structured output — JSON mode vs tool use",    "s": "llm", "st": "new" },
+    { "id": 24, "t": "Token economics — output 3-5x, caching",       "s": "llm", "st": "yellow", "last": "2026-09-06" },
+    { "id": 25, "t": "Prompt injection — attack + defense",          "s": "llm", "st": "new" },
+    { "id": 26, "t": "Model selection — Opus/Sonnet/Haiku",          "s": "llm", "st": "yellow", "last": "2026-09-06" },
+
+    { "id": 27, "t": "Why RAG vs put it all in context",             "s": "rag", "st": "new" },
+    { "id": 28, "t": "Chunking strategies + trade-offs",             "s": "rag", "st": "new" },
+    { "id": 29, "t": "Embeddings — cosine vs dot, dimensions",       "s": "rag", "st": "new" },
+    { "id": 30, "t": "Top-k + reranking",                            "s": "rag", "st": "new" },
+    { "id": 31, "t": "RAG failure modes + eval metrics",             "s": "rag", "st": "new" },
+
+    { "id": 32, "t": "ReAct pattern — think/act/observe",            "s": "agents","st": "new" },
+    { "id": 33, "t": "Tool definition — description is the API",     "s": "agents","st": "yellow", "last": "2026-08-25" },
+    { "id": 34, "t": "Stopping criteria + infinite-loop risk",       "s": "agents","st": "yellow", "last": "2026-08-25" },
+
+    { "id": 35, "t": "Design: streaming chat UI",                    "s": "sysd","st": "new" },
+    { "id": 36, "t": "Design: RAG end-to-end",                       "s": "sysd","st": "new" },
+    { "id": 37, "t": "Design: cost optimization for LLM product",    "s": "sysd","st": "new" },
+
+    { "id": 38, "t": "Tell me about yourself (60-90s, English)",     "s": "behav","st": "new" },
+    { "id": 39, "t": "Pivot story — facts, not passion",             "s": "behav","st": "new" },
+    { "id": 40, "t": "3 STAR stories",                               "s": "behav","st": "new" },
+
+    { "id": 41, "t": "Attention Q/K/V + why caching works",          "s": "bonus","st": "green",  "last": "2026-09-06" },
+    { "id": 42, "t": "Parked-check: cold-answer 3 random #1-16",     "s": "meta","st": "new" }
+  ]
+}

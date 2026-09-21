@@ -13,18 +13,44 @@
 
 ## Stats
 
-- Total drilled: 4 / 40 core (#17, #18 shaky; #19, #20 opened)
-- ✅ confident: 0
-- 🟡 shaky: 2 (#17, #18)
-- ❌ revisit: 2 (#19, #20)
+> Do not hand-maintain this. Run `node today.mjs status` — `queue.json` is the single source of truth.
+> Log an item the moment you finish it: `node today.mjs done <id> <g|y|r>`.
 
-## Next revisit queue (sorted by date)
+As of 2026-09-21: 3 green (#17, #18, attention/caching), 7 yellow (#19, #20, #21, #24, #26, #33, #34),
+16 new in queue, 16 parked (JS/React — the May decision).
 
-- **OVERDUE, 24 days** — #17 + #18: lesson-01 read 2026-07-18, Parts 2–4 never completed. ~90 min closes the loop.
+## What to do today
+
+`node today.mjs` — prints 2 revisits + 1 new item + the open ship task. No choosing.
 
 ---
 
 ## Sessions
+
+### 2026-09-06 — Sessions 6-7: scout slice 3 (caching) + exam tickets
+
+**Slice 3 shipped**: prompt caching. Breakpoint moves to the end of the conversation each step, static one on system+tools. Fresh input per step collapsed ~19000 -> 2.
+
+Clean run: new 718, cache write 19077, cache read 28742, out 2492.
+**$0.12199 without caching -> $0.07980 with = 1.53x**, measured within one run.
+
+Methodology point he now owns: comparing across runs of a non-deterministic agent measures the route, not the optimisation. The with/without computation on the same run is the valid A/B — he built it accidentally by writing `report()`.
+
+Money now: cache writes 60%, output 31%, reads 7%, new 2%. Caching fixed re-sending; it cannot fix dumping 20k-char raw pages. That is slice 4 (Haiku distills pages before Sonnet sees them — patch given, not yet run).
+
+Also fixed: maxRetries 5 + timeout after a connection timeout killed a run; usage report moved to `process.on('exit')` so a crashed run still reports cost.
+
+**Conceptual breakthrough — attention.** He asked how caching actually works and pushed back on tactical answers ("будто часть чего-то рассказал, но не концептуально"). Taught Q/K/V properly. He came back with it correct and unprompted: "Q — это квери, сравнивает отношение к каждому из KV (которые постоянны), а квери каждый раз новое." **✅**
+
+From that he derived the output-is-3-5x-more-expensive fact from mechanism rather than memory: prompt K/V computed in one parallel pass, output needs one full pass per token. #17 and #18 -> ✅.
+
+**Built `exam-tickets.html`** — 10 tickets, 3 questions each, RU/EN toggle, textarea for written answers, timer, red "where people fail" block per ticket. Went through three revisions on his feedback: (1) speaking aloud is impractical daily -> typing in English is now the default mode, speaking 1-2x/week; (2) needed both languages — EN is not a translation but the spoken interview script; (3) **reference answers rewritten from bullet lists into connected prose** — his objection was right, lists train enumeration, prose trains speech.
+
+**Status**: #17 ✅, #18 ✅, #19 🟡, #20 🟡, #21 🟡, #24 🟡, #26 🟡, #33 🟡, #34 🟡, attention/caching ✅ (beyond Core-40).
+
+**Next**: run slice 4, then draw tickets 3, 5, 7 cold.
+
+---
 
 ### 2026-08-25 — Session 5: scout slice 2 — tool use (#21, #33, #34)
 
@@ -186,4 +212,4 @@ Topic chosen by skipping JS/React blocks — Anton has 10y on those, opportunity
 **Mock-interviewer score (0-10)**:
 ```
 
-Last updated: 2026-08-25
+Last updated: 2026-09-06
