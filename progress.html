@@ -1,0 +1,144 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>progress — core-40</title>
+<style>
+  :root{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--ring:rgba(255,255,255,.10);
+    --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--h1:#1c5cab;--h2:#3987e5;--h3:#86b6ef}
+  *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 24px 60px;max-width:1080px;margin-inline:auto}
+  h1{font-size:15px;font-weight:600;margin:0 0 4px;letter-spacing:.02em}.sub{color:var(--muted);margin:0 0 22px;font-size:13px}
+  .muted{color:var(--muted)}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:26px}
+  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:12px 14px}.tile .v{font-size:26px;font-weight:600;line-height:1.1}.tile .l{color:var(--ink2);font-size:12px;margin-top:4px}
+  .tile .v.good{color:var(--good)}.tile .v.warn{color:var(--warn)}
+  h2{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin:26px 0 10px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 16px}
+  .row{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:6px 0;border-top:1px solid var(--grid)}.row:first-child{border-top:0}.k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--page);padding:1px 6px;border-radius:4px;border:1px solid var(--grid)}
+  .sec{margin-bottom:12px}.sech{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:6px}
+  .cells{display:flex;flex-wrap:wrap;gap:4px}
+  .cell{width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
+  .cell .id{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink2)}.cell .g{font-size:11px;line-height:1;color:var(--ink);min-height:11px}
+  .cell.green{background:var(--good);border-color:var(--good)}.cell.green .id,.cell.green .g{color:#07300a}
+  .cell.yellow{background:var(--warn);border-color:var(--warn)}.cell.yellow .id,.cell.yellow .g{color:#3a2a00}
+  .cell.red{background:var(--crit);border-color:var(--crit)}
+  .cell.new{background:var(--surface);border-style:dashed;border-color:var(--base)}
+  .cell.parked{background:repeating-linear-gradient(135deg,var(--surface) 0 4px,var(--grid) 4px 6px);border-color:var(--grid)}.cell.parked .id,.cell.parked .g{color:var(--muted)}
+  .cell.overdue::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.85}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink2);margin:10px 0 0}.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1px solid var(--ring)}
+  .legend .lg::before{background:var(--good)}.legend .ly::before{background:var(--warn)}.legend .lr::before{background:var(--crit)}.legend .ln::before{border-style:dashed;border-color:var(--base)}.legend .lp::before{background:repeating-linear-gradient(135deg,var(--surface) 0 3px,var(--grid) 3px 5px)}.legend .lo::before{background:var(--ink);border-radius:50%;width:6px;height:6px;margin:0 8px 0 2px}
+  .heat{position:relative;padding-top:18px}.months{position:absolute;top:0;left:0;height:14px;font-size:11px;color:var(--muted)}.months span{position:absolute}
+  .weeks{display:flex;gap:3px}.week{display:flex;flex-direction:column;gap:3px}
+  .day{width:13px;height:13px;border-radius:2px;background:var(--surface);border:1px solid var(--grid)}.day.l1{background:var(--h1);border-color:var(--h1)}.day.l2{background:var(--h2);border-color:var(--h2)}.day.l3{background:var(--h3);border-color:var(--h3)}
+  .day.future{opacity:.25}.day.today{outline:1px solid var(--ink);outline-offset:1px}
+  .hl{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted);margin-top:8px}.hl .day{width:11px;height:11px}
+  .tls{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.tl{background:var(--surface);border:1px solid var(--ring);border-radius:6px;padding:8px 10px;font-size:12px}.tld{display:block;color:var(--muted);margin-bottom:3px}.tld.now{color:var(--ink)}.tli b{font-family:ui-monospace,Menlo,monospace;font-weight:600}.tli i{color:var(--base)}
+  b{font-weight:600}i{color:var(--muted);font-style:normal}
+  .foot{color:var(--muted);font-size:12px;margin-top:30px}
+</style></head><body>
+<h1>core-40 &middot; progress</h1>
+<p class="sub">Monday, 21 September 2026 &middot; regenerate: <code>node today.mjs html</code> (auto after every <code>done</code>)</p>
+
+<div class="tiles">
+  <div class="tile"><div class="v good">3<span class="muted" style="font-size:14px;font-weight:400"> / 26</span></div><div class="l">green &middot; said it cold</div></div>
+  <div class="tile"><div class="v warn">7</div><div class="l">yellow &middot; shaky, in rotation</div></div>
+  <div class="tile"><div class="v">16</div><div class="l">new &middot; never opened</div></div>
+  <div class="tile"><div class="v">10</div><div class="l">due today (cap 2)</div></div>
+  <div class="tile"><div class="v">15d</div><div class="l">since last logged session</div></div>
+</div>
+
+<h2>Today</h2>
+<div class="card">
+    <div class="row"><span class="k">revisit</span><span><b>#21</b> Function calling / tool use loop <i>(24d overdue)</i><br><b>#33</b> Tool definition — description is the API <i>(24d overdue)</i><br><i class="muted">+8 in backlog, ignore — 2 is the cap</i></span></div>
+    <div class="row"><span class="k">new</span><span><b>#38</b> Tell me about yourself (60-90s, English)</span></div>
+    <div class="row"><span class="k">ship</span><span>slice 4 — Haiku distills pages before Sonnet sees them (patch written 2026-09-06, not run)</span></div>
+    <div class="row"><span class="k">5-min</span><span>#21 out loud, 60s, then <code>node today.mjs done 21 g|y|r</code></span></div></div>
+
+<h2>The wall &middot; 26 active, 16 parked</h2>
+<div class="sec"><div class="sech"><span>LLM engineering</span><span class="muted">2/10</span></div><div class="cells"><div class="cell green overdue" title="#17 What is a token
+green — said it cold
+last: 2026-09-06
+due: 2026-09-13 (overdue)"><span class="id">17</span><span class="g">&#10003;</span></div><div class="cell green overdue" title="#18 Context window — what happens at the limit
+green — said it cold
+last: 2026-09-06
+due: 2026-09-13 (overdue)"><span class="id">18</span><span class="g">&#10003;</span></div><div class="cell yellow overdue" title="#19 Temperature &amp; top_p
+yellow — shaky
+last: 2026-09-06
+due: 2026-09-09 (overdue)"><span class="id">19</span><span class="g">~</span></div><div class="cell yellow overdue" title="#20 System vs user prompt
+yellow — shaky
+last: 2026-09-06
+due: 2026-09-09 (overdue)"><span class="id">20</span><span class="g">~</span></div><div class="cell yellow overdue" title="#21 Function calling / tool use loop
+yellow — shaky
+last: 2026-08-25
+due: 2026-08-28 (overdue)"><span class="id">21</span><span class="g">~</span></div><div class="cell new" title="#22 Streaming SSE — format + ReadableStream
+new — never opened"><span class="id">22</span><span class="g"></span></div><div class="cell new" title="#23 Structured output — JSON mode vs tool use
+new — never opened"><span class="id">23</span><span class="g"></span></div><div class="cell yellow overdue" title="#24 Token economics — output 3-5x, caching
+yellow — shaky
+last: 2026-09-06
+due: 2026-09-09 (overdue)"><span class="id">24</span><span class="g">~</span></div><div class="cell new" title="#25 Prompt injection — attack + defense
+new — never opened"><span class="id">25</span><span class="g"></span></div><div class="cell yellow overdue" title="#26 Model selection — Opus/Sonnet/Haiku
+yellow — shaky
+last: 2026-09-06
+due: 2026-09-09 (overdue)"><span class="id">26</span><span class="g">~</span></div></div></div><div class="sec"><div class="sech"><span>RAG</span><span class="muted">0/5</span></div><div class="cells"><div class="cell new" title="#27 Why RAG vs put it all in context
+new — never opened"><span class="id">27</span><span class="g"></span></div><div class="cell new" title="#28 Chunking strategies + trade-offs
+new — never opened"><span class="id">28</span><span class="g"></span></div><div class="cell new" title="#29 Embeddings — cosine vs dot, dimensions
+new — never opened"><span class="id">29</span><span class="g"></span></div><div class="cell new" title="#30 Top-k + reranking
+new — never opened"><span class="id">30</span><span class="g"></span></div><div class="cell new" title="#31 RAG failure modes + eval metrics
+new — never opened"><span class="id">31</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Agents</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#32 ReAct pattern — think/act/observe
+new — never opened"><span class="id">32</span><span class="g"></span></div><div class="cell yellow overdue" title="#33 Tool definition — description is the API
+yellow — shaky
+last: 2026-08-25
+due: 2026-08-28 (overdue)"><span class="id">33</span><span class="g">~</span></div><div class="cell yellow overdue" title="#34 Stopping criteria + infinite-loop risk
+yellow — shaky
+last: 2026-08-25
+due: 2026-08-28 (overdue)"><span class="id">34</span><span class="g">~</span></div></div></div><div class="sec"><div class="sech"><span>System design</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#35 Design: streaming chat UI
+new — never opened"><span class="id">35</span><span class="g"></span></div><div class="cell new" title="#36 Design: RAG end-to-end
+new — never opened"><span class="id">36</span><span class="g"></span></div><div class="cell new" title="#37 Design: cost optimization for LLM product
+new — never opened"><span class="id">37</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Behavioral</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#38 Tell me about yourself (60-90s, English)
+new — never opened"><span class="id">38</span><span class="g"></span></div><div class="cell new" title="#39 Pivot story — facts, not passion
+new — never opened"><span class="id">39</span><span class="g"></span></div><div class="cell new" title="#40 3 STAR stories
+new — never opened"><span class="id">40</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Beyond core-40</span><span class="muted">1/1</span></div><div class="cells"><div class="cell green overdue" title="#41 Attention Q/K/V + why caching works
+green — said it cold
+last: 2026-09-06
+due: 2026-09-13 (overdue)"><span class="id">41</span><span class="g">&#10003;</span></div></div></div><div class="sec"><div class="sech"><span>Meta</span><span class="muted">0/1</span></div><div class="cells"><div class="cell new" title="#42 Parked-check: cold-answer 3 random #1-16
+new — never opened"><span class="id">42</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>JS/TS (parked)</span><span class="muted">0/8</span></div><div class="cells"><div class="cell parked" title="#1 Event loop — micro vs macrotasks
+parked — assumed known
+10y frontend — assumed known, May decision"><span class="id">1</span><span class="g">&#8211;</span></div><div class="cell parked" title="#2 Closures
+parked — assumed known
+10y frontend"><span class="id">2</span><span class="g">&#8211;</span></div><div class="cell parked" title="#3 Promises: all / allSettled / race
+parked — assumed known
+10y frontend"><span class="id">3</span><span class="g">&#8211;</span></div><div class="cell parked" title="#4 async/await pitfall — forEach vs for...of
+parked — assumed known
+10y frontend"><span class="id">4</span><span class="g">&#8211;</span></div><div class="cell parked" title="#5 this binding — 4 rules + arrow
+parked — assumed known
+10y frontend"><span class="id">5</span><span class="g">&#8211;</span></div><div class="cell parked" title="#6 TS generics — extends, infer, conditional
+parked — assumed known
+10y frontend"><span class="id">6</span><span class="g">&#8211;</span></div><div class="cell parked" title="#7 TS utility types
+parked — assumed known
+10y frontend"><span class="id">7</span><span class="g">&#8211;</span></div><div class="cell parked" title="#8 Discriminated unions
+parked — assumed known
+10y frontend"><span class="id">8</span><span class="g">&#8211;</span></div></div></div><div class="sec"><div class="sech"><span>React (parked)</span><span class="muted">0/8</span></div><div class="cells"><div class="cell parked" title="#9 Hooks rules — tracked by call order
+parked — assumed known
+10y frontend"><span class="id">9</span><span class="g">&#8211;</span></div><div class="cell parked" title="#10 useEffect cleanup
+parked — assumed known
+10y frontend"><span class="id">10</span><span class="g">&#8211;</span></div><div class="cell parked" title="#11 useMemo vs useCallback
+parked — assumed known
+10y frontend"><span class="id">11</span><span class="g">&#8211;</span></div><div class="cell parked" title="#12 useEffect dependencies
+parked — assumed known
+10y frontend"><span class="id">12</span><span class="g">&#8211;</span></div><div class="cell parked" title="#13 Reconciliation + keys
+parked — assumed known
+10y frontend"><span class="id">13</span><span class="g">&#8211;</span></div><div class="cell parked" title="#14 Suspense — server vs client, streaming SSR
+parked — assumed known
+verify in the parked-check rep"><span class="id">14</span><span class="g">&#8211;</span></div><div class="cell parked" title="#15 React Server Components vs SSR
+parked — assumed known
+verify in the parked-check rep"><span class="id">15</span><span class="g">&#8211;</span></div><div class="cell parked" title="#16 React 19 — Actions, useActionState, use()
+parked — assumed known
+verify in the parked-check rep"><span class="id">16</span><span class="g">&#8211;</span></div></div></div>
+<div class="legend"><span class="lg">green</span><span class="ly">yellow</span><span class="lr">red</span><span class="ln">new</span><span class="lp">parked</span><span class="lo">overdue for revisit</span></div>
+
+<h2>Sessions &middot; last 16 weeks &middot; 4 sessions, 14 items logged</h2>
+<div class="card"><div class="heat"><div class="months"><span style="left:64px">Jul</span><span style="left:128px">Aug</span><span style="left:208px">Sept</span></div><div class="weeks"><div class="week"><div class="day l0" title="2026-06-08"></div><div class="day l0" title="2026-06-09"></div><div class="day l0" title="2026-06-10"></div><div class="day l0" title="2026-06-11"></div><div class="day l0" title="2026-06-12"></div><div class="day l0" title="2026-06-13"></div><div class="day l0" title="2026-06-14"></div></div><div class="week"><div class="day l0" title="2026-06-15"></div><div class="day l0" title="2026-06-16"></div><div class="day l0" title="2026-06-17"></div><div class="day l0" title="2026-06-18"></div><div class="day l0" title="2026-06-19"></div><div class="day l0" title="2026-06-20"></div><div class="day l0" title="2026-06-21"></div></div><div class="week"><div class="day l0" title="2026-06-22"></div><div class="day l0" title="2026-06-23"></div><div class="day l0" title="2026-06-24"></div><div class="day l0" title="2026-06-25"></div><div class="day l0" title="2026-06-26"></div><div class="day l0" title="2026-06-27"></div><div class="day l0" title="2026-06-28"></div></div><div class="week"><div class="day l0" title="2026-06-29"></div><div class="day l0" title="2026-06-30"></div><div class="day l0" title="2026-07-01"></div><div class="day l0" title="2026-07-02"></div><div class="day l0" title="2026-07-03"></div><div class="day l0" title="2026-07-04"></div><div class="day l0" title="2026-07-05"></div></div><div class="week"><div class="day l0" title="2026-07-06"></div><div class="day l0" title="2026-07-07"></div><div class="day l0" title="2026-07-08"></div><div class="day l0" title="2026-07-09"></div><div class="day l0" title="2026-07-10"></div><div class="day l0" title="2026-07-11"></div><div class="day l0" title="2026-07-12"></div></div><div class="week"><div class="day l0" title="2026-07-13"></div><div class="day l0" title="2026-07-14"></div><div class="day l0" title="2026-07-15"></div><div class="day l0" title="2026-07-16"></div><div class="day l0" title="2026-07-17"></div><div class="day l2" title="2026-07-18 — 2 items"></div><div class="day l0" title="2026-07-19"></div></div><div class="week"><div class="day l0" title="2026-07-20"></div><div class="day l0" title="2026-07-21"></div><div class="day l0" title="2026-07-22"></div><div class="day l0" title="2026-07-23"></div><div class="day l0" title="2026-07-24"></div><div class="day l0" title="2026-07-25"></div><div class="day l0" title="2026-07-26"></div></div><div class="week"><div class="day l0" title="2026-07-27"></div><div class="day l0" title="2026-07-28"></div><div class="day l0" title="2026-07-29"></div><div class="day l0" title="2026-07-30"></div><div class="day l0" title="2026-07-31"></div><div class="day l0" title="2026-08-01"></div><div class="day l0" title="2026-08-02"></div></div><div class="week"><div class="day l0" title="2026-08-03"></div><div class="day l0" title="2026-08-04"></div><div class="day l0" title="2026-08-05"></div><div class="day l0" title="2026-08-06"></div><div class="day l0" title="2026-08-07"></div><div class="day l0" title="2026-08-08"></div><div class="day l0" title="2026-08-09"></div></div><div class="week"><div class="day l0" title="2026-08-10"></div><div class="day l0" title="2026-08-11"></div><div class="day l0" title="2026-08-12"></div><div class="day l0" title="2026-08-13"></div><div class="day l0" title="2026-08-14"></div><div class="day l0" title="2026-08-15"></div><div class="day l0" title="2026-08-16"></div></div><div class="week"><div class="day l0" title="2026-08-17"></div><div class="day l0" title="2026-08-18"></div><div class="day l0" title="2026-08-19"></div><div class="day l0" title="2026-08-20"></div><div class="day l0" title="2026-08-21"></div><div class="day l0" title="2026-08-22"></div><div class="day l0" title="2026-08-23"></div></div><div class="week"><div class="day l0" title="2026-08-24"></div><div class="day l2" title="2026-08-25 — 3 items"></div><div class="day l0" title="2026-08-26"></div><div class="day l0" title="2026-08-27"></div><div class="day l0" title="2026-08-28"></div><div class="day l0" title="2026-08-29"></div><div class="day l0" title="2026-08-30"></div></div><div class="week"><div class="day l0" title="2026-08-31"></div><div class="day l0" title="2026-09-01"></div><div class="day l0" title="2026-09-02"></div><div class="day l0" title="2026-09-03"></div><div class="day l0" title="2026-09-04"></div><div class="day l0" title="2026-09-05"></div><div class="day l3" title="2026-09-06 — 7 items"></div></div><div class="week"><div class="day l0" title="2026-09-07"></div><div class="day l0" title="2026-09-08"></div><div class="day l0" title="2026-09-09"></div><div class="day l0" title="2026-09-10"></div><div class="day l0" title="2026-09-11"></div><div class="day l0" title="2026-09-12"></div><div class="day l0" title="2026-09-13"></div></div><div class="week"><div class="day l0" title="2026-09-14"></div><div class="day l0" title="2026-09-15"></div><div class="day l0" title="2026-09-16"></div><div class="day l0" title="2026-09-17"></div><div class="day l0" title="2026-09-18"></div><div class="day l0" title="2026-09-19"></div><div class="day l0" title="2026-09-20"></div></div><div class="week"><div class="day l0 today" title="2026-09-21"></div><div class="day l0 future" title="2026-09-22"></div><div class="day l0 future" title="2026-09-23"></div><div class="day l0 future" title="2026-09-24"></div><div class="day l0 future" title="2026-09-25"></div><div class="day l0 future" title="2026-09-26"></div><div class="day l0 future" title="2026-09-27"></div></div></div></div>
+<div class="hl">less <div class="day"></div><div class="day l1"></div><div class="day l2"></div><div class="day l3"></div> more &nbsp;&middot;&nbsp; rows Mon&rarr;Sun &nbsp;&middot;&nbsp; the gaps are the data, not a verdict</div></div>
+
+<h2>Coming due &middot; next 14 days</h2>
+<div class="tls"><div class="tl"><span class="tld now">today</span><span class="tli"><b>#17</b> <b>#18</b> <b>#19</b> <b>#20</b> <b>#21</b> <b>#24</b> <b>#26</b> <b>#33</b> <b>#34</b> <b>#41</b></span></div><div class="tl"><span class="tld">Tue 22</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Wed 23</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Thu 24</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Fri 25</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sat 26</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sun 27</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Mon 28</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Tue 29</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Wed 30</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Thu 1</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Fri 2</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sat 3</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sun 4</span><span class="tli"><i>—</i></span></div></div>
+
+<p class="foot">Hover any cell for the item, status, last drilled, due date. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
+</body></html>
