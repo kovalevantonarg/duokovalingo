@@ -5,8 +5,10 @@ Private. Contains interview scores, weak spots and job-search material.
 ## Start here
 
 ```
-node today.mjs
+node today.mjs serve
 ```
+
+Opens `drill.html`: today's items with game modes (voice interview, true/false, fill the gap, order the steps), the wall, streak, XP. Every result writes to `queue.json`. Terminal-only version: `node today.mjs`.
 
 Two revisits, one new item, one ship task. No deciding what to study — that was the part that kept killing sessions.
 Finished an item: `node today.mjs done <id> <g|y|r>`. Whole picture: `node today.mjs status`.
@@ -25,7 +27,9 @@ Reading-first failed twice. Build-first is the format now.
 
 | File | What it is |
 |---|---|
-| `today.mjs` + `queue.json` | The dispatcher. What to do today, and the state behind it. |
+| `today.mjs` + `queue.json` | The dispatcher + state. `serve` runs the app, `done` logs from the terminal, `html` regenerates progress.html. |
+| `drill.html` + `drills.js` | The game: voice interview, true/false, fill the gap, order the steps, quick 5-min round. Reads tickets.js. |
+| `tickets.js` | The 27 tickets as data, shared by drill.html and exam-tickets.html. |
 | `plan.md` | Current plan. Applications first, drilling around them. |
 | `anton-os.md` | One page. Start Rule, four roles. Never grows. |
 | `learning-log.md` | Every session, every score, every gap. Source of truth. |
