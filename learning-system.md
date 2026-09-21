@@ -46,6 +46,7 @@ No new items. Claude plays an interviewer from one of your target companies (use
 ## Files (all in this folder)
 
 - `lesson-NN-topic.md` — one per drilled topic: material to read, build spec, recall questions, your compression
+- `drill.html` — the game layer over the same queue: voice interview (asks aloud, transcribes you), true/false lightning, fill the gap, order the steps, quick 5-min round. `node today.mjs serve` runs it and writes results into queue.json. Voice + self-score is the only mode that changes an item's status; the quick games earn XP and count as a session.
 - `queue.json` + `today.mjs` — the dispatcher: `node today.mjs` prints today's 2 revisits + 1 new + ship task; `done <id> g|y|r` logs it; `progress.html` is the picture
 - `exam-tickets.html` — 27 tickets covering all 42 queue items, RU/EN, reference answers as spoken prose, "where people fail" per ticket. Opens straight from a wall cell in progress.html
 - `core-40-priority.md` — the master list (triage now lives in queue.json: #1–16 parked)
