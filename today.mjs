@@ -4,7 +4,8 @@
 //   node today.mjs done 24 g    -> log an item (g green / y yellow / r red), regenerates progress.html
 //   node today.mjs status       -> whole queue at a glance
 //   node today.mjs html         -> regenerate progress.html + state.js
-//   node today.mjs serve [port] -> local server for drill.html (writes progress into queue.json), default :4040
+//   node today.mjs serve [port] -> local server for app/ (writes progress into queue.json), default :4040
+//   node today.mjs pull         -> fetch progress from the deployed app into queue.json (needs DRILL_URL + DRILL_PASSWORD in env or .env)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { exec } from "node:child_process";
@@ -13,8 +14,9 @@ import { dirname, join, extname } from "node:path";
 
 const FILE = new URL("./queue.json", import.meta.url);
 const HTML = new URL("./progress.html", import.meta.url);
-const STATE = new URL("./state.js", import.meta.url);
+const STATE = new URL("./app/state.js", import.meta.url);
 const DIR = dirname(fileURLToPath(import.meta.url));
+const APP = join(DIR, "app");
 const db = JSON.parse(readFileSync(FILE, "utf8"));
 db.history ??= [];
 const INTERVAL = { red: 1, yellow: 3, green: 7 };
@@ -71,7 +73,22 @@ if (cmd === "status") {
 
 if (cmd === "html") { writeHtml(); writeState(); console.log("progress.html + state.js written"); process.exit(0); }
 
-// ---- local server: drill.html reads/writes queue.json through /api ----
+// ---- pull: cloud -> queue.json ----
+if (cmd === "pull") {
+  const envf = existsSync(join(DIR, ".env")) ? readFileSync(join(DIR, ".env"), "utf8") : "";
+  const ev = (k) => process.env[k] || (envf.match(new RegExp(`^\\s*${k}\\s*=\\s*"?([^"\\n]+)"?`, "m")) || [])[1] || "";
+  const base = ev("DRILL_URL").replace(/\/$/, ""), pw = ev("DRILL_PASSWORD");
+  if (!base || !pw) { console.log("need DRILL_URL and DRILL_PASSWORD (env or .env)"); process.exit(1); }
+  const lr = await fetch(base + "/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: pw }) });
+  if (!lr.ok) { console.log("login failed", lr.status); process.exit(1); }
+  const cookie = (lr.headers.get("set-cookie") || "").split(";")[0];
+  const sr = await fetch(base + "/api/state", { headers: { cookie } }); if (!sr.ok) { console.log("state failed", sr.status); process.exit(1); }
+  const cloud = await sr.json(); delete cloud.auth; delete cloud.explain;
+  Object.assign(db, cloud); db.items = cloud.items; db.history = cloud.history; save(); writeHtml();
+  console.log(`pulled: ${db.items.length} items, ${db.history.length} sessions -> queue.json, progress.html, app/state.js`); process.exit(0);
+}
+
+// ---- local server: app/ reads/writes queue.json through /api ----
 if (cmd === "serve") {
   const port = Number(process.argv[3] || 4040);
   const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".css": "text/css", ".png": "image/png", ".md": "text/plain; charset=utf-8" };
@@ -79,7 +96,7 @@ if (cmd === "serve") {
   const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5";
   const CACHE = join(DIR, "explain-cache.json");
   const cache = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
-  const out = () => ({ ...db, explain: !!apiKey() });
+  const out = () => ({ ...db, auth: false, explain: !!apiKey() });
   const json = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(obj)); };
   const body = (req) => new Promise((ok) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch { ok({}); } }); });
   const logHit = (p) => {
@@ -119,13 +136,13 @@ if (cmd === "serve") {
         return json(res, 200, { text });
       } catch (e) { return json(res, 502, { error: e.message }); }
     }
-    let f = url.pathname === "/" ? "/drill.html" : decodeURIComponent(url.pathname);
-    const fp = join(DIR, f);
-    if (!fp.startsWith(DIR) || !existsSync(fp) || f.includes("..")) { res.writeHead(404); return res.end("not found"); }
+    let f = (url.pathname === "/" || url.pathname === "/drill.html") ? "/index.html" : decodeURIComponent(url.pathname);
+    const fp = join(APP, f);
+    if (!fp.startsWith(APP) || !existsSync(fp) || f.includes("..")) { res.writeHead(404); return res.end("not found"); }
     res.writeHead(200, { "content-type": MIME[extname(fp)] || "application/octet-stream", "cache-control": "no-store" });
     res.end(readFileSync(fp));
   }).listen(port, () => {
-    const u = `http://localhost:${port}/drill.html`;
+    const u = `http://localhost:${port}/`;
     console.log(`\ndrill: ${u}\nprogress writes to queue.json. "Explain differently": ${apiKey() ? "on (" + MODEL + ")" : "off — set ANTHROPIC_API_KEY or put it in .env"}. Ctrl-C to stop.\n`);
     if (process.platform === "darwin" && !process.argv.includes("--no-open")) exec(`open ${u}`);
   });
@@ -169,7 +186,7 @@ function writeHtml() {
       const dd = dueDate(i);
       const tip = `#${i.id} ${i.t}\n${LABEL[i.st]}${i.last ? `\nlast: ${i.last}` : ""}${dd ? `\ndue: ${dd}${dd <= TODAY ? " (overdue)" : ""}` : ""}${i.why ? `\n${i.why}` : ""}`;
       const overdue = dd && dd <= TODAY ? " overdue" : "";
-      return `<a class="cell ${i.st}${overdue}" href="exam-tickets.html#core-${i.id}" title="${esc(tip)}"><span class="id">${i.id}</span><span class="g">${GLYPH[i.st]}</span></a>`;
+      return `<a class="cell ${i.st}${overdue}" href="app/exam-tickets.html#core-${i.id}" title="${esc(tip)}"><span class="id">${i.id}</span><span class="g">${GLYPH[i.st]}</span></a>`;
     }).join("");
     const g = items.filter((i) => i.st === "green").length;
     return `<div class="sec"><div class="sech"><span>${esc(name)}</span><span class="muted">${g}/${items.length}</span></div><div class="cells">${cells}</div></div>`;

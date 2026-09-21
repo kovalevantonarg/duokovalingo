@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Билеты — Core-40</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#111815; --panel2:#0e1512; --line:#1e2a24; --line2:#2a3a32;
+    --fg:#d6e4dc; --dim:#7d9288; --dim2:#5c6f66;
+    --acc:#4ade80; --acc2:#22c55e; --bad:#f87171;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:15px;line-height:1.55;
+    padding:0 0 70px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+  }
+  .wrap{max-width:800px;margin:0 auto;padding:0 16px}
+  header{padding:20px 0 14px;padding-top:calc(20px + env(safe-area-inset-top));border-bottom:1px solid var(--line);margin-bottom:18px}
+  h1{font-size:15px;margin:0 0 3px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:600}
+  .sub{font-size:12px;color:var(--dim2);line-height:1.6}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
+  button{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:8px;cursor:pointer;background:var(--panel);border:1px solid var(--line2);color:var(--fg)}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#06120b;font-weight:600}
+  button.ghost{color:var(--dim)}
+  button:disabled{opacity:.4;cursor:default}
+  .lang{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+  .lang button{border:0;border-radius:0;padding:9px 13px;background:transparent;color:var(--dim);font-size:12px}
+  .lang button.on{background:var(--acc);color:#06120b;font-weight:600}
+  .timer{margin-left:auto;font-size:20px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .timer.run{color:var(--acc)}
+  .timer.over{color:var(--bad)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;margin-top:18px}
+  .tnum{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim2);margin-bottom:6px}
+  .ttopic{font-size:19px;color:var(--acc);margin:0 0 4px;font-weight:600;line-height:1.3}
+  .tmeta{font-size:11.5px;color:var(--dim2);margin-bottom:16px}
+  ol.qs{margin:0;padding-left:22px}
+  ol.qs li{margin:0 0 13px;font-size:15px;line-height:1.5}
+  ol.qs li::marker{color:var(--dim2)}
+
+  textarea{width:100%;margin-top:16px;min-height:150px;resize:vertical;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.6;padding:12px;outline:none}
+  textarea:focus{border-color:var(--acc2)}
+  textarea::placeholder{color:var(--dim2)}
+  .tools{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .count{font-size:11.5px;color:var(--dim2);margin-left:auto}
+
+  .hint{margin-top:14px;padding:11px 13px;background:var(--panel2);border-left:2px solid var(--line2);border-radius:0 6px 6px 0;font-size:12.5px;color:var(--dim)}
+  .ans{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+  .ans h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 14px;font-weight:600}
+  .ablock{margin:0 0 20px;padding-left:12px;border-left:2px solid var(--line2)}
+  .aq{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .atext{font-size:14.5px;line-height:1.65;color:#c9dad1;margin:0}
+  .kill{margin-top:6px;padding:11px 13px;background:#1d1512;border-left:2px solid var(--bad);border-radius:0 6px 6px 0;font-size:13px;color:#e8b6ae;line-height:1.6}
+  .kill b{color:#ffd9d2}
+  code{background:#0a100d;padding:1px 5px;border-radius:4px;font-size:.92em;color:#a7d8ba}
+  .idle{color:var(--dim2);text-align:center;padding:48px 16px;font-size:14px;line-height:1.75}
+  .list{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
+  .list h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 10px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .sech{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:6px 0 8px}
+  .secn{color:var(--dim2);letter-spacing:0}
+  .chip{font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line2);color:var(--dim);cursor:pointer;background:transparent}
+  .chip.done{border-color:var(--acc2);color:var(--acc)}
+  footer{max-width:800px;margin:26px auto 0;padding:16px;border-top:1px solid var(--line);color:var(--dim2);font-size:11.5px;line-height:1.75}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Билеты — Core-40</h1>
+  <div class="sub" id="sub"></div>
+</header>
+
+<div class="bar">
+  <button class="primary" id="draw"></button>
+  <button id="reveal" disabled></button>
+  <button class="ghost" id="reset"></button>
+  <span class="lang"><button id="ru" class="on">RU</button><button id="en">EN</button></span>
+  <span class="timer" id="timer">0:00</span>
+</div>
+
+<div id="stage"></div>
+
+<div class="list"><h3 id="allh"></h3><div id="chips"></div></div>
+</div>
+<footer id="foot"></footer>
+
+<script src="tickets.js"></script>
+<script>
+const UI={
+ ru:{sub:"Вытяни билет. Отвечай — печатая или вслух, 3–4 минуты на три вопроса. Эталон только после.",
+     draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
+     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",
+     ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
+     idle:"Ни одного билета не вытянуто.<br>Печатать можно где угодно — главное доставать из головы, а не узнавать в готовом тексте.",
+     resetd:"Сброшено. Все билеты снова в колоде.",
+     hint:"Отвечай, пока не иссякнешь. Только потом — «Показать эталон». Откроешь раньше — это чтение вместо вспоминания, билет сгорел.",
+     foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>Оценку 0–10 записывай в <code>learning-log.md</code>. Здесь ничего не сохраняется — это экзаменатор, а не трекер."},
+ en:{sub:"Draw a ticket. Answer by typing or out loud, 3–4 minutes for three questions. Reference answer only after.",
+     draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
+     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",
+     ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
+     idle:"No ticket drawn yet.<br>Typing works anywhere — what matters is producing from memory, not recognising a finished text.",
+     resetd:"Reset. All tickets back in the deck.",
+     hint:"Answer until you run dry. Only then hit Show reference. Opening early turns recall into reading and wastes the ticket.",
+     foot:"The reference is written the way the answer sounds out loud — connected speech, not a checklist. Judge yourself on whether you could say it, not on ticking items off.<br><br>Typing is the default and works anywhere. Out loud once or twice a week, when the house is quiet — fluency under pressure only comes from speaking.<br><br>Log your 0–10 in <code>learning-log.md</code>. Nothing is saved here — this is an examiner, not a tracker."}
+};
+
+const T=window.TICKETS;
+let lang="ru", cur=null, t0=null, tick=null, seen=new Set();
+const $=id=>document.getElementById(id);
+const stage=$("stage"), timer=$("timer"), chips=$("chips");
+const L=()=>UI[lang];
+const D=t=>t[lang];
+
+function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function stopTimer(){if(tick){clearInterval(tick);tick=null}}
+function startTimer(){
+  stopTimer(); t0=Date.now(); timer.className="timer run"; timer.textContent="0:00";
+  tick=setInterval(()=>{
+    const s=Math.floor((Date.now()-t0)/1000);
+    timer.textContent=fmt(s);
+    timer.className="timer "+(s>240?"over":"run");
+  },500);
+}
+function chrome(){
+  $("sub").innerHTML=L().sub; $("draw").textContent=L().draw;
+  $("reveal").textContent=L().reveal; $("reset").textContent=L().reset;
+  $("allh").textContent=L().all; $("foot").innerHTML=L().foot;
+  $("ru").className=lang==="ru"?"on":""; $("en").className=lang==="en"?"on":"";
+  renderChips();
+}
+const SEC={llm:["LLM engineering","LLM engineering"],rag:["RAG","RAG"],agents:["Агенты","Agents"],sysd:["Системный дизайн","System design"],behav:["Behavioral","Behavioral"],bonus:["Глубина","Depth"],parked:["Запарковано — проверка","Parked — check"]};
+const ORDER=["llm","rag","agents","sysd","behav","bonus","parked"];
+function renderChips(){
+  chips.innerHTML="";
+  ORDER.forEach(sec=>{
+    const ts=T.filter(t=>t.sec===sec); if(!ts.length) return;
+    const h=document.createElement("div"); h.className="sech";
+    const done=ts.filter(t=>seen.has(t.n)).length;
+    h.innerHTML=`<span>${SEC[sec][lang==="ru"?0:1]}</span><span class="secn">${done}/${ts.length}</span>`;
+    chips.appendChild(h);
+    const row=document.createElement("div"); row.className="chips";
+    ts.forEach(t=>{
+      const b=document.createElement("button");
+      b.className="chip"+(seen.has(t.n)?" done":"");
+      b.textContent=t.n+". "+D(t).topic;
+      b.title=t.tag;
+      b.onclick=()=>{location.hash="t"+t.n; show(t)};
+      row.appendChild(b);
+    });
+    chips.appendChild(row);
+  });
+}
+function openFromHash(){
+  const h=location.hash.slice(1); if(!h) return false;
+  let t=null;
+  if(h.startsWith("core-")){const id=Number(h.slice(5)); t=T.find(x=>(x.core||[]).includes(id));}
+  else if(h.startsWith("t")){const n=Number(h.slice(1)); t=T.find(x=>x.n===n);}
+  if(t){show(t); return true}
+  return false;
+}
+function show(t){
+  cur=t; seen.add(t.n); renderChips(); startTimer();
+  $("reveal").disabled=false;
+  const d=D(t);
+  stage.innerHTML=`
+    <div class="card">
+      <div class="tnum">${lang==="ru"?"Билет":"Ticket"} ${t.n} · ${t.tag}</div>
+      <div class="ttopic">${d.topic}</div>
+      <div class="tmeta">${L().meta}</div>
+      <ol class="qs">${d.qs.map(q=>`<li>${q}</li>`).join("")}</ol>
+      <textarea id="mine" placeholder="${L().ph}"></textarea>
+      <div class="tools">
+        <button id="copy">${L().copy}</button>
+        <button class="ghost" id="clr">${L().clear}</button>
+        <span class="count" id="cnt">0 ${L().chars}</span>
+      </div>
+      <div class="hint">${L().hint}</div>
+    </div>`;
+  const ta=$("mine"), cnt=$("cnt");
+  ta.oninput=()=>{cnt.textContent=ta.value.length+" "+L().chars};
+  $("copy").onclick=async()=>{
+    try{await navigator.clipboard.writeText(ta.value);}catch(e){ta.select();document.execCommand("copy");}
+    $("copy").textContent=L().copied; setTimeout(()=>{$("copy").textContent=L().copy},1200);
+  };
+  $("clr").onclick=()=>{ta.value="";cnt.textContent="0 "+L().chars;ta.focus()};
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function draw(){
+  const pool=T.filter(t=>!seen.has(t.n));
+  const from=pool.length?pool:T;
+  show(from[Math.floor(Math.random()*from.length)]);
+}
+function reveal(){
+  if(!cur)return;
+  stopTimer(); timer.className="timer";
+  const d=D(cur);
+  stage.querySelector(".card").insertAdjacentHTML("beforeend",`
+    <div class="ans">
+      <h3>${L().std}</h3>
+      ${d.a.map((b,i)=>`<div class="ablock"><div class="aq">${i+1}. ${b.q}</div><p class="atext">${b.t}</p></div>`).join("")}
+      <div class="kill">${L().kill}${d.kill}</div>
+    </div>`);
+  $("reveal").disabled=true;
+}
+function setLang(l){
+  lang=l; chrome();
+  if(cur){const t=cur; seen.delete(t.n); show(t);}
+  else stage.innerHTML=`<div class="idle">${L().idle}</div>`;
+}
+$("draw").onclick=draw;
+$("reveal").onclick=reveal;
+$("ru").onclick=()=>setLang("ru");
+$("en").onclick=()=>setLang("en");
+$("reset").onclick=()=>{
+  seen.clear(); cur=null; stopTimer();
+  timer.className="timer"; timer.textContent="0:00";
+  $("reveal").disabled=true;
+  stage.innerHTML=`<div class="idle">${L().resetd}</div>`;
+  renderChips();
+};
+chrome();
+if(!openFromHash()) stage.innerHTML=`<div class="idle">${L().idle}</div>`;
+window.addEventListener("hashchange",openFromHash);
+</script>
+</body>
+</html>
