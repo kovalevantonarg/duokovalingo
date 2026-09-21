@@ -30,6 +30,12 @@ This is the "делать самостоятельно" part. Claude reviews aft
 **Phase 4 — Compression (5 min).**
 You write the concept as **one flashcard line** in your own words into concepts.md (Q on one line, A on the next). Your words, not Claude's — that's what sticks.
 
+**Phase 4b — Optional, for mechanism topics (5 min).**
+Two aids, both optional, both only when the topic is a *mechanism* (agent loop, Q/K/V, RAG pipeline, SSE stream, event loop) rather than a fact:
+- **Redraw the diagram from memory.** The lesson file carries a diagram of the mechanism. Close it, draw the same thing on paper in 90 seconds, then compare. Drawing from memory is retrieval practice for spatial knowledge; re-looking at the picture is not.
+- **One Mermaid block in `concepts.md`.** The new item plus two arrows to items you already hold (`A --> B : why`). Three minutes. Links you drew yourself stick; links written for you don't.
+Skip both on a bad day without guilt. Facts and behavioral items don't get diagrams.
+
 **Phase 5 — Out-loud answer + log (10 min).**
 Answer the original interview question out loud in English, 60–90 sec, timed. Claude scores 0–10 (content + clarity), fixes at most 2–3 phrasings (not every mistake), writes the log entry with status and next-revisit date.
 
@@ -40,7 +46,9 @@ No new items. Claude plays an interviewer from one of your target companies (use
 ## Files (all in this folder)
 
 - `lesson-NN-topic.md` — one per drilled topic: material to read, build spec, recall questions, your compression
-- `core-40-priority.md` — the master list + your 1–3 triage ratings
+- `queue.json` + `today.mjs` — the dispatcher: `node today.mjs` prints today's 2 revisits + 1 new + ship task; `done <id> g|y|r` logs it; `progress.html` is the picture
+- `exam-tickets.html` — 27 tickets covering all 42 queue items, RU/EN, reference answers as spoken prose, "where people fail" per ticket. Opens straight from a wall cell in progress.html
+- `core-40-priority.md` — the master list (triage now lives in queue.json: #1–16 parked)
 - `learning-log.md` — session log, stats, revisit queue. **Single source of truth for progress.**
 - `concepts.md` — your flashcard deck, one line per concept, your own words
 - `answers-*.md` — reference answers (7 files, already written) — for reading AFTER a failed recall, not before
@@ -54,4 +62,4 @@ No new items. Claude plays an interviewer from one of your target companies (use
 - Claude must ask for your 1–3 self-rating before scheduling anything new, and roughly 2x any time estimate (recall, not refresh — proven in May).
 - English corrections: max 2–3 per session, only ones worth learning. Fluency grows from volume, not from being corrected into silence.
 
-Last updated: 2026-07-18
+Last updated: 2026-09-21 — added dispatcher, progress.html, full ticket set, optional Phase 4b

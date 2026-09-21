@@ -14,7 +14,7 @@
   code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--page);padding:1px 6px;border-radius:4px;border:1px solid var(--grid)}
   .sec{margin-bottom:12px}.sech{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:6px}
   .cells{display:flex;flex-wrap:wrap;gap:4px}
-  .cell{width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
+  .cell{text-decoration:none;width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
   .cell .id{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink2)}.cell .g{font-size:11px;line-height:1;color:var(--ink);min-height:11px}
   .cell.green{background:var(--good);border-color:var(--good)}.cell.green .id,.cell.green .g{color:#07300a}
   .cell.yellow{background:var(--warn);border-color:var(--warn)}.cell.yellow .id,.cell.yellow .g{color:#3a2a00}
@@ -52,85 +52,85 @@
     <div class="row"><span class="k">5-min</span><span>#21 out loud, 60s, then <code>node today.mjs done 21 g|y|r</code></span></div></div>
 
 <h2>The wall &middot; 26 active, 16 parked</h2>
-<div class="sec"><div class="sech"><span>LLM engineering</span><span class="muted">2/10</span></div><div class="cells"><div class="cell green overdue" title="#17 What is a token
+<div class="sec"><div class="sech"><span>LLM engineering</span><span class="muted">2/10</span></div><div class="cells"><a class="cell green overdue" href="exam-tickets.html#core-17" title="#17 What is a token
 green — said it cold
 last: 2026-09-06
-due: 2026-09-13 (overdue)"><span class="id">17</span><span class="g">&#10003;</span></div><div class="cell green overdue" title="#18 Context window — what happens at the limit
+due: 2026-09-13 (overdue)"><span class="id">17</span><span class="g">&#10003;</span></a><a class="cell green overdue" href="exam-tickets.html#core-18" title="#18 Context window — what happens at the limit
 green — said it cold
 last: 2026-09-06
-due: 2026-09-13 (overdue)"><span class="id">18</span><span class="g">&#10003;</span></div><div class="cell yellow overdue" title="#19 Temperature &amp; top_p
+due: 2026-09-13 (overdue)"><span class="id">18</span><span class="g">&#10003;</span></a><a class="cell yellow overdue" href="exam-tickets.html#core-19" title="#19 Temperature &amp; top_p
 yellow — shaky
 last: 2026-09-06
-due: 2026-09-09 (overdue)"><span class="id">19</span><span class="g">~</span></div><div class="cell yellow overdue" title="#20 System vs user prompt
+due: 2026-09-09 (overdue)"><span class="id">19</span><span class="g">~</span></a><a class="cell yellow overdue" href="exam-tickets.html#core-20" title="#20 System vs user prompt
 yellow — shaky
 last: 2026-09-06
-due: 2026-09-09 (overdue)"><span class="id">20</span><span class="g">~</span></div><div class="cell yellow overdue" title="#21 Function calling / tool use loop
+due: 2026-09-09 (overdue)"><span class="id">20</span><span class="g">~</span></a><a class="cell yellow overdue" href="exam-tickets.html#core-21" title="#21 Function calling / tool use loop
 yellow — shaky
 last: 2026-08-25
-due: 2026-08-28 (overdue)"><span class="id">21</span><span class="g">~</span></div><div class="cell new" title="#22 Streaming SSE — format + ReadableStream
-new — never opened"><span class="id">22</span><span class="g"></span></div><div class="cell new" title="#23 Structured output — JSON mode vs tool use
-new — never opened"><span class="id">23</span><span class="g"></span></div><div class="cell yellow overdue" title="#24 Token economics — output 3-5x, caching
+due: 2026-08-28 (overdue)"><span class="id">21</span><span class="g">~</span></a><a class="cell new" href="exam-tickets.html#core-22" title="#22 Streaming SSE — format + ReadableStream
+new — never opened"><span class="id">22</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-23" title="#23 Structured output — JSON mode vs tool use
+new — never opened"><span class="id">23</span><span class="g"></span></a><a class="cell yellow overdue" href="exam-tickets.html#core-24" title="#24 Token economics — output 3-5x, caching
 yellow — shaky
 last: 2026-09-06
-due: 2026-09-09 (overdue)"><span class="id">24</span><span class="g">~</span></div><div class="cell new" title="#25 Prompt injection — attack + defense
-new — never opened"><span class="id">25</span><span class="g"></span></div><div class="cell yellow overdue" title="#26 Model selection — Opus/Sonnet/Haiku
+due: 2026-09-09 (overdue)"><span class="id">24</span><span class="g">~</span></a><a class="cell new" href="exam-tickets.html#core-25" title="#25 Prompt injection — attack + defense
+new — never opened"><span class="id">25</span><span class="g"></span></a><a class="cell yellow overdue" href="exam-tickets.html#core-26" title="#26 Model selection — Opus/Sonnet/Haiku
 yellow — shaky
 last: 2026-09-06
-due: 2026-09-09 (overdue)"><span class="id">26</span><span class="g">~</span></div></div></div><div class="sec"><div class="sech"><span>RAG</span><span class="muted">0/5</span></div><div class="cells"><div class="cell new" title="#27 Why RAG vs put it all in context
-new — never opened"><span class="id">27</span><span class="g"></span></div><div class="cell new" title="#28 Chunking strategies + trade-offs
-new — never opened"><span class="id">28</span><span class="g"></span></div><div class="cell new" title="#29 Embeddings — cosine vs dot, dimensions
-new — never opened"><span class="id">29</span><span class="g"></span></div><div class="cell new" title="#30 Top-k + reranking
-new — never opened"><span class="id">30</span><span class="g"></span></div><div class="cell new" title="#31 RAG failure modes + eval metrics
-new — never opened"><span class="id">31</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Agents</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#32 ReAct pattern — think/act/observe
-new — never opened"><span class="id">32</span><span class="g"></span></div><div class="cell yellow overdue" title="#33 Tool definition — description is the API
+due: 2026-09-09 (overdue)"><span class="id">26</span><span class="g">~</span></a></div></div><div class="sec"><div class="sech"><span>RAG</span><span class="muted">0/5</span></div><div class="cells"><a class="cell new" href="exam-tickets.html#core-27" title="#27 Why RAG vs put it all in context
+new — never opened"><span class="id">27</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-28" title="#28 Chunking strategies + trade-offs
+new — never opened"><span class="id">28</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-29" title="#29 Embeddings — cosine vs dot, dimensions
+new — never opened"><span class="id">29</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-30" title="#30 Top-k + reranking
+new — never opened"><span class="id">30</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-31" title="#31 RAG failure modes + eval metrics
+new — never opened"><span class="id">31</span><span class="g"></span></a></div></div><div class="sec"><div class="sech"><span>Agents</span><span class="muted">0/3</span></div><div class="cells"><a class="cell new" href="exam-tickets.html#core-32" title="#32 ReAct pattern — think/act/observe
+new — never opened"><span class="id">32</span><span class="g"></span></a><a class="cell yellow overdue" href="exam-tickets.html#core-33" title="#33 Tool definition — description is the API
 yellow — shaky
 last: 2026-08-25
-due: 2026-08-28 (overdue)"><span class="id">33</span><span class="g">~</span></div><div class="cell yellow overdue" title="#34 Stopping criteria + infinite-loop risk
+due: 2026-08-28 (overdue)"><span class="id">33</span><span class="g">~</span></a><a class="cell yellow overdue" href="exam-tickets.html#core-34" title="#34 Stopping criteria + infinite-loop risk
 yellow — shaky
 last: 2026-08-25
-due: 2026-08-28 (overdue)"><span class="id">34</span><span class="g">~</span></div></div></div><div class="sec"><div class="sech"><span>System design</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#35 Design: streaming chat UI
-new — never opened"><span class="id">35</span><span class="g"></span></div><div class="cell new" title="#36 Design: RAG end-to-end
-new — never opened"><span class="id">36</span><span class="g"></span></div><div class="cell new" title="#37 Design: cost optimization for LLM product
-new — never opened"><span class="id">37</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Behavioral</span><span class="muted">0/3</span></div><div class="cells"><div class="cell new" title="#38 Tell me about yourself (60-90s, English)
-new — never opened"><span class="id">38</span><span class="g"></span></div><div class="cell new" title="#39 Pivot story — facts, not passion
-new — never opened"><span class="id">39</span><span class="g"></span></div><div class="cell new" title="#40 3 STAR stories
-new — never opened"><span class="id">40</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>Beyond core-40</span><span class="muted">1/1</span></div><div class="cells"><div class="cell green overdue" title="#41 Attention Q/K/V + why caching works
+due: 2026-08-28 (overdue)"><span class="id">34</span><span class="g">~</span></a></div></div><div class="sec"><div class="sech"><span>System design</span><span class="muted">0/3</span></div><div class="cells"><a class="cell new" href="exam-tickets.html#core-35" title="#35 Design: streaming chat UI
+new — never opened"><span class="id">35</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-36" title="#36 Design: RAG end-to-end
+new — never opened"><span class="id">36</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-37" title="#37 Design: cost optimization for LLM product
+new — never opened"><span class="id">37</span><span class="g"></span></a></div></div><div class="sec"><div class="sech"><span>Behavioral</span><span class="muted">0/3</span></div><div class="cells"><a class="cell new" href="exam-tickets.html#core-38" title="#38 Tell me about yourself (60-90s, English)
+new — never opened"><span class="id">38</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-39" title="#39 Pivot story — facts, not passion
+new — never opened"><span class="id">39</span><span class="g"></span></a><a class="cell new" href="exam-tickets.html#core-40" title="#40 3 STAR stories
+new — never opened"><span class="id">40</span><span class="g"></span></a></div></div><div class="sec"><div class="sech"><span>Beyond core-40</span><span class="muted">1/1</span></div><div class="cells"><a class="cell green overdue" href="exam-tickets.html#core-41" title="#41 Attention Q/K/V + why caching works
 green — said it cold
 last: 2026-09-06
-due: 2026-09-13 (overdue)"><span class="id">41</span><span class="g">&#10003;</span></div></div></div><div class="sec"><div class="sech"><span>Meta</span><span class="muted">0/1</span></div><div class="cells"><div class="cell new" title="#42 Parked-check: cold-answer 3 random #1-16
-new — never opened"><span class="id">42</span><span class="g"></span></div></div></div><div class="sec"><div class="sech"><span>JS/TS (parked)</span><span class="muted">0/8</span></div><div class="cells"><div class="cell parked" title="#1 Event loop — micro vs macrotasks
+due: 2026-09-13 (overdue)"><span class="id">41</span><span class="g">&#10003;</span></a></div></div><div class="sec"><div class="sech"><span>Meta</span><span class="muted">0/1</span></div><div class="cells"><a class="cell new" href="exam-tickets.html#core-42" title="#42 Parked-check: cold-answer 3 random #1-16
+new — never opened"><span class="id">42</span><span class="g"></span></a></div></div><div class="sec"><div class="sech"><span>JS/TS (parked)</span><span class="muted">0/8</span></div><div class="cells"><a class="cell parked" href="exam-tickets.html#core-1" title="#1 Event loop — micro vs macrotasks
 parked — assumed known
-10y frontend — assumed known, May decision"><span class="id">1</span><span class="g">&#8211;</span></div><div class="cell parked" title="#2 Closures
+10y frontend — assumed known, May decision"><span class="id">1</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-2" title="#2 Closures
 parked — assumed known
-10y frontend"><span class="id">2</span><span class="g">&#8211;</span></div><div class="cell parked" title="#3 Promises: all / allSettled / race
+10y frontend"><span class="id">2</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-3" title="#3 Promises: all / allSettled / race
 parked — assumed known
-10y frontend"><span class="id">3</span><span class="g">&#8211;</span></div><div class="cell parked" title="#4 async/await pitfall — forEach vs for...of
+10y frontend"><span class="id">3</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-4" title="#4 async/await pitfall — forEach vs for...of
 parked — assumed known
-10y frontend"><span class="id">4</span><span class="g">&#8211;</span></div><div class="cell parked" title="#5 this binding — 4 rules + arrow
+10y frontend"><span class="id">4</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-5" title="#5 this binding — 4 rules + arrow
 parked — assumed known
-10y frontend"><span class="id">5</span><span class="g">&#8211;</span></div><div class="cell parked" title="#6 TS generics — extends, infer, conditional
+10y frontend"><span class="id">5</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-6" title="#6 TS generics — extends, infer, conditional
 parked — assumed known
-10y frontend"><span class="id">6</span><span class="g">&#8211;</span></div><div class="cell parked" title="#7 TS utility types
+10y frontend"><span class="id">6</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-7" title="#7 TS utility types
 parked — assumed known
-10y frontend"><span class="id">7</span><span class="g">&#8211;</span></div><div class="cell parked" title="#8 Discriminated unions
+10y frontend"><span class="id">7</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-8" title="#8 Discriminated unions
 parked — assumed known
-10y frontend"><span class="id">8</span><span class="g">&#8211;</span></div></div></div><div class="sec"><div class="sech"><span>React (parked)</span><span class="muted">0/8</span></div><div class="cells"><div class="cell parked" title="#9 Hooks rules — tracked by call order
+10y frontend"><span class="id">8</span><span class="g">&#8211;</span></a></div></div><div class="sec"><div class="sech"><span>React (parked)</span><span class="muted">0/8</span></div><div class="cells"><a class="cell parked" href="exam-tickets.html#core-9" title="#9 Hooks rules — tracked by call order
 parked — assumed known
-10y frontend"><span class="id">9</span><span class="g">&#8211;</span></div><div class="cell parked" title="#10 useEffect cleanup
+10y frontend"><span class="id">9</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-10" title="#10 useEffect cleanup
 parked — assumed known
-10y frontend"><span class="id">10</span><span class="g">&#8211;</span></div><div class="cell parked" title="#11 useMemo vs useCallback
+10y frontend"><span class="id">10</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-11" title="#11 useMemo vs useCallback
 parked — assumed known
-10y frontend"><span class="id">11</span><span class="g">&#8211;</span></div><div class="cell parked" title="#12 useEffect dependencies
+10y frontend"><span class="id">11</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-12" title="#12 useEffect dependencies
 parked — assumed known
-10y frontend"><span class="id">12</span><span class="g">&#8211;</span></div><div class="cell parked" title="#13 Reconciliation + keys
+10y frontend"><span class="id">12</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-13" title="#13 Reconciliation + keys
 parked — assumed known
-10y frontend"><span class="id">13</span><span class="g">&#8211;</span></div><div class="cell parked" title="#14 Suspense — server vs client, streaming SSR
+10y frontend"><span class="id">13</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-14" title="#14 Suspense — server vs client, streaming SSR
 parked — assumed known
-verify in the parked-check rep"><span class="id">14</span><span class="g">&#8211;</span></div><div class="cell parked" title="#15 React Server Components vs SSR
+verify in the parked-check rep"><span class="id">14</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-15" title="#15 React Server Components vs SSR
 parked — assumed known
-verify in the parked-check rep"><span class="id">15</span><span class="g">&#8211;</span></div><div class="cell parked" title="#16 React 19 — Actions, useActionState, use()
+verify in the parked-check rep"><span class="id">15</span><span class="g">&#8211;</span></a><a class="cell parked" href="exam-tickets.html#core-16" title="#16 React 19 — Actions, useActionState, use()
 parked — assumed known
-verify in the parked-check rep"><span class="id">16</span><span class="g">&#8211;</span></div></div></div>
+verify in the parked-check rep"><span class="id">16</span><span class="g">&#8211;</span></a></div></div>
 <div class="legend"><span class="lg">green</span><span class="ly">yellow</span><span class="lr">red</span><span class="ln">new</span><span class="lp">parked</span><span class="lo">overdue for revisit</span></div>
 
 <h2>Sessions &middot; last 16 weeks &middot; 4 sessions, 14 items logged</h2>
@@ -140,5 +140,5 @@ verify in the parked-check rep"><span class="id">16</span><span class="g">&#8211
 <h2>Coming due &middot; next 14 days</h2>
 <div class="tls"><div class="tl"><span class="tld now">today</span><span class="tli"><b>#17</b> <b>#18</b> <b>#19</b> <b>#20</b> <b>#21</b> <b>#24</b> <b>#26</b> <b>#33</b> <b>#34</b> <b>#41</b></span></div><div class="tl"><span class="tld">Tue 22</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Wed 23</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Thu 24</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Fri 25</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sat 26</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sun 27</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Mon 28</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Tue 29</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Wed 30</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Thu 1</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Fri 2</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sat 3</span><span class="tli"><i>—</i></span></div><div class="tl"><span class="tld">Sun 4</span><span class="tli"><i>—</i></span></div></div>
 
-<p class="foot">Hover any cell for the item, status, last drilled, due date. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
+<p class="foot">Hover any cell for the item, status, last drilled, due date. Click it to open its exam ticket. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
 </body></html>

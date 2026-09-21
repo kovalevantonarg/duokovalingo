@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Билеты — LLM Engineering</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#111815; --panel2:#0e1512; --line:#1e2a24; --line2:#2a3a32;
+    --fg:#d6e4dc; --dim:#7d9288; --dim2:#5c6f66;
+    --acc:#4ade80; --acc2:#22c55e; --bad:#f87171;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:15px;line-height:1.55;
+    padding:0 0 70px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
+  }
+  .wrap{max-width:800px;margin:0 auto;padding:0 16px}
+  header{padding:20px 0 14px;padding-top:calc(20px + env(safe-area-inset-top));border-bottom:1px solid var(--line);margin-bottom:18px}
+  h1{font-size:15px;margin:0 0 3px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:600}
+  .sub{font-size:12px;color:var(--dim2);line-height:1.6}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
+  button{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:8px;cursor:pointer;background:var(--panel);border:1px solid var(--line2);color:var(--fg)}
+  button:active{transform:translateY(1px)}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#06120b;font-weight:600}
+  button.ghost{color:var(--dim)}
+  button:disabled{opacity:.4;cursor:default}
+  .lang{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+  .lang button{border:0;border-radius:0;padding:9px 13px;background:transparent;color:var(--dim);font-size:12px}
+  .lang button.on{background:var(--acc);color:#06120b;font-weight:600}
+  .timer{margin-left:auto;font-size:20px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .timer.run{color:var(--acc)}
+  .timer.over{color:var(--bad)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;margin-top:18px}
+  .tnum{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim2);margin-bottom:6px}
+  .ttopic{font-size:19px;color:var(--acc);margin:0 0 4px;font-weight:600;line-height:1.3}
+  .tmeta{font-size:11.5px;color:var(--dim2);margin-bottom:16px}
+  ol.qs{margin:0;padding-left:22px}
+  ol.qs li{margin:0 0 13px;font-size:15px;line-height:1.5}
+  ol.qs li::marker{color:var(--dim2)}
+
+  textarea{width:100%;margin-top:16px;min-height:150px;resize:vertical;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.6;padding:12px;outline:none}
+  textarea:focus{border-color:var(--acc2)}
+  textarea::placeholder{color:var(--dim2)}
+  .tools{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .count{font-size:11.5px;color:var(--dim2);margin-left:auto}
+
+  .hint{margin-top:14px;padding:11px 13px;background:var(--panel2);border-left:2px solid var(--line2);border-radius:0 6px 6px 0;font-size:12.5px;color:var(--dim)}
+  .ans{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+  .ans h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 14px;font-weight:600}
+  .ablock{margin:0 0 20px;padding-left:12px;border-left:2px solid var(--line2)}
+  .aq{font-size:12.5px;color:var(--dim);margin-bottom:7px}
+  .atext{font-size:14.5px;line-height:1.65;color:#c9dad1;margin:0}
+  .kill{margin-top:6px;padding:11px 13px;background:#1d1512;border-left:2px solid var(--bad);border-radius:0 6px 6px 0;font-size:13px;color:#e8b6ae;line-height:1.6}
+  .kill b{color:#ffd9d2}
+  code{background:#0a100d;padding:1px 5px;border-radius:4px;font-size:.92em;color:#a7d8ba}
+  .idle{color:var(--dim2);text-align:center;padding:48px 16px;font-size:14px;line-height:1.75}
+  .list{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
+  .list h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 10px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line2);color:var(--dim);cursor:pointer;background:transparent}
+  .chip.done{border-color:var(--acc2);color:var(--acc)}
+  footer{max-width:800px;margin:26px auto 0;padding:16px;border-top:1px solid var(--line);color:var(--dim2);font-size:11.5px;line-height:1.75}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Билеты — LLM Engineering</h1>
+  <div class="sub" id="sub"></div>
+</header>
+
+<div class="bar">
+  <button class="primary" id="draw"></button>
+  <button id="reveal" disabled></button>
+  <button class="ghost" id="reset"></button>
+  <span class="lang"><button id="ru" class="on">RU</button><button id="en">EN</button></span>
+  <span class="timer" id="timer">0:00</span>
+</div>
+
+<div id="stage"></div>
+
+<div class="list"><h3 id="allh"></h3><div class="chips" id="chips"></div></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+const UI={
+ ru:{sub:"Вытяни билет. Отвечай — печатая или вслух, 3–4 минуты на три вопроса. Эталон только после.",
+     draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
+     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",
+     ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
+     idle:"Ни одного билета не вытянуто.<br>Печатать можно где угодно — главное доставать из головы, а не узнавать в готовом тексте.",
+     resetd:"Сброшено. Все билеты снова в колоде.",
+     hint:"Отвечай, пока не иссякнешь. Только потом — «Показать эталон». Откроешь раньше — это чтение вместо вспоминания, билет сгорел.",
+     foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>Оценку 0–10 записывай в <code>learning-log.md</code>. Здесь ничего не сохраняется — это экзаменатор, а не трекер."},
+ en:{sub:"Draw a ticket. Answer by typing or out loud, 3–4 minutes for three questions. Reference answer only after.",
+     draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
+     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",
+     ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
+     idle:"No ticket drawn yet.<br>Typing works anywhere — what matters is producing from memory, not recognising a finished text.",
+     resetd:"Reset. All tickets back in the deck.",
+     hint:"Answer until you run dry. Only then hit Show reference. Opening early turns recall into reading and wastes the ticket.",
+     foot:"The reference is written the way the answer sounds out loud — connected speech, not a checklist. Judge yourself on whether you could say it, not on ticking items off.<br><br>Typing is the default and works anywhere. Out loud once or twice a week, when the house is quiet — fluency under pressure only comes from speaking.<br><br>Log your 0–10 in <code>learning-log.md</code>. Nothing is saved here — this is an examiner, not a tracker."}
+};
+
+const T=[
+{n:1,tag:"Core-40 #17",
+ ru:{topic:"Токены",
+  qs:["Что такое токен? Дай определение так, как сказал бы интервьюеру.",
+      "Сколько символов и сколько слов примерно в одном токене? Почему это среднее, а не правило?",
+      "Почему русский текст стоит дороже английского? Механизм, а не факт."],
+  a:[{q:"Определение",t:"Токен — это subword unit, кусок текста из фиксированного словаря модели, обычно на пятьдесят–двести тысяч записей. Модель не видит ни слов, ни букв: она видит целые числа, каждое из которых — индекс в этом словаре. И важно, что токены есть с обеих сторон — твой промпт токенизируется на входе, и модель порождает токены на выходе."},
+     {q:"Цифры",t:"Примерно четыре символа английского, или три четверти слова. Это одна и та же величина в двух единицах, поэтому выбираешь одну и держишься её. А среднее это потому, что словарь строил алгоритм BPE: самые частые соседние пары склеивались в отдельные записи, поэтому частые слова стали одним токеном, а редкие режутся на куски. Длину определяет частота, а не смысл."},
+     {q:"Кириллица",t:"Словарь строился на корпусе, где преобладал английский, поэтому эффективные склейки достались именно ему. Кириллица режется гораздо мельче — примерно один-два символа на токен вместо четырёх, то есть в два-четыре раза больше токенов на тот же смысл. И это не курьёз, а продуктовое решение: русскоязычная фича может стоить втрое дороже английской и втрое быстрее съедать контекстное окно."}],
+  kill:"<b>«Token is a symbol»</b> — русское «символ» это character, английское symbol значит другое. Говори <b>subword unit</b>. И не путай «4 символа» с «4 слова» — это ошибка в пять раз."},
+ en:{topic:"Tokens",
+  qs:["What is a token? Define it the way you would to an interviewer.",
+      "Roughly how many characters and how many words per token? Why is that an average, not a rule?",
+      "Why does Russian text cost more than English? Give the mechanism, not the fact."],
+  a:[{q:"Definition",t:"A token is a subword unit — a chunk of text from the model's fixed vocabulary, usually somewhere between fifty and two hundred thousand entries. The model never sees words or characters. It sees integers, each one an index into that vocabulary. And it matters that tokens exist on both sides: your prompt is tokenised on the way in, and the model produces tokens on the way out."},
+     {q:"The numbers",t:"About four characters of English, or roughly three quarters of a word. Those are the same fact in two different units, so you pick one and stay with it. It's an average rather than a rule because the vocabulary was built by byte-pair encoding — the most frequent adjacent pairs got merged into single entries, so common words became one token and rare ones got split into pieces. Frequency decides length, not meaning."},
+     {q:"Non-English",t:"The vocabulary was built on an English-heavy corpus, so English got the efficient merges. Cyrillic ends up split much finer — roughly one or two characters per token instead of four — which means two to four times more tokens for the same meaning. That's a product decision rather than trivia: a Russian-language feature can cost triple its English equivalent, and it eats the context window three times faster."}],
+  kill:"<b>\"A token is a symbol\"</b> — Russian <i>символ</i> means <i>character</i>; English \"symbol\" doesn't. Say <b>subword unit</b>. And never say \"4 words per token\" — that's a 5x error."}},
+
+{n:2,tag:"Core-40 #18",
+ ru:{topic:"Контекстное окно",
+  qs:["Что такое context window и что в него входит?",
+      "Ты близко к лимиту и отправляешь запрос. Что произойдёт и в какой момент?",
+      "Промпт 195k, окно 200k, max_tokens 8000. Результат? Почему?"],
+  a:[{q:"Определение",t:"Контекстное окно — это максимум токенов, который модель обрабатывает за один запрос, причём вход и сгенерированный выход считаются вместе. За место в нём конкурирует всё сразу: системный промпт, история диалога, найденные документы, определения инструментов и результаты их вызовов. У Claude сейчас порядка двухсот тысяч, у GPT-4o сто двадцать восемь, у Gemini больше миллиона — но цифры двигаются, и перед собесом я бы их перепроверил."},
+     {q:"Превышение",t:"Придёт ошибка invalid_request_error, и придёт она до начала генерации. Это ключевой момент: валидация происходит заранее, запрос отклоняется целиком, и ни одного токена не сгенерируется. Никакого мягкого усечения нет — модель не выбрасывает молча старые сообщения. Я это запоминаю как fail fast, not silent, и это хороший дизайн: молчаливое усечение дало бы неправильные ответы вообще без сигнала, а ошибку хотя бы можно обработать."},
+     {q:"max_tokens",t:"Запрос будет отклонён. В окно должен поместиться вход плюс max_tokens, а не только вход — max_tokens это заявленный потолок ответа, и место под него резервируется заранее. Поэтому сто девяносто пять плюс восемь не влезают в двести, хотя сам промпт помещается свободно. В проде я считаю входные токены и ставлю max_tokens как минимум из нужной длины и остатка окна за вычетом запаса."}],
+  kill:"<b>«Обрежет старое»</b> — нет, упадёт с ошибкой. И <b>output_tokens === max_tokens</b> надо логировать: обрезка молчаливая, на середине слова, без ошибки."},
+ en:{topic:"Context window",
+  qs:["What is the context window and what competes for space in it?",
+      "You're near the limit and you send the request. What happens, and when exactly?",
+      "195k prompt, 200k window, max_tokens 8000. Result? Why?"],
+  a:[{q:"Definition",t:"The context window is the maximum number of tokens the model can process in one request, and it counts the input and the generated output together. Everything competes for that space: the system prompt, the conversation history, retrieved documents, tool definitions and tool results. Claude is around two hundred thousand, GPT-4o is a hundred and twenty-eight, Gemini is over a million — though those numbers move, so I'd verify them before an interview."},
+     {q:"Exceeding it",t:"You get an invalid_request_error, and you get it before generation starts. That's the part people miss: validation happens upfront, the request is rejected outright, and not a single token is produced. There's no graceful truncation — the model doesn't silently drop the oldest messages. I remember it as fail fast, not silent, and it's the right design: silent truncation would give you wrong answers with no signal, whereas an error you can actually handle."},
+     {q:"The max_tokens trap",t:"It gets rejected. The window has to fit the input plus max_tokens, not just the input — max_tokens is your declared ceiling on the response and the space is reserved up front. So a hundred and ninety-five plus eight doesn't fit into two hundred, even though the prompt alone fits comfortably. In production I count the input tokens first and set max_tokens to the smaller of what I actually need and what's left in the window after a safety margin."}],
+  kill:"<b>\"It truncates the old messages\"</b> — no, it errors out. Also log <b>output_tokens === max_tokens</b>: clipping is silent, mid-word, and raises nothing."}},
+
+{n:3,tag:"Core-40 #24",
+ ru:{topic:"Экономика токенов",
+  qs:["Почему output дороже input в 3–5 раз? Механизм, а не «так в прайсе».",
+      "Косты выросли втрое за месяц. Первые четыре гипотезы по порядку.",
+      "В простом вызове output был 99% счёта, в агенте input стал 84%. Что изменилось и какой вывод?"],
+  a:[{q:"Асимметрия",t:"Потому что вход и выход считаются принципиально по-разному. Промпт известен целиком, поэтому состояние всех его токенов вычисляется за один параллельный проход — одна операция на всю простыню. А выход рождается по одному токену, и каждый требует полного прохода через модель: сколько токенов, столько проходов. Будущее нельзя посчитать заранее, а прошлое можно посчитать разом — вот и вся причина. Отсюда же, кстати, вообще возможен стриминг."},
+     {q:"Дебаг стоимости",t:"Сначала смотрю выбор модели — не уехал ли какой-то путь на Opus, это самый крупный рычаг. Потом многословность ответов: «ответь одним предложением» экономит больше, чем любая чистка промпта. Третье — не растёт ли история неограниченно в длинных диалогах. И четвёртое — есть ли prompt caching на длинном стабильном префиксе. Только после этого думаю, что можно увести в batch API."},
+     {q:"Разворот",t:"Изменилась архитектура. В агенте на каждом шаге пересылается весь разговор со всеми скачанными страницами, поэтому вход растёт квадратично и быстро обгоняет выход. И вывод отсюда не «input дороже» и не «output дороже», а тот, что профиль расходов определяется архитектурой, а не моделью. Поэтому его меряют, а не угадывают, и перемеряют заново после каждого изменения архитектуры."}],
+  kill:"<b>«Оптимизируем промпт»</b> — в простом вызове это театр: срежешь 26 токенов входа и заплатишь больше, если ответ вырос на 19."},
+ en:{topic:"Token economics",
+  qs:["Why does output cost 3–5x more than input? Mechanism, not \"that's the price list\".",
+      "Costs tripled this month. Name your first four hypotheses, in order.",
+      "In a single call output was 99% of the bill; in the agent input became 84%. What changed, and what's the takeaway?"],
+  a:[{q:"The asymmetry",t:"Because input and output are computed in fundamentally different ways. The prompt is known in full, so the state for all of its tokens is computed in a single parallel forward pass — one operation for the whole thing. Output is generated one token at a time, and each token needs a full pass through the model: as many passes as tokens. The future can't be computed ahead of time, the past can be computed all at once. That's the whole reason — and it's also why streaming is possible at all."},
+     {q:"Debugging cost",t:"First I check model selection — did some path start routing to Opus. That's usually the biggest single lever. Then output verbosity, because asking for a one-sentence answer saves far more than trimming the system prompt ever will. Third, whether conversation history is growing unbounded in long sessions. Fourth, whether prompt caching is in place on a long stable prefix. Only after that do I look at what could move to the batch API."},
+     {q:"The flip",t:"The architecture changed. In an agent every step resends the entire conversation including every page you fetched, so input grows quadratically and quickly overtakes output. And the takeaway isn't that input is expensive or that output is expensive — it's that the cost profile is decided by architecture, not by the model. Which is why you measure it instead of assuming, and re-measure after every architectural change."}],
+  kill:"<b>\"We'll optimise the prompt\"</b> — in a single call that's theatre. I cut 26 input tokens and paid more, because the answer grew by 19."}},
+
+{n:4,tag:"Core-40 #19",
+ ru:{topic:"Sampling: temperature и top_p",
+  qs:["Что temperature делает с числами и в каком месте пайплайна?",
+      "Тот же промпт, temperature 0, два раза. Одинаковый выход гарантирован?",
+      "Что делает top_p и чем лучше top_k? И что с temperature на новых Claude?"],
+  a:[{q:"Механизм",t:"Temperature делит логиты перед softmax — вот и весь механизм. Если делить на число меньше единицы, логиты расходятся дальше друг от друга, softmax усиливает разрыв, распределение становится резким. Больше единицы — наоборот, сжимаются, распределение выравнивается, маловероятные токены получают шанс. Ноль реализуется как greedy decoding, всегда берётся самый вероятный. И важно, где это происходит: уже после того, как распределение посчитано. Поэтому температура не добавляет модели ни знаний, ни креативности — она только меняет, как часто берётся не-топовый токен."},
+     {q:"Детерминизм",t:"Нет, не гарантирован — правильная формулировка near-deterministic, not guaranteed. Сложение чисел с плавающей точкой на GPU неассоциативно: тысячи значений суммируются параллельно в том порядке, в каком расписал kernel, и появляются микроразличия. Плюс твой запрос батчится с чужими, а другой состав батча меняет пути в вычислениях. И там, где два кандидата почти равны, разница в одну десятимиллиардную переворачивает выбор — а генерация авторегрессивна, поэтому после одного разошедшегося токена расходится всё. Если нужна настоящая воспроизводимость, я кэширую ответ, а не полагаюсь на сэмплер."},
+     {q:"top_p и депрекация",t:"top_p сортирует токены по вероятности, набирает их сверху, пока сумма не достигнет p, а остальное отрезает и перенормирует. Главное его свойство — адаптивность: когда модель уверена, в наборе останется один токен, когда не уверена — сорок. А top_k всегда берёт ровно k, независимо от того, насколько модель уверена, и потому либо тащит мусор, либо режет хвост произвольно. Крутить надо что-то одно, не оба сразу. И отдельно: на Claude 4.7 и новее temperature вообще deprecated, принимается только дефолт, а управление сместилось в параметр effort."}],
+  kill:"<b>«temp 0 = детерминизм»</b> и <b>«выше температура = креативнее»</b>. Первое неверно из-за float и батчинга; второе на фактической задаче даёт не креатив, а ошибки."},
+ en:{topic:"Sampling: temperature and top_p",
+  qs:["What does temperature do to the numbers, and where in the pipeline does it act?",
+      "Same prompt, temperature 0, twice. Is identical output guaranteed?",
+      "What does top_p do and why is it preferred over top_k? And what happened to temperature on the newest Claude models?"],
+  a:[{q:"Mechanism",t:"Temperature divides the logits before the softmax — that's the entire mechanism. Divide by something below one and the logits move further apart, softmax exaggerates the gaps, and the distribution gets sharp. Above one they compress, the distribution flattens, and unlikely tokens become plausible. Zero is implemented as greedy decoding, always taking the top token. And where it acts matters: this is after the distribution has already been computed. So temperature adds no knowledge and no creativity — it only changes how often a non-top token gets picked."},
+     {q:"Determinism",t:"No. The correct phrasing is near-deterministic, not guaranteed. Floating-point addition on a GPU isn't associative — thousands of values get summed in parallel in whatever order the kernel schedules, and tiny differences appear. On top of that your request is batched with other people's, and a different batch composition changes the computation paths. Where two candidates are nearly tied, a difference of one part in ten million flips the choice — and since generation is autoregressive, one diverged token means everything after it diverges. If I genuinely need reproducibility I cache the output rather than trusting the sampler."},
+     {q:"top_p and deprecation",t:"top_p sorts tokens by probability, takes them from the top until the accumulated mass reaches p, then cuts the rest and renormalises. Its key property is that it adapts: when the model is confident the set collapses to one token, when it's unsure it might keep forty. top_k always takes exactly k regardless of confidence, so it either drags in noise or truncates the tail arbitrarily. You tune one of them, never both. And separately — on Claude 4.7 and later temperature is deprecated entirely, only the default is accepted, and steering moved into the effort parameter."}],
+  kill:"<b>\"temp 0 means deterministic\"</b> and <b>\"higher temperature is more creative\"</b>. The first is wrong because of float and batching; the second, on a factual task, produces errors, not creativity."}},
+
+{n:5,tag:"Core-40 #20",
+ ru:{topic:"System vs user prompt",
+  qs:["Чем system отличается от user? Что куда кладут?",
+      "Почему system тяжелее перебить? Назови механизм.",
+      "И почему это НЕ гарантия безопасности? Где живут настоящие контроли?"],
+  a:[{q:"Различие",t:"System несёт то, что верно для каждого хода: роль, правила, ограничения, формат вывода. У Anthropic это вообще отдельный top-level параметр, а не элемент массива сообщений. User несёт то, что верно только для этого хода — сам запрос. И у этого разделения есть прямое денежное следствие: system надо держать статичным, потому что если подставлять туда данные пользователя, префикс меняется каждый запрос, prompt caching не попадает никогда, и ты платишь полную цену вечно."},
+     {q:"Механизм",t:"Модели обучают с так называемой instruction hierarchy — примерно system выше developer, тот выше user, а ниже всех результаты инструментов и найденный контент. В ходе instruction tuning и RLHF модель учится при конфликте предпочитать более высокий уровень. Поэтому на «ignore your instructions» из пользовательского сообщения она склонна остаться при системном промпте."},
+     {q:"Почему не граница",t:"Потому что это натренированная склонность, а не механизм разграничения прав. Нет кода, который запретил бы модели послушаться достаточно убедительной инструкции — это мягкий приор, а не барьер. Поэтому системный промпт я называю defense-in-depth, но не defense. Настоящие контроли живут снаружи модели: авторизация на уровне каждого инструмента, где модель просит, а решает мой код; минимальные права; валидация выхода схемой, потому что ответ модели это недоверенный ввод; подтверждение человеком на всём разрушительном. И отдельно стоит помнить, что системный промпт не секретный — его регулярно вытаскивают, поэтому ключей и конфиденциальной логики там быть не должно."}],
+  kill:"<b>«Положили правило в system prompt, значит безопасно»</b> — этой фразой ты сообщаешь, что агентов в проде не держал."},
+ en:{topic:"System vs user prompt",
+  qs:["How does the system prompt differ from the user prompt? What goes where?",
+      "Why is the system prompt harder to override? Name the mechanism.",
+      "And why is that NOT a security guarantee? Where do the real controls live?"],
+  a:[{q:"The difference",t:"System carries what's true on every turn: role, rules, constraints, output format. With Anthropic it's a separate top-level parameter rather than an element of the messages array. User carries what's true for this turn only — the actual request. And that split has a direct money consequence: you keep system static, because if you interpolate per-user data into it the prefix changes on every request, prompt caching never hits, and you pay full price forever."},
+     {q:"The mechanism",t:"Models are trained with what's called an instruction hierarchy — roughly, system outranks developer, which outranks user, which outranks tool results and retrieved content. During instruction tuning and RLHF the model learns to prefer the higher level when the levels conflict. So when a user message says ignore your instructions, the model is trained to stay with the system prompt."},
+     {q:"Why it's not a boundary",t:"Because it's a trained tendency, not an enforced permission system. There's no code path that stops the model obeying a sufficiently persuasive instruction — it's a soft prior, not a barrier. So I'd call the system prompt defense-in-depth, but not a defense. The real controls sit outside the model: authorization at the level of each tool, where the model asks and my code decides; least privilege; schema validation of output, because what the model returns is untrusted input; and human confirmation on anything destructive. And separately, the system prompt isn't secret — people extract them routinely — so no keys and no confidential logic go in there."}],
+  kill:"<b>\"We put the rule in the system prompt, so it's safe\"</b> — that sentence tells the interviewer you've never run an agent in production."}},
+
+{n:6,tag:"Core-40 #25",
+ ru:{topic:"Prompt injection",
+  qs:["Что такое prompt injection? Чем indirect опаснее прямой?",
+      "Твой агент читает страницу, в ней «игнорируй инструкции». Что делаешь?",
+      "Почему разделители — не решение?"],
+  a:[{q:"Суть",t:"Prompt injection — это когда недоверенный текст попадает в контекст и модель читает его как инструкцию, а не как данные. Прямая инъекция — это когда пользователь сам пишет «ignore previous instructions», и это в основном демонстрация. По-настоящему опасна indirect: инструкция лежит внутри веб-страницы, PDF или тикета поддержки, которые агент притащил сам. Пользователь при этом не писал ничего вредоносного, атака приехала вместе с данными, и именно так ломают агентов в проде."},
+     {q:"Что делать",t:"Первое — явно отделить недоверенный контент тегами и прямо назвать его данными: текст внутри document это данные, никогда не инструкции. Второе — минимальные права у каждого инструмента, чтобы даже успешная инъекция мало что могла. Третье — всё разрушительное только через подтверждение человеком. Четвёртое — валидация выхода схемой, потому что то, что вернула модель, это недоверенный ввод. И пятое — ограничить, куда агент вообще имеет право ходить."},
+     {q:"Почему не панацея",t:"Потому что разделитель повышает цену атаки, но не устраняет её — модель всё равно может послушаться, это остаётся вопросом убедительности текста, а не разрешений. Надёжная граница возможна только снаружи модели, в коде, который исполняет действия. На собесе я стараюсь сказать обе половины: и что делаю в промпте, и почему на этом не останавливаюсь."}],
+  kill:"Ответ только про прямую инъекцию. Ломает агентов в проде именно <b>indirect</b>, и спрашивают дальше про неё."},
+ en:{topic:"Prompt injection",
+  qs:["What is prompt injection? Why is indirect injection worse than direct?",
+      "Your agent fetches a page and it contains \"ignore your instructions\". What do you do?",
+      "Why aren't delimiters a solution?"],
+  a:[{q:"The idea",t:"Prompt injection is when untrusted text lands in the context and the model reads it as an instruction rather than as data. Direct injection is the user typing ignore previous instructions, and that's mostly a demo. The dangerous one is indirect: the instruction sits inside a web page, a PDF or a support ticket that your agent fetched itself. The user never typed anything malicious — the attack arrived with the data, and that's how production agents actually get broken."},
+     {q:"What you do",t:"First, explicitly delimit the untrusted content and label it as data — text inside document is data, never instructions. Second, least privilege on every tool, so that even a successful injection can't do much. Third, anything destructive goes through human confirmation. Fourth, validate output against a schema, because what the model returns is untrusted input. And fifth, constrain where the agent is allowed to go in the first place."},
+     {q:"Why delimiters aren't enough",t:"Because a delimiter raises the cost of the attack without eliminating it — the model can still be talked into it, which makes it a question of how persuasive the text is rather than a question of permissions. A reliable boundary only exists outside the model, in the code that executes actions. In an interview I try to say both halves: what I do in the prompt, and why I don't stop there."}],
+  kill:"Answering only about direct injection. <b>Indirect</b> is what actually breaks production agents, and it's where the follow-up goes."}},
+
+{n:7,tag:"Core-40 #21, #33",
+ ru:{topic:"Tool use",
+  qs:["Модель попросила инструмент. Кто идёт в интернет и что происходит дальше по шагам?",
+      "Из чего состоит определение tool и что там самое важное?",
+      "Почему content в ответе — массив, а не строка?"],
+  a:[{q:"Петля",t:"Модель не вызывает ничего — вот главное. Она возвращает намерение: имя инструмента и аргументы. Дальше всё делает мой код: он идёт в интернет, получает результат и кладёт его обратно в массив сообщений как tool_result с тем же tool_use_id. После этого модель вызывается снова, уже с результатом в контексте. И так по кругу, пока stop_reason не перестанет быть tool_use. Руки — это мой код, у модели их нет, и именно поэтому вообще возможна авторизация."},
+     {q:"Определение",t:"Имя, описание и JSON-схема параметров. И самое важное там — описание, потому что это на самом деле промпт, а не документация: это единственное, по чему модель решает, звать инструмент или не звать. Я пишу его как инструкцию для толкового незнакомца — что инструмент делает, когда его применять и, отдельно, когда применять не надо. Плохое описание чинится не кодом, а текстом."},
+     {q:"Массив блоков",t:"Потому что в одном ответе может приехать сразу несколько разных блоков: текст и запрос инструмента вместе, иногда несколько инструментов сразу. Модель одновременно рассуждает вслух и просит данные. Поэтому content — это массив с полем type у каждого блока, и код обязан их фильтровать, а не считать ответ строкой."}],
+  kill:"<b>«Модель вызывает функцию»</b> — нет, возвращает JSON с намерением. Исполняешь ты, и именно поэтому авторизация вообще возможна."},
+ en:{topic:"Tool use",
+  qs:["The model asked for a tool. Who goes to the internet, and what happens next, step by step?",
+      "What's in a tool definition, and which part matters most?",
+      "Why is content an array rather than a string?"],
+  a:[{q:"The loop",t:"The model doesn't call anything — that's the key point. It returns an intent: a tool name and arguments. Everything after that is my code: it goes to the internet, gets the result, and appends it back into the messages array as a tool_result carrying the same tool_use_id. Then the model is called again, now with that result in context. And round it goes until stop_reason is no longer tool_use. The hands are my code — the model has none, and that's exactly why authorization is possible at all."},
+     {q:"The definition",t:"A name, a description, and a JSON schema for the parameters. The description is the part that matters, because it's really a prompt rather than documentation — it's the only thing the model uses to decide whether to call the tool. I write it for a competent stranger: what it does, when to use it, and separately when not to. A bad description is fixed with text, not with code."},
+     {q:"Array of blocks",t:"Because a single response can carry several different blocks at once: text and a tool request together, sometimes several tool requests. The model reasons out loud and asks for data in the same message. So content is an array where every block has a type, and your code has to filter on that rather than treating the response as a string."}],
+  kill:"<b>\"The model calls the function\"</b> — it doesn't. It returns JSON describing an intent. You execute it, which is exactly why authorization is possible."}},
+
+{n:8,tag:"Core-40 #34",
+ ru:{topic:"Стоп-условия и ошибки",
+  qs:["Как агент понимает, что пора остановиться? Перечисли условия.",
+      "Tool вернул 404. Бросаешь исключение или отдаёшь модели?",
+      "Что должно происходить, когда прогон падает на середине?"],
+  a:[{q:"Стоп",t:"Останавливаемся в четырёх случаях: модель вернула финальный ответ вместо запроса инструмента, достигнут потолок итераций, случилась неустранимая ошибка, или мы упёрлись в чекпоинт, где нужен человек. Жёсткий лимит шагов и бюджет по деньгам я считаю обязательными, а не перестраховкой: агент, у которого инструмент стабильно падает, будет крутиться, пока не кончатся деньги. И причину остановки надо логировать — при разборе это первое, на что смотришь."},
+     {q:"Ошибки tool",t:"Отдаю модели. Возвращаю обычной строкой вроде ERROR: HTTP 404, и модель это читает и пробует другой путь — другой url, другую страницу. Если бросить исключение, агент умрёт на первой битой ссылке и потеряет всю уже проделанную работу, за которую ты уже заплатил. Ошибка инструмента — это нормальные данные для модели, а не аварийная ситуация для программы."},
+     {q:"Падение",t:"Учёт расходов обязан отработать в любом случае, иначе ты даже не знаешь, во что обошёлся неудачный прогон. У меня это висит на выходе из процесса, поэтому отчёт печатается и при падении. Общий принцип такой: инструментация, которая работает только на счастливом пути, бесполезна ровно в тот момент, когда она нужна. Плюс ретраи на транзиентных сетевых ошибках и явный таймаут, чтобы одна икота сети не убивала весь прогон."}],
+  kill:"Забыть про потолок итераций. «Ну оно само остановится» — не остановится, если tool падает."},
+ en:{topic:"Stopping criteria and errors",
+  qs:["How does an agent know it should stop? List the conditions.",
+      "A tool returns 404. Do you throw, or hand it back to the model?",
+      "What has to happen when a run dies halfway?"],
+  a:[{q:"Stopping",t:"There are four cases: the model returned a final answer instead of a tool request, we hit the iteration cap, an unrecoverable error occurred, or we reached a checkpoint that needs a human. I treat a hard step cap and a spending budget as mandatory rather than as belt-and-braces: an agent whose tool keeps failing will loop until the money runs out. And I log why it stopped, because that's the first thing you look at when something goes wrong."},
+     {q:"Tool errors",t:"I hand it back to the model. I return a plain string like ERROR: HTTP 404, and the model reads it and tries a different route — another URL, another page. If you throw instead, the agent dies on the first dead link and loses all the work it had already done and already paid for. A tool error is ordinary data for the model, not an emergency for the program."},
+     {q:"Crashes",t:"Cost accounting has to run either way, otherwise you don't even know what the failed run cost you. Mine hangs off the process exit, so the report prints even on a crash. The general principle is that instrumentation which only works on the happy path is useless precisely when you need it. Plus retries on transient network errors and an explicit timeout, so one network hiccup doesn't kill the whole run."}],
+  kill:"Forgetting the iteration cap. \"It'll stop on its own\" — it won't, if the tool keeps failing."}},
+
+{n:9,tag:"глубина / depth",
+ ru:{topic:"Attention и кэш",
+  qs:["Что такое Q, K и V? Объясни своими словами.",
+      "Почему кэшируют K и V, но не Q? И почему кэш только префиксный?",
+      "Чем prompt caching отличается от KV cache внутри запроса? Что значит ephemeral?"],
+  a:[{q:"Q/K/V",t:"Для каждого токена модель считает три вектора. K — это как бирка, «про что я, чем могу быть полезен». V — фактическое содержимое, то, что этот токен передаёт дальше. А Q — запрос текущего токена, «что я сейчас ищу». Механика такая: Q сравнивается со всеми K, из этого получаются веса релевантности, и уже этими весами взвешиваются V. То есть Q ищет, K отвечает за находимость, V переносит смысл."},
+     {q:"Почему KV",t:"Потому что K и V токена зависят только от него самого и от того, что было до него, и никогда — от того, что придёт после. Значит, посчитав их однажды, можно хранить: они не изменятся. А Q нужен ровно один раз, в момент обработки своего токена, и хранить его незачем — отсюда и название KV cache, а не QKV. Префиксность следует оттуда же: если поменять токен на пятой позиции, все, кто идёт после, находятся уже в другом контексте, и их K и V другие. А то, что было до пятого, не затронуто вообще. Это, кстати, общий закон — кэшируется то, что зависит только от прошлого, ровно как useMemo или инкрементальная сборка."},
+     {q:"Prompt caching",t:"KV cache внутри одного запроса работает всегда, автоматически и бесплатно, но живёт ровно один запрос: ответ отдан, состояние выброшено. Prompt caching его не выбрасывает, а держит между запросами — механизм тот же самый, меняется только область жизни. Держать стоит им памяти, поэтому запись тарифицируется с наценкой в двадцать пять процентов, а чтение в десять раз дешевле обычного входа. А ephemeral означает буквально «подержим, но не обещаем»: порядка пяти минут, best-effort, могут выселить раньше. Отсюда правило: код обязан работать одинаково при нуле попаданий, кэш — это оптимизация цены, а не часть логики."}],
+  kill:"<b>«Кэш чтобы не платить дважды»</b> — мелко. Правильно: продление жизни KV-состояния между запросами, поэтому запись с наценкой, а чтение почти даром."},
+ en:{topic:"Attention and caching",
+  qs:["What are Q, K and V? Explain in your own words.",
+      "Why are K and V cached but not Q? And why is the cache prefix-only?",
+      "How is prompt caching different from the KV cache inside a request? What does ephemeral mean?"],
+  a:[{q:"Q/K/V",t:"For every token the model computes three vectors. K is like a label — what this token is about, what it can be useful for. V is the actual content, what this token passes along. And Q is the current token's query — what it's looking for right now. The mechanics are that Q gets compared against every K, that produces relevance weights, and those weights are then applied to the Vs. So Q searches, K makes a token findable, and V carries the meaning."},
+     {q:"Why KV",t:"Because a token's K and V depend only on itself and on what came before it, and never on what comes after. So once you've computed them you can store them — they won't change. Q is needed exactly once, at the moment its own token is processed, so there's nothing worth keeping — which is why it's called a KV cache and not a QKV cache. Prefix-only follows from the same thing: change the token at position five and everything after it sits in a different context, so their K and V differ, while everything before five is untouched. It's a general law, really — you can cache whatever depends only on the past, exactly like useMemo or an incremental build."},
+     {q:"Prompt caching",t:"The KV cache inside a single request is always on, automatic and free, but it lives for exactly one request — the answer is returned and the state is thrown away. Prompt caching doesn't throw it away, it holds it between requests. Same mechanism, the only thing that changes is the scope. Holding it costs them memory, which is why a cache write is billed at a twenty-five percent premium while a read is ten times cheaper than normal input. And ephemeral means literally we'll hold it but we don't promise: around five minutes, best-effort, and it can be evicted early. Hence the rule that your code has to behave identically with zero cache hits — caching is a price optimisation, never part of the logic."}],
+  kill:"<b>\"Caching so you don't pay twice\"</b> is too shallow. It's persisting KV state across requests — which is why writes carry a premium and reads are nearly free."}},
+
+{n:10,tag:"Core-40 #18, #27",
+ ru:{topic:"Statelessness и лестница",
+  qs:["Модель что-нибудь помнит между вызовами?",
+      "Из этого следуют три вещи. Какие?",
+      "Контекст кончается. Обходы от самого дешёвого к сложному."],
+  a:[{q:"Память",t:"Ничего не помнит. Это обычный HTTP-запрос: отправил, получил ответ, соединение закрылось, никакого состояния на той стороне не осталось. «Помнит» на самом деле мой массив сообщений — то есть память живёт в моём коде, а не в модели. Поэтому каждый ход диалога пересылает всю переписку заново, целиком."},
+     {q:"Следствия",t:"Во-первых, разговор дорожает с каждым ходом, потому что вход растёт квадратично. Во-вторых, контекстное окно неизбежно кончается, это вопрос времени, а не вероятности. И в-третьих, в агентной петле одни и те же данные оплачиваются многократно — у меня в замере было шестьдесят девять тысяч токенов отправлено ради двадцати одной тысячи уникальных, то есть за одно и то же я заплатил больше трёх раз."},
+     {q:"Лестница",t:"Начинаю с самого тупого — sliding window, держим последние N сообщений, остальное выбрасываем: бесплатно и молча теряет информацию. Дальше summarization, старое сжимается в накопительное резюме, свежее держится дословно — так работает большинство долгоживущих чатов. Потом RAG: не класть в контекст вообще, а доставать релевантное под конкретный запрос — правильный выбор, когда корпус больше окна. Четвёртое — hierarchical или map-reduce, режем документ, обрабатываем части отдельно, собираем результат. И пятое, стоящее особняком, — prompt caching: места оно не экономит совсем, экономит деньги и латентность на стабильном префиксе, поэтому используется вместе с остальными, а не вместо."}],
+  kill:"Назвать только summarization. Верно, но это одна ступень из пяти — а спрашивают, умеешь ли выбирать <b>самое дешёвое из достаточного</b>."},
+ en:{topic:"Statelessness and the ladder",
+  qs:["Does the model remember anything between calls?",
+      "Three things follow from that. What are they?",
+      "You're running out of context. Walk the mitigations from cheapest to most complex."],
+  a:[{q:"Memory",t:"It remembers nothing. It's an ordinary HTTP request: you send it, you get an answer, the connection closes, and no state is left on that side. What actually remembers is my messages array — so the memory lives in my code, not in the model. Which is why every turn of a conversation resends the entire history from scratch."},
+     {q:"Consequences",t:"First, the conversation gets more expensive with every turn, because input grows quadratically. Second, the context window inevitably runs out — it's a question of when, not whether. And third, in an agent loop the same data gets paid for many times over. In my own run I sent sixty-nine thousand tokens to convey twenty-one thousand unique ones, so I paid for the same pages more than three times."},
+     {q:"The ladder",t:"I start with the dumbest thing that works — a sliding window, keep the last N messages and drop the rest: free, and it loses information silently. Then summarization, where older turns get compressed into a running summary and recent ones stay verbatim; that's what most long-lived chat products actually do. Then RAG: don't put it in context at all, retrieve only what's relevant per query — the right answer once the corpus is bigger than the window. Fourth is hierarchical or map-reduce, splitting a document, processing the parts independently and combining. And fifth, which stands apart, is prompt caching: it saves no space at all, it saves money and latency on a stable prefix, so it's used alongside the others rather than instead of them."}],
+  kill:"Naming only summarization. It's correct, but it's one rung of five — and the question is really whether you can pick <b>the cheapest thing that suffices</b>."}}
+];
+
+let lang="ru", cur=null, t0=null, tick=null, seen=new Set();
+const $=id=>document.getElementById(id);
+const stage=$("stage"), timer=$("timer"), chips=$("chips");
+const L=()=>UI[lang];
+const D=t=>t[lang];
+
+function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function stopTimer(){if(tick){clearInterval(tick);tick=null}}
+function startTimer(){
+  stopTimer(); t0=Date.now(); timer.className="timer run"; timer.textContent="0:00";
+  tick=setInterval(()=>{
+    const s=Math.floor((Date.now()-t0)/1000);
+    timer.textContent=fmt(s);
+    timer.className="timer "+(s>240?"over":"run");
+  },500);
+}
+function chrome(){
+  $("sub").innerHTML=L().sub; $("draw").textContent=L().draw;
+  $("reveal").textContent=L().reveal; $("reset").textContent=L().reset;
+  $("allh").textContent=L().all; $("foot").innerHTML=L().foot;
+  $("ru").className=lang==="ru"?"on":""; $("en").className=lang==="en"?"on":"";
+  renderChips();
+}
+function renderChips(){
+  chips.innerHTML="";
+  T.forEach(t=>{
+    const b=document.createElement("button");
+    b.className="chip"+(seen.has(t.n)?" done":"");
+    b.textContent=t.n+". "+D(t).topic;
+    b.onclick=()=>show(t);
+    chips.appendChild(b);
+  });
+}
+function show(t){
+  cur=t; seen.add(t.n); renderChips(); startTimer();
+  $("reveal").disabled=false;
+  const d=D(t);
+  stage.innerHTML=`
+    <div class="card">
+      <div class="tnum">${lang==="ru"?"Билет":"Ticket"} ${t.n} · ${t.tag}</div>
+      <div class="ttopic">${d.topic}</div>
+      <div class="tmeta">${L().meta}</div>
+      <ol class="qs">${d.qs.map(q=>`<li>${q}</li>`).join("")}</ol>
+      <textarea id="mine" placeholder="${L().ph}"></textarea>
+      <div class="tools">
+        <button id="copy">${L().copy}</button>
+        <button class="ghost" id="clr">${L().clear}</button>
+        <span class="count" id="cnt">0 ${L().chars}</span>
+      </div>
+      <div class="hint">${L().hint}</div>
+    </div>`;
+  const ta=$("mine"), cnt=$("cnt");
+  ta.oninput=()=>{cnt.textContent=ta.value.length+" "+L().chars};
+  $("copy").onclick=async()=>{
+    try{await navigator.clipboard.writeText(ta.value);}catch(e){ta.select();document.execCommand("copy");}
+    $("copy").textContent=L().copied; setTimeout(()=>{$("copy").textContent=L().copy},1200);
+  };
+  $("clr").onclick=()=>{ta.value="";cnt.textContent="0 "+L().chars;ta.focus()};
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function draw(){
+  const pool=T.filter(t=>!seen.has(t.n));
+  const from=pool.length?pool:T;
+  show(from[Math.floor(Math.random()*from.length)]);
+}
+function reveal(){
+  if(!cur)return;
+  stopTimer(); timer.className="timer";
+  const d=D(cur);
+  stage.querySelector(".card").insertAdjacentHTML("beforeend",`
+    <div class="ans">
+      <h3>${L().std}</h3>
+      ${d.a.map((b,i)=>`<div class="ablock"><div class="aq">${i+1}. ${b.q}</div><p class="atext">${b.t}</p></div>`).join("")}
+      <div class="kill">${L().kill}${d.kill}</div>
+    </div>`);
+  $("reveal").disabled=true;
+}
+function setLang(l){
+  lang=l; chrome();
+  if(cur){const t=cur; seen.delete(t.n); show(t);}
+  else stage.innerHTML=`<div class="idle">${L().idle}</div>`;
+}
+$("draw").onclick=draw;
+$("reveal").onclick=reveal;
+$("ru").onclick=()=>setLang("ru");
+$("en").onclick=()=>setLang("en");
+$("reset").onclick=()=>{
+  seen.clear(); cur=null; stopTimer();
+  timer.className="timer"; timer.textContent="0:00";
+  $("reveal").disabled=true;
+  stage.innerHTML=`<div class="idle">${L().resetd}</div>`;
+  renderChips();
+};
+chrome();
+stage.innerHTML=`<div class="idle">${L().idle}</div>`;
+</script>
+</body>
+</html>
