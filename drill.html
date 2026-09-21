@@ -95,7 +95,7 @@ const UI={
      xpgain:"XP",logged:"записано",modes:{tf:"⚡ П/Л",gap:"✍ Пропуск",order:"⇅ Порядок",voice:"🎤 Голос",ticket:"📄 Билет"},
      roundDone:"Раунд закончен",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это и есть материал на завтра.",
      statuses:{green:"уверенно",yellow:"шатко",red:"мимо",new:"не открывал",parked:"запарковано"},overdue:"просрочено",days:"д",
-     nothing:"Ничего не due — бери новое.",streak:"серия",xpt:"XP сегодня"},
+     nothing:"Ничего не due — бери новое.",streak:"серия",xpt:"XP сегодня",more:"Подробнее",explain:"Объяснить иначе",thinking:"думаю…"},
  en:{today:"Today",due:"revisit",newi:"new",ship:"ship",quick:"Quick round · 5 min",quickd:"True/false and gaps over what's due today. No choosing, no typing essays.",
      wall:"The wall",sessions:"Sessions",offline:"Offline: results queue locally. Run <code>node today.mjs serve</code> and open <code>localhost:4040/drill.html</code> to write progress into queue.json.",
      pending:"not synced",true:"True",false:"False",check:"Check",next:"Next",again:"Again",home:"Home",
@@ -107,7 +107,7 @@ const UI={
      xpgain:"XP",logged:"logged",modes:{tf:"⚡ T/F",gap:"✍ Gap",order:"⇅ Order",voice:"🎤 Voice",ticket:"📄 Ticket"},
      roundDone:"Round over",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",
      statuses:{green:"cold",yellow:"shaky",red:"missed",new:"never opened",parked:"parked"},overdue:"overdue",days:"d",
-     nothing:"Nothing due — take the new one.",streak:"streak",xpt:"XP today"}
+     nothing:"Nothing due — take the new one.",streak:"streak",xpt:"XP today",more:"More",explain:"Explain differently",thinking:"thinking…"}
 };
 const SEC={llm:"LLM",rag:"RAG",agents:"Agents",sysd:"System design",behav:"Behavioral",bonus:"Depth",meta:"Meta",js:"JS/TS (parked)",react:"React (parked)"};
 const INTERVAL={red:1,yellow:3,green:7};
@@ -213,6 +213,19 @@ function finish(id,mode,correct,total,xp,extra=""){
     <div class="row" style="justify-content:center"><button onclick="location.hash='play/${id}/${mode}';route(true)">${L().again}</button><button class="primary" onclick="location.hash='home'">${L().home}</button></div></div>`;
 }
 
+// ---------- "why" block: verdict + More (reference paragraph) + Explain differently (LLM via server) ----------
+function bestPara(t,text){const words=new Set((text.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[]));let best=t[lang].a[0],bs=-1;for(const a of t[lang].a){const w=a.t.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[];const sc=w.filter(x=>words.has(x)).length/Math.sqrt(w.length||1);if(sc>bs){bs=sc;best=a}}return best}
+function whyHTML(ok,verdict,q){return `<div class="why ${ok?"ok":"bad"}">${verdict}<div class="row" style="align-items:center"><button class="primary sm" id="nx">${L().next} →</button><button class="sm" id="more">${L().more}</button>${(DB.explain&&live)?`<button class="sm" id="expl">${L().explain}</button>`:""}<a style="margin-left:auto;font-size:12px" href="exam-tickets.html#t${q.t.n}">${L().ticket} ${q.t.n} →</a></div><div id="moreBox"></div></div>`}
+function wireWhy(q,stmt,next){
+  $("#nx").onclick=next; $("#nx").focus();
+  $("#more").onclick=()=>{const p=bestPara(q.t,stmt);$("#moreBox").insertAdjacentHTML("beforeend",`<div class="ref" style="margin-top:12px"><div class="aq">${esc(p.q)} · ${esc(q.t[lang].topic)}</div><p>${esc(p.t)}</p></div>`);$("#more").disabled=true};
+  const ex=$("#expl"); if(ex) ex.onclick=async()=>{ex.disabled=true;ex.textContent=L().thinking;const p=bestPara(q.t,stmt);
+    try{const r=await fetch("/api/explain",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({stmt,ok:q.ok!==false,topic:q.t[lang].topic,ref:p.t,kill:q.t[lang].kill.replace(/<[^>]+>/g,""),lang})});const j=await r.json();
+      $("#moreBox").insertAdjacentHTML("beforeend",`<div class="ref" style="margin-top:12px;border-color:var(--acc2)"><div class="aq">${L().explain}${j.cached?" · cache":""}</div><p>${esc(j.text||("✗ "+j.error))}</p></div>`);}
+    catch(e){$("#moreBox").insertAdjacentHTML("beforeend",`<div class="why bad">✗ ${esc(e.message)}</div>`)}
+    ex.textContent=L().explain;};
+}
+
 // ---------- true / false ----------
 function sentences(t){return t[lang].a.flatMap(a=>a.t.split(/(?<=[.!?])\s+/)).map(s=>s.trim()).filter(s=>{const w=s.split(/\s+/).length;return w>=8&&w<=28&&/^[A-ZА-ЯЁ]/.test(s)&&!/^(Поэтому|Потому|И |А |Плюс|Отсюда|So |And |But |Because|Which|That's|Plus|Then )/.test(s)})}
 function buildTF(ids,n=10){
@@ -234,8 +247,8 @@ function playTF(id,ids){
       <div class="tf"><button class="false" id="f">← ${L().false}</button><button class="true" id="t">${L().true} →</button></div><div id="why"></div></div>`;
     const answer=v=>{ if($("#why").innerHTML) return; const ok=v===q.ok; beep(ok); combo=ok?combo+1:0; if(ok){correct++;xp+=1}
       $("#c").classList.add(ok?"flash-ok":"flash-bad"); $("#combo").textContent=combo>1?"×"+combo:"";
-      $("#why").innerHTML=`<div class="why ${ok?"ok":"bad"}">${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}<div class="row"><button class="primary sm" id="nx">${L().next} →</button></div></div>`;
-      $("#nx").onclick=()=>{i++;step()}; $("#nx").focus(); };
+      $("#why").innerHTML=whyHTML(ok,`${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}`,q);
+      wireWhy(q,q.s,()=>{i++;step()}); };
     $("#t").onclick=()=>answer(true); $("#f").onclick=()=>answer(false);
     document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Enter"&&$("#nx"))$("#nx").click()};
   }; step();
@@ -254,7 +267,7 @@ function playGap(id,ids){
     const check=()=>{ if($("#why").innerHTML) return; let all=true;
       answers.forEach((alts,j)=>{const el=$("#g"+j); const v=norm(el.value); const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1)); el.classList.add(ok?"ok":"bad"); el.disabled=true; total++; if(ok){correct++;xp+=2}else{all=false; el.value=alts[0]}});
       beep(all); combo=all?combo+1:0; $("#c").classList.add(all?"flash-ok":"flash-bad");
-      $("#why").innerHTML=`<div class="why ${all?"ok":"bad"}">${all?L().resok:L().resbad}<div class="row"><button class="primary sm" id="nx">${L().next} →</button></div></div>`; $("#nx").onclick=()=>{i++;step()}; $("#nx").focus(); };
+      $("#why").innerHTML=whyHTML(all,all?L().resok:L().resbad,q); wireWhy(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()}); };
     $("#chk").onclick=check; document.onkeydown=e=>{if(e.key==="Enter"){if($("#nx"))$("#nx").click();else check()}};
   }; step();
 }
@@ -266,7 +279,7 @@ function playOrder(id){
   const render=(result)=>{
     app.innerHTML=`<div class="card" id="c">${playTop(L().order,0,1)}<div class="tag">${esc(t[lang].topic)}</div><div class="q">${esc(st.title)}</div><div class="muted" style="font-size:12px">${L().order_hint}</div>
       <ul class="steps">${cur.map((idx,pos)=>`<li data-pos="${pos}" class="${sel===pos?"sel":""}${result?(idx===pos?" ok":" bad"):""}" draggable="true"><span class="n">${pos+1}</span><span>${esc(st.items[idx])}</span><span class="mv"><button data-up="${pos}">↑</button><button data-dn="${pos}">↓</button></span></li>`).join("")}</ul>
-      <div class="row">${result&&result.ok?`<button class="primary" id="fin">${L().next} →</button>`:`<button class="primary" id="chk">${L().check}</button>`}${result&&!result.ok?`<button id="ret">${L().again}</button>`:""}</div>${result?`<div class="why ${result.ok?"ok":"bad"}">${result.ok?L().resok:L().resbad} · ${result.n} ${L().correct} ${L().of} ${cur.length}</div>`:""}</div>`;
+      <div class="row">${result&&result.ok?`<button class="primary" id="fin">${L().next} →</button>`:`<button class="primary" id="chk">${L().check}</button>`}${result&&!result.ok?`<button id="ret">${L().again}</button>`:""}</div>${result?`<div class="why ${result.ok?"ok":"bad"}">${result.ok?L().resok:L().resbad} · ${result.n} ${L().correct} ${L().of} ${cur.length}<div class="row"><button class="sm" id="more">${L().more}</button></div><div id="moreBox"></div></div>`:""}</div>`;
     const move=(a,b)=>{if(b<0||b>=cur.length)return;const v=cur.splice(a,1)[0];cur.splice(b,0,v);sel=null;render()};
     app.querySelectorAll("[data-up]").forEach(b=>b.onclick=e=>{e.stopPropagation();move(+b.dataset.up,+b.dataset.up-1)});
     app.querySelectorAll("[data-dn]").forEach(b=>b.onclick=e=>{e.stopPropagation();move(+b.dataset.dn,+b.dataset.dn+1)});
@@ -275,6 +288,7 @@ function playOrder(id){
       li.ondragstart=e=>{e.dataTransfer.setData("text",pos)}; li.ondragover=e=>e.preventDefault(); li.ondrop=e=>{e.preventDefault();move(+e.dataTransfer.getData("text"),pos)};});
     if($("#chk")) $("#chk").onclick=()=>{tries++;const n=cur.filter((v,i)=>v===i).length;const ok=n===cur.length;beep(ok);render({ok,n})};
     if($("#ret")) $("#ret").onclick=()=>render();
+    if($("#more")) $("#more").onclick=()=>{const p=bestPara(t,st.title);$("#moreBox").innerHTML=`<div class="ref" style="margin-top:12px"><div class="aq">${esc(p.q)}</div><p>${esc(p.t)}</p></div>`;$("#more").disabled=true};
     if($("#fin")) $("#fin").onclick=()=>finish(id,"order",1,1,tries===1?5:2);
   }; render();
 }
@@ -326,7 +340,7 @@ function quick(){
   const stepTF=()=>{ if(i>=qs.length) return phaseGap();
     const q=qs[i]; app.innerHTML=`<div class="card" id="c">${playTop(L().quick+" · "+L().tf,i,qs.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="stmt">${esc(q.s)}</div><div class="tf"><button class="false" id="f">← ${L().false}</button><button class="true" id="t">${L().true} →</button></div><div id="why"></div></div>`;
     const answer=v=>{if($("#why").innerHTML)return;const ok=v===q.ok;beep(ok);combo=ok?combo+1:0;if(ok){correct++;xp++}$("#c").classList.add(ok?"flash-ok":"flash-bad");$("#combo").textContent=combo>1?"×"+combo:"";
-      $("#why").innerHTML=`<div class="why ${ok?"ok":"bad"}">${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}<div class="row"><button class="primary sm" id="nx">${L().next} →</button></div></div>`;$("#nx").onclick=()=>{i++;stepTF()};$("#nx").focus()};
+      $("#why").innerHTML=whyHTML(ok,`${ok?L().resok:L().resbad} · ${q.ok?L().true:L().false}${!q.ok?` — ${q.t[lang].kill.replace(/<[^>]+>/g,"")}`:""}`,q);wireWhy(q,q.s,()=>{i++;stepTF()})};
     $("#t").onclick=()=>answer(true);$("#f").onclick=()=>answer(false);document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Enter"&&$("#nx"))$("#nx").click()};
   };
   const phaseGap=()=>{ const tfC=correct,tfN=qs.length,tfX=xp; // reuse gap engine with a custom finish
@@ -339,7 +353,7 @@ function quick(){
       app.innerHTML=`<div class="card" id="c">${playTop(L().quick+" · "+L().gap,j,gq.length)}<div class="tag">${esc(q.t[lang].topic)}</div><div class="cloze" style="margin-top:14px">${html}</div><div class="row"><button class="primary" id="chk">${L().check}</button></div><div id="why"></div></div>`; $("#g0").focus();
       const norm=s=>s.toLowerCase().replace(/[«»"'`]/g,"").replace(/\s+/g," ").replace(/[–—]/g,"-").trim();
       const check=()=>{if($("#why").innerHTML)return;let all=true;answers.forEach((alts,x)=>{const el=$("#g"+x);const v=norm(el.value);const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1));el.classList.add(ok?"ok":"bad");el.disabled=true;gt++;if(ok){gc++;gx+=2}else{all=false;el.value=alts[0]}});beep(all);$("#c").classList.add(all?"flash-ok":"flash-bad");
-        $("#why").innerHTML=`<div class="why ${all?"ok":"bad"}">${all?L().resok:L().resbad}<div class="row"><button class="primary sm" id="nx">${L().next} →</button></div></div>`;$("#nx").onclick=()=>{j++;step()};$("#nx").focus()};
+        $("#why").innerHTML=whyHTML(all,all?L().resok:L().resbad,q);wireWhy(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{j++;step()})};
       $("#chk").onclick=check;document.onkeydown=e=>{if(e.key==="Enter"){if($("#nx"))$("#nx").click();else check()}};
     }; step(); };
   stepTF();

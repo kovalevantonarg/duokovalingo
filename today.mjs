@@ -75,6 +75,11 @@ if (cmd === "html") { writeHtml(); writeState(); console.log("progress.html + st
 if (cmd === "serve") {
   const port = Number(process.argv[3] || 4040);
   const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".css": "text/css", ".png": "image/png", ".md": "text/plain; charset=utf-8" };
+  const apiKey = () => { if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY; const envp = join(DIR, ".env"); if (!existsSync(envp)) return ""; const m = readFileSync(envp, "utf8").match(/^\s*ANTHROPIC_API_KEY\s*=\s*"?([^"\n]+)"?/m); return m ? m[1].trim() : ""; };
+  const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5";
+  const CACHE = join(DIR, "explain-cache.json");
+  const cache = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
+  const out = () => ({ ...db, explain: !!apiKey() });
   const json = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(obj)); };
   const body = (req) => new Promise((ok) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch { ok({}); } }); });
   const logHit = (p) => {
@@ -89,13 +94,30 @@ if (cmd === "serve") {
   };
   createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
-    if (url.pathname === "/api/state") return json(res, 200, db);
+    if (url.pathname === "/api/state") return json(res, 200, out());
     if (req.method === "POST" && (url.pathname === "/api/log" || url.pathname === "/api/done")) {
       const p = await body(req);
       if (!logHit(p)) return json(res, 400, { error: "bad id" });
       save(); writeHtml();
       console.log(`  ${p.d || TODAY}  #${p.id}  ${p.mode || ""}  ${p.st ? "-> " + p.st : ""}  +${p.xp || 0}xp`);
-      return json(res, 200, db);
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && url.pathname === "/api/explain") {
+      const p = await body(req); const key = apiKey();
+      if (!key) return json(res, 400, { error: "no ANTHROPIC_API_KEY (env or .env next to today.mjs)" });
+      const ck = [p.lang, p.ok, p.stmt].join("|");
+      if (cache[ck]) return json(res, 200, { text: cache[ck], cached: true });
+      const sys = `You are explaining one statement from an AI-engineering interview drill to a senior frontend engineer (10 years, TypeScript) who is learning LLM engineering. Answer in ${p.lang === "ru" ? "Russian; technical terms stay in English" : "English"}. 4-7 sentences of connected prose, no bullet points, no headings. Start from the mechanism, not the rule. One concrete analogy or a tiny example if it genuinely helps. If the statement is false, say precisely which part is false and give the true version. Do not repeat the reference text; explain it differently.`;
+      const user = `Statement: "${p.stmt}"\nThis statement is ${p.ok ? "TRUE" : "FALSE"}.\nTopic: ${p.topic}\nReference answer (facts only, do not quote): ${p.ref}\nCommon trap: ${p.kill}`;
+      try {
+        const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODEL, max_tokens: 600, system: sys, messages: [{ role: "user", content: user }] }) });
+        const j = await r.json();
+        if (!r.ok) return json(res, 502, { error: j.error?.message || ("api " + r.status) });
+        const text = (j.content || []).map((c) => c.text || "").join("").trim();
+        cache[ck] = text; writeFileSync(CACHE, JSON.stringify(cache, null, 1));
+        console.log(`  explain  ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
+        return json(res, 200, { text });
+      } catch (e) { return json(res, 502, { error: e.message }); }
     }
     let f = url.pathname === "/" ? "/drill.html" : decodeURIComponent(url.pathname);
     const fp = join(DIR, f);
@@ -104,7 +126,7 @@ if (cmd === "serve") {
     res.end(readFileSync(fp));
   }).listen(port, () => {
     const u = `http://localhost:${port}/drill.html`;
-    console.log(`\ndrill: ${u}\nprogress writes to queue.json. Ctrl-C to stop.\n`);
+    console.log(`\ndrill: ${u}\nprogress writes to queue.json. "Explain differently": ${apiKey() ? "on (" + MODEL + ")" : "off — set ANTHROPIC_API_KEY or put it in .env"}. Ctrl-C to stop.\n`);
     if (process.platform === "darwin" && !process.argv.includes("--no-open")) exec(`open ${u}`);
   });
 }
