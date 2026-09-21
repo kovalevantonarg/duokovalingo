@@ -100,7 +100,7 @@ function writeHtml() {
       const dd = dueDate(i);
       const tip = `#${i.id} ${i.t}\n${LABEL[i.st]}${i.last ? `\nlast: ${i.last}` : ""}${dd ? `\ndue: ${dd}${dd <= TODAY ? " (overdue)" : ""}` : ""}${i.why ? `\n${i.why}` : ""}`;
       const overdue = dd && dd <= TODAY ? " overdue" : "";
-      return `<div class="cell ${i.st}${overdue}" title="${esc(tip)}"><span class="id">${i.id}</span><span class="g">${GLYPH[i.st]}</span></div>`;
+      return `<a class="cell ${i.st}${overdue}" href="exam-tickets.html#core-${i.id}" title="${esc(tip)}"><span class="id">${i.id}</span><span class="g">${GLYPH[i.st]}</span></a>`;
     }).join("");
     const g = items.filter((i) => i.st === "green").length;
     return `<div class="sec"><div class="sech"><span>${esc(name)}</span><span class="muted">${g}/${items.length}</span></div><div class="cells">${cells}</div></div>`;
@@ -157,7 +157,7 @@ function writeHtml() {
   code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--page);padding:1px 6px;border-radius:4px;border:1px solid var(--grid)}
   .sec{margin-bottom:12px}.sech{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:6px}
   .cells{display:flex;flex-wrap:wrap;gap:4px}
-  .cell{width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
+  .cell{text-decoration:none;width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
   .cell .id{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink2)}.cell .g{font-size:11px;line-height:1;color:var(--ink);min-height:11px}
   .cell.green{background:var(--good);border-color:var(--good)}.cell.green .id,.cell.green .g{color:#07300a}
   .cell.yellow{background:var(--warn);border-color:var(--warn)}.cell.yellow .id,.cell.yellow .g{color:#3a2a00}
@@ -201,7 +201,7 @@ ${wall}
 <h2>Coming due &middot; next 14 days</h2>
 <div class="tls">${tl.join("")}</div>
 
-<p class="foot">Hover any cell for the item, status, last drilled, due date. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
+<p class="foot">Hover any cell for the item, status, last drilled, due date. Click it to open its exam ticket. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
 </body></html>`;
   writeFileSync(HTML, html);
 }

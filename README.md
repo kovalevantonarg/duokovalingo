@@ -32,6 +32,8 @@ Reading-first failed twice. Build-first is the format now.
 | `learning-system.md` | The drill protocol. |
 | `core-40-priority.md` | The 40 must-know questions. |
 | `core-40-deck.html` | Same 40 as flashcards. Open on phone. |
+| `exam-tickets.html` | 27 exam tickets, all 42 queue items. RU/EN, spoken-prose reference, "where people fail". |
+| `progress.html` | The wall, session heat map, due timeline. Cells open their ticket. |
 | `concepts.md` | My own wording. The only version that survives an interview. |
 | `lesson-NN-*.md` | Lesson, English. `lesson-NN-RU.md` — comprehension check, terms stay English. |
 | `english-pack.md` | Self-intro, STAR stories, phrase bank. |
