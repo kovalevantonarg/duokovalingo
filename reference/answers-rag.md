@@ -26,8 +26,8 @@
 
 Четыре причины, по которым RAG почти всегда выигрывает у "long-context everything":
 
-1. **Cost** — в контексте каждый запрос платишь за все токены. 200k токенов × 100 запросов/день × $3/1M = $60/день только за input. RAG режет это в 50-100x.
-2. **Latency** — даже Gemini 2.5 с 1M context ощутимо медленнее на full context. RAG: <1с retrieval + 2-3с generation.
+1. **Cost** — в контексте каждый запрос платишь за все токены. Пример на пальцах: 200k токенов × 100 запросов/день × $3/1M (порядок цены mid-tier модели, проверь актуальную) = $60/день только за input. RAG режет это в 50-100x. Prompt caching смягчает, но не убирает: кэш живёт минуты, а корпус меняется.
+2. **Latency** — даже модели с окном в 1M токенов заметно медленнее на полном контексте: время до первого токена растёт с длиной входа. RAG: <1с retrieval + 2-3с generation.
 3. **Recency** — модель замораживает знание на cutoff. RAG берёт freshest data из твоего store.
 4. **Quality / Lost in the middle** — эмпирика: модели лучше помнят начало и конец длинного контекста, забывают середину. Релевантные 5 chunks > 100k токенов "всего подряд".
 
@@ -40,10 +40,10 @@
 ```
 
 ### Когда RAG не нужен
+Полный чеклист — в #40 / Q15, здесь не дублирую.
 
-- Корпус маленький (< 50k токенов, помещается в context)
-- Данные нужны realtime / транзакционные → tool use / agent с API call, не embeddings
-- Вопросы требуют aggregation across whole corpus ("сколько всего документов упоминают X") → SQL/analytics, не similarity search
+### Как я это объясняю своими словами
+Это тот же инстинкт, что code-splitting во фронте: не грузи весь бандл (весь корпус), если пользователю сейчас нужен один роут (пара чанков). Десять лет я резал бандлы ради latency и цены загрузки, здесь та же экономика, только единица — токены.
 
 ### Why interviewer cares
 Это самая частая архитектура AI-фичи в B2B SaaS. Если ты не объясняешь trade-off "RAG vs long context vs fine-tune" за 60 сек — ты не product engineer, ты junior.
@@ -59,28 +59,9 @@
 ### Короткий ответ
 **Chunk = единица retrieval. Типичный размер 200-500 токенов с 50-100 token overlap. Выбор стратегии важнее оптимизации embedding-модели.**
 
-### 4 базовые стратегии
+### Мой выбор, а не обзор стратегий
 
-**1. Fixed-size (character/token)**
-- Самый простой: режь каждые N токенов, добавь overlap
-- Pros: deterministic, легко
-- Cons: режет посреди предложения, теряет смысл на стыках
-
-**2. Recursive / structural**
-- Разбивай по hierarchy: paragraph → sentence → word
-- LangChain `RecursiveCharacterTextSplitter` так делает по умолчанию
-- Pros: сохраняет границы предложений
-- Cons: chunks разного размера, надо tune separators
-
-**3. Semantic chunking**
-- Embed каждое предложение, кластеризуй смежные с высокой similarity
-- Pros: chunks семантически когерентны
-- Cons: дороже на ingestion, harder to reason about
-
-**4. Document-aware (markdown/code/HTML)**
-- По headers (H1/H2), по функциям, по секциям
-- Pros: respects структуру автора
-- Cons: only works для structured docs
+Стратегий четыре — fixed-size, recursive/structural, semantic (эмбедь предложения и кластеризуй), document-aware (по заголовкам/секциям) — но пересказывать их все на интервью бессмысленно, это пересказ блог-поста Pinecone. Я по умолчанию беру **recursive 500/50** (LangChain `RecursiveCharacterTextSplitter`) и не трогаю semantic chunking, пока корпус не перевалит за несколько тысяч чанков — кластеризация стоит дороже, чем экономит, пока шум эмбеддингов не начал реально портить eval. Document-aware chunking я бы включил только на подмножестве с надёжными заголовками (markdown, контракты с нумерованными пунктами) — остальное разбираю recursive.
 
 ### Размер chunk — почему 200-500 токенов
 
@@ -97,7 +78,7 @@
 
 ### Контекстуальные хаки (state-of-the-art 2024-2025)
 
-**Contextual Retrieval (Anthropic)**: перед embedding каждого chunk, добавь LLM-генерированный context "этот chunk из документа X, секция Y, говорит про Z". Поднимает recall на 35-49%.
+**Contextual Retrieval (Anthropic)**: перед embedding каждого chunk, добавь LLM-генерированный context "этот chunk из документа X, секция Y, говорит про Z". Снижает retrieval failure rate (доля релевантных чанков, не попавших в top-20) на 35% отдельно, на 49% вместе с contextual BM25, и на 67% с добавленным реранкером — это не «recall +35-49%», а сокращение доли промахов, метрика точнее звучит именно так на собесе.
 
 ```
 Original chunk: "Margins improved 5% YoY."
@@ -202,6 +183,8 @@ Voyage publishes специализированные модели:
 
 ### Что выбирать в проекте
 
+Мой выбор для chat-with-docs: начинаю с text-embedding-3-small, потому что на небольшом корпусе качество retrieval упирается в chunking и reranking раньше, чем в модель эмбеддингов. Меняю модель только если eval показывает, что промахи именно семантические, а не из-за нарезки. Рейтинги MTEB и цены меняются помесячно, так что перед интервью таблицу перепроверяю.
+
 - **Прототип / MVP** → text-embedding-3-small (дёшево, хватит)
 - **Production / quality matters** → voyage-3 + rerank
 - **Конкретный домен** → проверь, есть ли domain-specific модель Voyage / Cohere
@@ -290,7 +273,7 @@ WITH (lists = 100);
 
 - **Структура**: k-means кластеры. Query → найди ближайшие N кластеров → exact search внутри
 - **Параметры**:
-  - `lists`: ≈ √n (например, 100 для 10k, 1000 для 1M)
+  - `lists`: rows/1000 при <1M строк (например, 10 для 10k), √rows при >1M строк (1000 для 1M)
   - `probes` (runtime): сколько кластеров проверять. Больше → recall, медленнее
 - **Pros**: быстрый build, меньше RAM
 - **Cons**: recall шатается, requires recall tuning, перестраивай при изменении distribution
@@ -395,7 +378,7 @@ Reranker (cross-encoder): score(query, chunk) — модель видит оба
 ## #35 / Q10 — Hybrid search: vector + BM25 (зачем оба)
 
 ### Короткий ответ
-**Vector search ловит смысл, BM25 ловит exact matches (имена, IDs, термины). Hybrid = vector + BM25 + reciprocal rank fusion. Поднимает recall на 10-20% over pure vector.**
+**Vector search ловит смысл, BM25 ловит exact matches (имена, IDs, термины). Hybrid = vector + BM25 + reciprocal rank fusion.** Опорная цифра, которую можно назвать со ссылкой: в бенчмарке Anthropic contextual embeddings сокращали долю промахов в top-20 на 35%, а с добавлением BM25 на 49%. То есть BM25 поверх векторов даёт заметный прирост, но конкретный эффект на твоём корпусе меряешь сам.
 
 ### Где vector search фейлит
 
@@ -691,14 +674,18 @@ Wrong answer →
 **Golden dataset**: 50-200 пар (question, ground-truth-answer, ground-truth-source). Собирай вручную или semi-auto (LLM генерит вопросы по chunks, ты curates).
 
 ```python
-from ragas import evaluate
-from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
+# Актуальный API ragas: метрики — классы, LLM-судья передаётся явно
+from ragas.metrics.collections import Faithfulness
 
-results = evaluate(
-    dataset,  # ваш golden set
-    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+scorer = Faithfulness(llm=judge_llm)
+result = scorer.score(
+    user_input=q,
+    response=answer,
+    retrieved_contexts=chunks,
 )
+print(result.value)  # 0..1
 ```
+Старый стиль (`from ragas.metrics import faithfulness` + `evaluate(...)`) встречается во многих туториалах, но в свежих версиях уже не основной. API ragas меняется между минорными версиями: перед live-coding сверяюсь с доками той версии, что стоит в проекте.
 
 ### CI integration
 
@@ -733,7 +720,7 @@ results = evaluate(
 ### Когда RAG не нужен
 
 **1. Корпус маленький (< 50k токенов)**
-Просто положи всё в context. Один Sonnet call за $0.60 на 200k context — дешевле чем поднимать pgvector + ingestion pipeline.
+Просто положи всё в context. Один вызов mid-tier модели на 200k контекста стоит порядка десятков центов — дешевле, чем поднимать pgvector + ingestion pipeline и поддерживать его.
 
 **2. Real-time / транзакционные данные**
 "Сколько заказов сегодня?" — это SQL / API call, не embedding match. Tool use / agent с DB tool, не RAG.
@@ -752,7 +739,7 @@ RAG pipeline (embed + search + rerank + LLM) обычно 1.5-3 сек. Если
 
 ### Альтернативы RAG
 
-- **Long context** — Gemini 2.5 1M, Claude 200k. Если данных мало.
+- **Long context** — у топовых моделей окна порядка 1M токенов (конкретные цифры проверяю в день интервью). Если данных мало.
 - **Tool use / agents** — для realtime data
 - **Fine-tune** — для consistent style / format (но не для facts!)
 - **Structured query** (SQL / GraphQL) — для precise filtering / aggregation
@@ -760,7 +747,9 @@ RAG pipeline (embed + search + rerank + LLM) обычно 1.5-3 сек. Если
 
 ### Senior signal
 
-На interview спрашивают "Built X with RAG". Сильный ответ: "Сначала мы попробовали без RAG, просто кладя последние N docs в context. Это работало для tier-1 пользователей. RAG ввели когда [конкретная метрика] упала на dataset > 100 docs". Это показывает, что ты не cargo-cult'ишь "AI-фичу = RAG".
+На interview спрашивают "Built X with RAG". Сильный ответ: "Сначала я попробовал без RAG, просто кладя документы в context. Это работало, пока корпус был маленький. RAG ввёл, когда X упало / выросло на корпусе > N docs". Это показывает, что ты не cargo-cult'ишь "AI-фичу = RAG".
+
+[Заполнить реальными цифрами из своего RAG-проекта: какая метрика заставила перейти на retrieval (цена запроса, latency до первого токена, faithfulness на eval-наборе) и на каком объёме корпуса. Без реальной цифры этот ответ не произносить: выдуманное число разваливается на первом уточняющем вопросе.]
 
 ### Sources
 - [Anthropic — When to use RAG vs long context](https://docs.claude.com/en/docs/build-with-claude/contextual-rag)
@@ -797,4 +786,4 @@ RAG pipeline (embed + search + rerank + LLM) обычно 1.5-3 сек. Если
 - [answers-llm.md](answers-llm.md) — base LLM concepts (предпосылка для RAG)
 - answers-agents.md — TODO (next)
 
-Last updated: 2026-05-09
+Last updated: 2026-09-22

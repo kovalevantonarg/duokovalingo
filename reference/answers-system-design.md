@@ -29,6 +29,10 @@
 
 ## #SD1 — Design a Chat UI for an AI Assistant
 
+### Моя позиция (сказать первым)
+Я бы строил это как optimistic UI + SSE-стрим с отменой, которая доходит до сервера, а не только обрывает fetch. Если спросят «а почему не WebSocket» — SSE проще: обычный HTTP, та же авторизация и балансировщики, что у остального API (прокси только надо настроить, чтобы не буферизовали ответ), а двусторонний канал для чата не нужен: клиент шлёт POST, сервер стримит ответ. Паттерн «показать сразу, сверить с сервером потом» я делал во фронте годами; новое здесь только одно: отмена посреди стрима должна остановить и LLM-вызов, иначе платишь за токены, которые никто не прочитает.
+
+
 ### Clarify
 - Single-user или multi-user shared chat?
 - Streaming partial responses или wait full?
@@ -112,6 +116,10 @@
 ---
 
 ## #SD2 — Design a RAG System (end-to-end)
+
+### Моя позиция (сказать первым)
+Моё решение по умолчанию: Postgres + pgvector, recursive-чанки 500/50, top-k ~20 и реранкер до 5 в промпт. Отдельную векторную БД не беру, пока не упрусь в масштаб: одна база вместо двух — меньше синхронизации и один бэкап. Если начнут давить «почему не Pinecone» — отвечу, что переезд стоит дёшево, пока схема простая, а операционная цена второй системы с первого дня реальна.
+
 
 ### Clarify
 - Type of docs: PDF / web / Slack / mixed?
@@ -198,6 +206,10 @@
 
 ## #SD3 — Design Cursor's Autocomplete
 
+### Моя позиция (сказать первым)
+Главное ограничение здесь — бюджет ~200 мс, и оно диктует всё остальное: маленькая быстрая модель, debounce, отмена запросов на каждое нажатие и выброс устаревших ответов. Debounce + AbortController + drop stale response я делал для search-as-you-type; разница только в том, что вместо REST-эндпоинта на конце модель, и из-за latency-бюджета она должна быть намного меньше, чем я бы взял для чата.
+
+
 ### Clarify
 - Inline suggestion (single-line) vs multi-line completion?
 - Latency budget (Cursor target ~200ms)?
@@ -278,6 +290,10 @@
 
 ## #SD4 — Design a Multi-tenant LLM App
 
+### Моя позиция (сказать первым)
+По умолчанию: общая БД + Postgres RLS + tenant_id в JWT, per-tenant rate limit и жёсткий бюджетный кап до вызова модели. Отдельная БД на тенанта только для regulated-клиентов. И для EU-тенантов регион — это поле конфигурации тенанта, которое проверяется на том же уровне, что tenant_id (подробнее ниже в разделе про GDPR).
+
+
 ### Clarify
 - B2B SaaS или consumer?
 - Tenants могут иметь свои API keys?
@@ -335,6 +351,13 @@
 - System prompts с tenant config rendered server-side, клиент НЕ контролирует
 - Audit log: каждый prompt assembly → tenant_id + assembled prompt
 
+**7. GDPR / data residency (EU-тенанты)**
+- Регион хранения — поле конфигурации тенанта (`tenant.region = 'eu'`), проверяется на том же уровне, что tenant_id. Postgres и векторный индекс для EU-тенантов живут в EU-регионе.
+- LLM-вызовы для EU-тенантов: провайдер с DPA и EU-обработкой. У Anthropic Messages API есть параметр `inference_geo` для выбора региона инференса; какие регионы доступны и для каких моделей — проверяю в доках перед интервью.
+- Эмбеддинги: либо провайдер с EU-обработкой, либо self-hosted модель, если данные не должны покидать регион вообще.
+- Логи и usage_log тоже персональные данные: TTL на хранение, удаление по запросу (right to erasure) должно проходить и по векторам, не только по строкам в Postgres.
+- Это прямой мостик к моему поиску работы: я целюсь в EU-стартапы, и у них это вопрос первого созвона с клиентом, а не compliance-задача на потом.
+
 ### Bottlenecks
 
 - **Hot tenant** (один tenant с 100x traffic) → noisy neighbor: per-tenant queue / priority lanes
@@ -356,6 +379,10 @@
 ---
 
 ## #SD5 — Design "Chat with My Docs" (твой project 1)
+
+### Моя позиция (сказать первым)
+Это мой собственный проект, поэтому здесь нельзя пересказывать SD2. Интервьюер будет спрашивать «что тебя удивило», «что сломалось», «что бы переделал». Ниже — решения, которые я защищаю, и места, куда нужно вписать реальные цифры из проекта.
+
 
 ### Clarify
 - Doc types: PDF only? Word/Markdown/HTML?
@@ -411,6 +438,18 @@
 - System prompt requires `[n]` citations
 - Frontend: hover [n] → show source chunk, click → open PDF на nu page
 
+### Что я защищаю как свои решения
+- **pgvector, а не отдельная векторная БД**: на моём объёме одна база проще, и user_id-фильтр — обычный btree-индекс рядом с HNSW.
+- **Цитаты валидирую после генерации**: модель может сослаться на [5], когда в промпте 3 чанка. Невалидные ссылки убираю, а не показываю пользователю битую ссылку.
+- **Ingestion асинхронный, UI честно показывает прогресс**: пока документ не проиндексирован, вопросы по нему блокируются, а не отвечаются по частичному индексу.
+
+### Реальные цифры из проекта (заполнить до интервью)
+- [Размер корпуса, на котором тестировал: сколько документов / чанков]
+- [Eval: сколько пар в golden set, какой faithfulness / hit rate получил]
+- [Что сломалось первым и как нашёл: конкретный баг, а не «были проблемы»]
+- [Что бы переделал сейчас]
+Без этих четырёх пунктов SD5 звучит как пересказ SD2, а именно по своему проекту интервьюер копает глубже всего.
+
 ### Failure modes & fixes
 
 | Failure | Fix |
@@ -428,6 +467,10 @@
 ---
 
 ## #SD6 — Design a Real-time Collaboration Editor (Resend Email Editor)
+
+### Моя позиция (сказать первым)
+Я бы взял CRDT (Yjs), а не OT. Аргумент под давлением: OT требует центрального сервера, который упорядочивает операции, и офлайн-редактирование с последующим слиянием на нём превращается в мучение. CRDT сливает правки без центра, а цена — рост истории документа, которую надо периодически компактить.
+
 
 ### Clarify
 - Multiple cursors / users editing simultaneously?
@@ -450,7 +493,7 @@
 - Naturally offline-friendly
 - Memory overhead для metadata (vector clocks)
 
-**Recommendation**: CRDT в 2025+. Yjs / Automerge — battle-tested. OT — legacy.
+**Recommendation**: CRDT — текущий дефолт для новых коллаборативных редакторов. Yjs / Automerge — battle-tested. OT — legacy.
 
 ### Architecture sketch
 
@@ -515,6 +558,12 @@ CRDT doc state в memory у каждого client + persisted snapshot + ops log
 
 ## #SD7 — Cache LLM Responses (semantic vs exact)
 
+### Моя позиция (сказать первым)
+Exact-match кэш ставлю всегда: он дешёвый и безопасный. Semantic-кэш — только с высоким порогом сходства (0.95 для одиночного semantic-слоя) и только для запросов без персонального контекста. Если PM скажет «давай кэшировать всё семантически», я возражу: ложное попадание возвращает уверенный неправильный ответ на чужой вопрос, а это хуже промаха кэша. Порог снижаю только по данным eval, не на глаз.
+
+
+> Формат: это concept-вопрос, а не полноценный design prompt. Но на живом интервью всё равно начинаю с одного-двух уточнений (масштаб, latency-бюджет, кто платит за токены), прежде чем отвечать.
+
 ### Короткий ответ
 **2 strategies: exact match (hash key) дешевый, semantic (embedding similarity) поднимает hit rate в 3-5x. Production обычно: exact cache layer 1, semantic layer 2.**
 
@@ -578,6 +627,12 @@ return response;
 
 ## #SD8 — Streaming Responses End-to-End
 
+### Моя позиция (сказать первым)
+Стрим от провайдера проксирую через свой сервер (ключ не уходит на клиент), на клиент отдаю свой простой SSE-протокол, а не сырые события провайдера. Так фронт не зависит от формата конкретного вендора: сменил провайдера — поменял адаптер на сервере, UI не трогаешь.
+
+
+> Формат: это concept-вопрос, а не полноценный design prompt. Но на живом интервью всё равно начинаю с одного-двух уточнений (масштаб, latency-бюджет, кто платит за токены), прежде чем отвечать.
+
 ### Короткий ответ
 **Сервер пушит chunks через SSE. Frontend consumes через ReadableStream API. Backpressure обычно не проблема (LLM = bottleneck), но нужно cancellation + reconnect.**
 
@@ -608,17 +663,19 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       const llmStream = await client.messages.stream({
-        model: 'claude-sonnet-4-6',
+        model: process.env.ANTHROPIC_MODEL, // не хардкодь версию
         messages,
         max_tokens: 1024,
       });
 
       for await (const event of llmStream) {
-        if (event.type === 'content_block_delta') {
+        // guard delta.type: есть ещё thinking_delta и input_json_delta (tool use)
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
           const data = `data: ${JSON.stringify({ delta: event.delta.text })}\n\n`;
           controller.enqueue(encoder.encode(data));
         }
       }
+      // [DONE] — это наш собственный сигнал клиенту. Сам Claude заканчивает стрим событием message_stop.
       controller.enqueue(encoder.encode('data: [DONE]\n\n'));
       controller.close();
     },
@@ -694,6 +751,12 @@ while (true) {
 ---
 
 ## #SD9 — Rate Limiting LLM API Calls
+
+### Моя позиция (сказать первым)
+Лимиты держу на своей стороне раньше, чем провайдер начнёт отвечать 429: token bucket в Redis по двум осям, запросы и токены, плюс очередь с приоритетами для платных тенантов. 429 от провайдера — это уже авария, а не механизм контроля.
+
+
+> Формат: это concept-вопрос, а не полноценный design prompt. Но на живом интервью всё равно начинаю с одного-двух уточнений (масштаб, latency-бюджет, кто платит за токены), прежде чем отвечать.
 
 ### Короткий ответ
 **Token bucket для bursty traffic, sliding window для precision. Per-user + global. Use Redis для distributed limiter. Don't forget budget caps (cost rate limiting), не только request rate.**
@@ -784,6 +847,12 @@ Client должен respect `Retry-After` + exponential backoff с jitter.
 ---
 
 ## #SD10 — Cost Optimization for LLM-heavy Product
+
+### Моя позиция (сказать первым)
+Порядок рычагов, который я защищаю: сначала измерить стоимость по фичам, потом роутинг на модель подешевле, prompt caching на стабильном префиксе, сокращение выхода, и только потом batch. Оптимизировать без per-feature учёта — это гадание.
+
+
+> Формат: это concept-вопрос, а не полноценный design prompt. Но на живом интервью всё равно начинаю с одного-двух уточнений (масштаб, latency-бюджет, кто платит за токены), прежде чем отвечать.
 
 ### Короткий ответ
 **В порядке impact: 1) prompt caching (50-90% off), 2) model routing (Haiku для easy, Sonnet/Opus для hard), 3) batch API (50% off для async), 4) context trimming, 5) semantic cache, 6) output token cap.**
