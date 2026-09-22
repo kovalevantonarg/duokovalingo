@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#0b1220">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="drill">
-<title>drill — core-40</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="duokovalingo">
+<title>duokovalingo — core-40</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600;700;800&family=Unbounded:wght@700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -239,7 +239,7 @@ const I={
 // ---------- i18n ----------
 const UI={
  ru:{today:"Сегодня",due:"повторить",newi:"новое · не открывал",ship:"ship",quick:"Быстрый раунд",quickm:"5 мин",quickd:"Правда/ложь и пропуски по тому, что due сегодня. Без выбора, без сочинений.",start:"Начать",
-     wall:"Стена",sessions:"Сессии",offline:"Офлайн · результаты копятся локально. Запусти <code>node today.mjs serve</code> и открой <code>localhost:4040/drill.html</code>.",
+     wall:"Стена",sessions:"Сессии",offline:"Офлайн · результаты копятся локально. Запусти <code>node today.mjs serve</code> и открой <code>localhost:4040</code>.",
      pending:"не синхронизировано",true:"Правда",false:"Ложь",check:"Проверить",next:"Дальше",again:"Ещё раз",tryagain:"Ещё раз",home:"Домой",quit:"Выйти",
      tf:"Правда или ложь",gap:"Пропуск",order:"Порядок",voice:"Голос",ticket:"Билет",
      ask:"Вслух",rec:"Говорить",stop:"Стоп",reveal:"Эталон",selfscore:"Как прошло?",selfsub:"Честно — это твоя же метрика. Только это меняет <b>#ID</b> на стене.",g:"Сказал уверенно",y:"Шатко",r:"Не смог",
@@ -252,7 +252,7 @@ const UI={
      nothing:"Ничего не due — бери новое.",drill:"Дриллить",last:"Последний дрилл",dueh:"Due",interval:"Интервал",lastmode:"Последний режим",cold:"уверенно",shaky:"шатко",missed:"мимо",neww:"новое",
      hintNext:"дальше",hintMore:"подробнее",hintQuit:"выйти",hintCheck:"проверить",hintSpeak:"говорить / стоп",hintNextQ:"следующий вопрос",hintMove:"двигать",wk:"нед.",cell:"клетка",ofw:"из",pw:"Пароль",enter:"Войти",wrongpw:"Не тот пароль",logout:"Выйти",noserver:"Сервер не настроен"},
  en:{today:"Today",due:"revisit",newi:"new · never opened",ship:"ship",quick:"Quick round",quickm:"5 min",quickd:"True/false and gaps over what's due today. No choosing, no typing essays.",start:"Start",
-     wall:"The wall",sessions:"Sessions",offline:"Offline · results queue locally. Run <code>node today.mjs serve</code> then open <code>localhost:4040/drill.html</code>.",
+     wall:"The wall",sessions:"Sessions",offline:"Offline · results queue locally. Run <code>node today.mjs serve</code> then open <code>localhost:4040</code>.",
      pending:"not synced",true:"True",false:"False",check:"Check",next:"Continue",again:"Again",tryagain:"Try again",home:"Home",quit:"Quit",
      tf:"True or false",gap:"Gap",order:"Order",voice:"Voice",ticket:"Ticket",
      ask:"Ask out loud",rec:"Speak",stop:"Stop",reveal:"Reveal",selfscore:"How did it go?",selfsub:"Honestly — it's your own metric. This is the only thing that changes <b>#ID</b> on the wall.",g:"Said it cold",y:"Shaky",r:"Couldn't",
@@ -285,7 +285,7 @@ let pending=JSON.parse(localStorage.getItem("drill.pending")||"[]");
 let needLogin=false;
 async function loadState(){ needLogin=false; try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){DB=await r.json(); live=true;} else if(r.status===401){needLogin=true;}}catch{} if(!live&&!needLogin) for(const p of pending) applyLocal(p); }
 function loginScreen(err){
-  app.innerHTML=`<div class="login"><a class="wm">drill<small>core-40</small></a><form id="lf"><input type="password" id="pw" placeholder="${L().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${L().enter}</button><div class="err">${err||""}</div></form></div>`;
+  app.innerHTML=`<div class="login"><a class="wm">duokovalingo<small>core-40</small></a><form id="lf"><input type="password" id="pw" placeholder="${L().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${L().enter}</button><div class="err">${err||""}</div></form></div>`;
   $("#lf").onsubmit=async e=>{e.preventDefault(); const b=$("#lf button"); b.disabled=true;
     try{const r=await fetch("/api/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:$("#pw").value})});
       if(r.ok){await loadState(); await flushPending(); return route();} const j=await r.json().catch(()=>({})); loginScreen(r.status===401?L().wrongpw:(j.error||L().noserver));}
@@ -311,7 +311,7 @@ function beep(ok){ if(!snd) return; try{AC=AC||new (window.AudioContext||window.
 
 // ---------- shared pieces ----------
 const kbd=(k,dk)=>`<span class="kbd${dk?" dk":""}">${k}</span>`;
-function header(){ return `<header class="hdr"><a class="wm" href="#home">drill<small>core-40</small></a><span class="sp"></span><span class="stat fire">${I.flame}${streak()}</span><span class="stat xp" style="margin-left:6px">${I.bolt}${xpToday()}</span><button class="icb${snd?"":" off"}" id="snd" aria-label="sound" style="margin-left:8px">${I.sound}</button>${DB.auth?`<button class="icb" id="lo" aria-label="${L().logout}" title="${L().logout}">${I.out}</button>`:""}<div class="seg"><button id="ru" class="${lang==="ru"?"on":""}">RU</button><button id="en" class="${lang==="en"?"on":""}">EN</button></div></header>`; }
+function header(){ return `<header class="hdr"><a class="wm" href="#home">duokovalingo<small>core-40</small></a><span class="sp"></span><span class="stat fire">${I.flame}${streak()}</span><span class="stat xp" style="margin-left:6px">${I.bolt}${xpToday()}</span><button class="icb${snd?"":" off"}" id="snd" aria-label="sound" style="margin-left:8px">${I.sound}</button>${DB.auth?`<button class="icb" id="lo" aria-label="${L().logout}" title="${L().logout}">${I.out}</button>`:""}<div class="seg"><button id="ru" class="${lang==="ru"?"on":""}">RU</button><button id="en" class="${lang==="en"?"on":""}">EN</button></div></header>`; }
 function wireHeader(){ const lo=$("#lo"); if(lo) lo.onclick=async()=>{await fetch("/api/logout",{method:"POST"}); DB={items:[],history:[]}; live=false; loginScreen();}; const r=$("#ru"),e=$("#en"),s=$("#snd"); if(r) r.onclick=()=>{lang="ru";localStorage.setItem("drill.lang",lang);route()}; if(e) e.onclick=()=>{lang="en";localStorage.setItem("drill.lang",lang);route()}; if(s) s.onclick=()=>{snd=!snd;localStorage.setItem("drill.snd",snd?"on":"off");s.classList.toggle("off",!snd);beep(true)}; }
 const MODE_ICON={voice:I.mic14,tf:I.bolt13,gap:I.pen,order:I.sort,ticket:I.doc};
 function chips(id,hot){ const t=ticketFor(id); if(!t) return ""; const d=window.DRILLS[t.n]||{};
