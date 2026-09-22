@@ -187,6 +187,7 @@ svg{flex:none}
 /* item */
 .stt{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--dim);font-weight:600}
 .h2{font-family:'Unbounded','Golos Text',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0}.h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim2);font-weight:700;margin:0}
+.missrow{padding-top:10px;border-top:1px solid var(--line)}.missrow:first-of-type{padding-top:0;border-top:0}.missrow p{margin-top:4px;font-size:15px;line-height:1.4}
 .meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}@media(min-width:700px){.meta{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .meta div{display:flex;flex-direction:column;gap:2px}.meta .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);font-weight:700}.meta .v{font-size:16px;color:var(--fg);font-weight:700;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}.meta .v.ov{color:var(--warn)}
 /* login */
@@ -247,7 +248,7 @@ const UI={
      said:"Что я сказал",reference:"Как это звучит целиком",killh:"На чём валятся",
      resok:"Верно",resbad:"Мимо",inplace:"на месте",of:"из",youwrote:"Ты написал",correctis:"правильно",swapped:"Не на своих местах",
      more:"Подробнее",explain:"Объяснить иначе",thinking:"Думаю…",
-     roundOver:"Раунд окончен",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это материал на завтра.",xpt:"XP сегодня",streak:"серия",was:"было",onmap:"на карте",todayw:"сегодня",
+     roundOver:"Раунд окончен",missedTitle:"Ошибки в этом раунде",reviewMisses:"Повторить ошибки",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это материал на завтра.",xpt:"XP сегодня",streak:"серия",was:"было",onmap:"на карте",todayw:"сегодня",
      statuses:{green:"уверенно",yellow:"шатко",red:"мимо",new:"не открывал",parked:"запарковано"},overdue:"просрочено",days:"д",ago:"назад",never:"ни разу",
      nothing:"Ничего не due — бери новое.",drill:"Дриллить",last:"Последний дрилл",dueh:"Due",interval:"Интервал",lastmode:"Последний режим",cold:"уверенно",shaky:"шатко",missed:"мимо",neww:"новое",
      hintNext:"дальше",hintMore:"подробнее",hintQuit:"выйти",hintCheck:"проверить",hintSpeak:"говорить / стоп",hintNextQ:"следующий вопрос",hintMove:"двигать",wk:"нед.",cell:"клетка",ofw:"из",pw:"Пароль",enter:"Войти",wrongpw:"Не тот пароль",logout:"Выйти",noserver:"Сервер не настроен"},
@@ -260,7 +261,7 @@ const UI={
      said:"What I said",reference:"How it sounds spoken",killh:"Where people fail",
      resok:"Correct",resbad:"Miss",inplace:"in place",of:"of",youwrote:"You wrote",correctis:"the answer is",swapped:"Out of place",
      more:"More",explain:"Explain differently",thinking:"Thinking…",
-     roundOver:"Round over",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",xpt:"XP today",streak:"streak",was:"was",onmap:"on the map",todayw:"today",
+     roundOver:"Round over",missedTitle:"Mistakes this round",reviewMisses:"Retry mistakes",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",xpt:"XP today",streak:"streak",was:"was",onmap:"on the map",todayw:"today",
      statuses:{green:"cold",yellow:"shaky",red:"missed",new:"never opened",parked:"parked"},overdue:"overdue",days:"d",ago:"ago",never:"never",
      nothing:"Nothing due — take the new one.",drill:"Drill it",last:"Last drilled",dueh:"Due",interval:"Interval",lastmode:"Last mode",cold:"cold",shaky:"shaky",missed:"missed",neww:"new",
      hintNext:"next",hintMore:"more",hintQuit:"quit",hintCheck:"check",hintSpeak:"speak / stop",hintNextQ:"next question",hintMove:"move",wk:"wk",cell:"cell",ofw:"of",pw:"Password",enter:"Sign in",wrongpw:"Wrong password",logout:"Sign out",noserver:"Server not configured"}
@@ -296,8 +297,9 @@ async function post(path,body){ body.d=TODAY; if(live){try{const r=await fetch(p
 async function flushPending(){ if(!live||!pending.length) return; for(const p of pending.slice()){try{const r=await fetch(p.path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(p)}); if(r.ok){DB=await r.json(); pending.shift();}}catch{break}} localStorage.setItem("drill.pending",JSON.stringify(pending)); }
 const byId=id=>DB.items.find(i=>i.id===id);
 const ticketFor=id=>window.TICKETS.find(t=>(t.core||[]).includes(id));
-const due=()=>DB.items.filter(i=>INTERVAL[i.st]&&i.last).map(i=>({...i,over:days(i.last)-INTERVAL[i.st]})).filter(i=>i.over>=0).sort((a,b)=>b.over-a.over);
-const isDue=i=>!!(i.last&&INTERVAL[i.st]&&days(i.last)-INTERVAL[i.st]>=0);
+const due=()=>DB.items.filter(i=>ivOf(i)&&i.last).map(i=>({...i,over:days(i.last)-ivOf(i)})).filter(i=>i.over>=0).sort((a,b)=>b.over-a.over);
+const ivOf=i=>i.iv||INTERVAL[i.st];
+const isDue=i=>!!(i.last&&ivOf(i)&&days(i.last)-ivOf(i)>=0);
 const nextNew=()=>NEW_ORDER.map(byId).find(i=>i&&i.st==="new");
 function streak(){const set=new Set(DB.history.map(h=>h.d));let n=0,d=new Date(TODAY);if(!set.has(TODAY)) d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
 const xpToday=()=>(DB.history.find(h=>h.d===TODAY)||{}).xp||0;
@@ -348,12 +350,12 @@ function home(){
 }
 function itemScreen(id){
   const i=byId(id); if(!i) return home(); const t=ticketFor(id); const st=i.st||"new";
-  const lastTxt=i.last?`${days(i.last)}${L().days} ${L().ago}`:L().never; const dueTxt=isDue(i)?`${days(i.last)-INTERVAL[i.st]}${L().days} ${L().overdue}`:(i.last&&INTERVAL[i.st]?`${INTERVAL[i.st]-days(i.last)}${L().days}`:"—");
+  const lastTxt=i.last?`${days(i.last)}${L().days} ${L().ago}`:L().never; const dueTxt=isDue(i)?`${days(i.last)-ivOf(i)}${L().days} ${L().overdue}`:(i.last&&ivOf(i)?`${ivOf(i)-days(i.last)}${L().days}`:"—");
   app.innerHTML=header()+`<div class="page" style="max-width:704px"><a href="#home" class="btn ghost" style="align-self:flex-start;text-transform:none;letter-spacing:0;font-size:15px;margin-left:-8px;height:40px">${I.home}${L().home} ${kbd("Esc",1)}</a>
     <div class="card" style="padding:24px"><div class="stt"><span class="sw ${st}" style="margin-top:0"></span>${L().statuses[st]}${isDue(i)?`<span style="color:var(--dim3)">·</span><span style="color:var(--warn)">${dueTxt}</span>`:""}</div>
     <h2 class="h2" style="margin-top:8px"><span style="color:var(--dim2);margin-right:8px">#${i.id}</span>${esc(i.t)}</h2>
     <p class="sub" style="margin-top:6px">${SEC[i.s]||""}${t?` · ${L().ticket.toLowerCase()} ${t.n} · ${esc(t[lang].topic)}`:""}${i.why?` · ${esc(i.why)}`:""}</p>
-    <div class="meta"><div><span class="k">${L().last}</span><span class="v">${lastTxt}</span></div><div><span class="k">${L().dueh}</span><span class="v${isDue(i)?" ov":""}">${dueTxt}</span></div><div><span class="k">${L().interval}</span><span class="v">${INTERVAL[st]?INTERVAL[st]+L().days+" · "+L().statuses[st]:"—"}</span></div><div><span class="k">${L().lastmode}</span><span class="v">${i.lastMode||"—"}</span></div></div>
+    <div class="meta"><div><span class="k">${L().last}</span><span class="v">${lastTxt}</span></div><div><span class="k">${L().dueh}</span><span class="v${isDue(i)?" ov":""}">${dueTxt}</span></div><div><span class="k">${L().interval}</span><span class="v">${ivOf(i)?ivOf(i)+L().days+" · "+L().statuses[st]:"—"}</span></div><div><span class="k">${L().lastmode}</span><span class="v">${i.lastMode||"—"}</span></div></div>
     <div style="margin-top:22px"><span class="h3">${L().drill}</span>${t?chips(id,"voice").replace('class="chips"','class="chips" style="display:flex"'):""}</div></div></div>`;
   wireHeader(); document.onkeydown=e=>{if(e.key==="Escape")location.hash="home"};
 }
@@ -375,12 +377,28 @@ function wireSheet(q,stmt,next,morePara){
     ex.classList.remove("wait");ex.classList.add("on");ex.innerHTML=I.spark+L().explain;};
   document.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();next()}else if(e.key==="m"||e.key==="M"||e.key==="ь"){if(!m.disabled)m.click()}else if(e.key==="Escape")location.hash="home"};
 }
-function finish(id,mode,correct,total,xp,ids){
+function missRecap(missedQ){
+  if(!missedQ||!missedQ.length) return "";
+  const rows=missedQ.map(({kind,q})=>{const txt=kind==="gap"?q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]):q.s;
+    return `<div class="missrow"><span class="tag">${esc(q.t[lang].topic)}</span><p>${codify(txt)}</p></div>`}).join("");
+  return `<div class="card" style="margin-top:20px;padding:16px;display:flex;flex-direction:column;gap:6px;text-align:left"><span class="h3">${L().missedTitle} · ${missedQ.length}</span>${rows}</div>`;
+}
+function retryMisses(missedQ,onAllDone){
+  const tfQs=missedQ.filter(m=>m.kind==="tf").map(m=>m.q), gapQs=missedQ.filter(m=>m.kind==="gap").map(m=>m.q);
+  const afterGap=(c,x)=>{ if(!gapQs.length) return onAllDone(c,tfQs.length,x);
+    runGap(gapQs,g=>onAllDone(c+g.correct,tfQs.length+g.total,x+g.xp)); };
+  if(tfQs.length) return runTF(tfQs,acc=>afterGap(acc.correct,acc.xp),L().reviewMisses);
+  afterGap(0,0);
+}
+function finish(id,mode,correct,total,xp,ids,missedQ){
   const pct=total?correct/total:1; const msg=pct===1?L().perfect:pct>=.7?L().good:L().meh; const was=streak(), xpWas=xpToday();
   const all=ids||[id]; Promise.all(all.map((cid,k)=>post("/api/log",{id:cid,mode,xp:k===0?xp:0,correct,total}))).then(()=>{const m=$("#mom");if(m)m.innerHTML=momTiles(was,xpWas)});
-  app.innerHTML=`<div class="round">${rtop(100,true)}<div class="res"><span class="tag">${L().roundOver} · ${all.map(x=>"#"+x).join(", ")}</span><div class="n" style="margin-top:24px">${correct}<small>/${total}</small></div><div class="v">${msg}</div><div class="xp">+${xp} XP</div><div class="mom" id="mom">${momTiles(was,xpWas)}</div></div>
-    <div class="act" style="flex-direction:row;gap:12px;margin-top:36px"><button class="btn line" id="ag" style="flex:1">${L().again} ${kbd("R",1)}</button><button class="btn green" id="hm" style="flex:1.4">${L().home} ${kbd("Enter",1)}</button></div></div>`;
+  const hasMiss=missedQ&&missedQ.length;
+  app.innerHTML=`<div class="round">${rtop(100,true)}<div class="res"><span class="tag">${L().roundOver} · ${all.map(x=>"#"+x).join(", ")}</span><div class="n" style="margin-top:24px">${correct}<small>/${total}</small></div><div class="v">${msg}</div><div class="xp">+${xp} XP</div><div class="mom" id="mom">${momTiles(was,xpWas)}</div>${missRecap(missedQ)}</div>
+    ${hasMiss?`<div class="act" style="flex-direction:row;margin-top:20px"><button class="btn blue full" id="rv">${L().reviewMisses} · ${missedQ.length}</button></div>`:""}
+    <div class="act" style="flex-direction:row;gap:12px;margin-top:${hasMiss?"12":"36"}px"><button class="btn line" id="ag" style="flex:1">${L().again} ${kbd("R",1)}</button><button class="btn green" id="hm" style="flex:1.4">${L().home} ${kbd("Enter",1)}</button></div></div>`;
   wireQuit(); const again=()=>{location.hash=mode==="quick"?"quick":`play/${id}/${mode}`;route(true)}; $("#ag").onclick=again; $("#hm").onclick=()=>location.hash="home";
+  if(hasMiss) $("#rv").onclick=()=>retryMisses(missedQ,(c,t,x)=>finish(id,mode+"-review",c,t,x,ids));
   document.onkeydown=e=>{if(e.key==="Enter")location.hash="home";else if(e.key==="r"||e.key==="R"||e.key==="к")again();else if(e.key==="Escape")location.hash="home"};
 }
 function momTiles(was,xpWas){const s=streak(),x=xpToday();return `<div><b style="color:var(--fire)">${I.flame}${s}</b><span>${L().streak}${s!==was?` · ${L().was} ${was}`:""}</span></div><div><b style="color:var(--warn)">${I.bolt}${x}</b><span>${L().xpt}</span></div><div><b><span class="dy l1" style="width:14px;height:14px"></span>${L().todayw}</b><span>${L().onmap}</span></div>`}
@@ -397,10 +415,10 @@ function buildTF(ids,n=10){
 function tfScreen(title,q,i,n){ return `<div class="round">${rtop(Math.round(i/n*100))}<div class="body"><span class="tag">${esc(q.t[lang].topic)}</span><p class="stmt">${codify(q.s)}</p></div>
   <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←",1).replace('class="kbd dk"','class="kbd dk" style="left:14px"')}${L().false}</button><button class="ans" id="t">${L().true}${kbd("→",1).replace('class="kbd dk"','class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span>${kbd("Enter")} ${L().hintNext}</span><span>${kbd("M")} ${L().hintMore}</span><span>${kbd("Esc")} ${L().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`; }
 function runTF(qs,onDone,title,acc){
-  let i=0; acc=acc||{correct:0,xp:0}; setTimeout(()=>{},0);
+  let i=0; acc=acc||{correct:0,xp:0,missedQ:[]}; setTimeout(()=>{},0);
   const step=()=>{ if(i>=qs.length) return onDone(acc);
     const q=qs[i]; app.innerHTML=tfScreen(title,q,i,qs.length); wireQuit(); setCombo(combo);
-    const answer=v=>{ if($("#sheet")) return; const ok=v===q.ok; beep(ok); setCombo(ok?combo+1:0); if(ok){acc.correct++;acc.xp+=1}
+    const answer=v=>{ if($("#sheet")) return; const ok=v===q.ok; beep(ok); setCombo(ok?combo+1:0); if(ok){acc.correct++;acc.xp+=1}else{acc.missedQ.push({kind:"tf",q})}
       const picked=$(v?"#t":"#f"), other=$(v?"#f":"#t"); picked.classList.add("pick"); if(!ok) picked.classList.add("bad"); other.classList.add("dim"); picked.disabled=other.disabled=true; setProg(i+1,qs.length);
       $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:q.ok?L().true:L().false,text:q.ok?"":q.t[lang].kill,q,btn:ok?"green":"red",btnLabel:L().next});
       wireSheet(q,q.s,()=>{i++;step()}); if(!ok) $("#more").click(); };
@@ -408,7 +426,7 @@ function runTF(qs,onDone,title,acc){
     document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Escape")location.hash="home"};
   }; step();
 }
-function playTF(id){ combo=0; const qs=buildTF([id]); runTF(qs,acc=>finish(id,"tf",acc.correct,qs.length,acc.xp+(acc.correct===qs.length?3:0)),L().tf); }
+function playTF(id){ combo=0; const qs=buildTF([id]); runTF(qs,acc=>finish(id,"tf",acc.correct,qs.length,acc.xp+(acc.correct===qs.length?3:0),null,acc.missedQ),L().tf); }
 
 // ---------- fill the gap ----------
 const norm=s=>s.toLowerCase().replace(/[«»"'`]/g,"").replace(/\s+/g," ").replace(/[–—]/g,"-").trim();
@@ -416,11 +434,12 @@ function gapScreen(q,i,n){ const answers=[]; let k=0;
   const html=esc(q.s).replace(/\[\[(.+?)\]\]/g,(_,a)=>{const alts=a.split("|").map(x=>x.trim());answers.push(alts);const w=Math.min(280,Math.max(96,alts[0].length*13+34));return `<input class="inp" id="g${k++}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${w}px">`});
   return {answers,html:`<div class="round">${rtop(Math.round(i/n*100))}<div class="body"><span class="tag">${esc(q.t[lang].topic)}</span><p class="cloze">${html}</p></div><div class="act"><button class="btn blue full big" id="chk">${L().check} ${kbd("Enter",1)}</button></div><div id="sheetSlot"></div></div>`}; }
 function runGap(qs,onDone,acc){
-  let i=0; acc=acc||{correct:0,total:0,xp:0};
+  let i=0; acc=acc||{correct:0,total:0,xp:0,missedQ:[]};
   const step=()=>{ if(i>=qs.length) return onDone(acc);
     const q=qs[i]; const {answers,html}=gapScreen(q,i,qs.length); app.innerHTML=html; wireQuit(); setCombo(combo); $("#g0").focus();
     const check=()=>{ if($("#sheet")) return; let all=true; const misses=[];
       answers.forEach((alts,j)=>{const el=$("#g"+j); const v=norm(el.value); const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1)); el.classList.add(ok?"ok":"bad"); el.disabled=true; acc.total++; if(ok){acc.correct++;acc.xp+=2}else{all=false;misses.push([el.value,alts[0]]); el.value=alts[0]}});
+      if(!all) acc.missedQ.push({kind:"gap",q});
       beep(all); setCombo(all?combo+1:0); setProg(i+1,qs.length); $("#chk").closest(".act").style.display="none";
       const text=all?"":misses.map(([v,a])=>`${L().youwrote} <code>${esc(v||"—")}</code> — ${L().correctis} <b>${esc(a)}</b>`).join("<br>");
       const okN=answers.length-misses.length;
@@ -429,7 +448,7 @@ function runGap(qs,onDone,acc){
     $("#chk").onclick=check; document.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}else if(e.key==="Escape")location.hash="home"};
   }; step();
 }
-function playGap(id){ combo=0; const t=ticketFor(id); const qs=shuffle((window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t}))).slice(0,3); if(!qs.length) return home(); runGap(qs,acc=>finish(id,"gap",acc.correct,acc.total,acc.xp)); }
+function playGap(id){ combo=0; const t=ticketFor(id); const qs=shuffle((window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t}))).slice(0,3); if(!qs.length) return home(); runGap(qs,acc=>finish(id,"gap",acc.correct,acc.total,acc.xp,null,acc.missedQ)); }
 
 // ---------- order the steps ----------
 function playOrder(id){
@@ -505,7 +524,7 @@ function quick(){
   const d=due().slice(0,3).map(i=>i.id); const nn=nextNew(); const ids=d.length?d:(nn?[nn.id]:[17]); combo=0;
   const qs=buildTF(ids,8);
   runTF(qs,acc=>{ const ts=ids.map(ticketFor).filter(Boolean); const gq=shuffle(ts.flatMap(t=>(window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t})))).slice(0,5);
-    runGap(gq,g=>finish(ids[0],"quick",acc.correct+g.correct,qs.length+g.total,acc.xp+g.xp,ids)); },L().quick);
+    runGap(gq,g=>finish(ids[0],"quick",acc.correct+g.correct,qs.length+g.total,acc.xp+g.xp,ids,acc.missedQ.concat(g.missedQ))); },L().quick);
 }
 
 // ---------- router ----------
