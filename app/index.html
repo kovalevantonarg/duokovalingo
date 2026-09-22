@@ -117,7 +117,7 @@ svg{flex:none}
 /* rounds */
 .round{max-width:640px;margin:0 auto;padding:20px var(--gut) 0;display:flex;flex-direction:column;min-height:100dvh}
 @media(min-width:700px){.round{padding-top:32px}}
-.rtop{display:flex;align-items:center;gap:14px}
+.rtop{display:flex;align-items:center;gap:14px}.rtop .rl{height:32px;flex:none}.rtop .rl button{padding:0 9px;font-size:11px}
 .x{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--dim2);background:transparent;border:0;padding:0;margin-left:-6px}.x:hover{color:var(--fg)}
 .pbar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
 .pbar i{display:block;height:100%;background:var(--blue);border-radius:4px;transition:width var(--std),background var(--std)}
@@ -348,10 +348,17 @@ function chips(id,hot){ const t=ticketFor(id); if(!t) return ""; const d=window.
   const b=(m,label)=>`<button class="chip${hot===m?" hot":""}" onclick="location.hash='play/${id}/${m}'">${MODE_ICON[m]}${label}</button>`;
   return `<div class="chips">${b("voice",L().voice)}${b("tf","T/F")}${d.cloze?b("gap",L().gap):""}${d.steps?b("order",L().order):""}<a class="chip" href="exam-tickets.html#t${t.n}">${I.doc}${L().ticket} ${t.n}</a></div>`; }
 function itemRow(i,sub){ const st=i.st||"new"; return `<div class="item"><span class="sw ${st}${isDue(i)?" due":""}"></span><div class="it"><div class="t"><span class="id">#${i.id}</span>${esc(i.t)}</div><div class="s">${sub}</div>${chips(i.id)}</div>${chips(i.id)}</div>`; }
-function rtop(pct,ok){ return `<div class="rtop"><button class="x" id="quit" aria-label="${L().quit}">${I.x}</button><div class="pbar${ok?" ok":""}" id="pbar"><i style="width:${pct}%"></i></div><span class="combo" id="combo"></span></div>`; }
+function rtop(pct,ok){ return `<div class="rtop"><button class="x" id="quit" aria-label="${L().quit}">${I.x}</button><div class="pbar${ok?" ok":""}" id="pbar"><i style="width:${pct}%"></i></div><span class="combo" id="combo"></span><div class="seg rl" id="rl" role="group" aria-label="language"><button data-l="ru" class="${lang==="ru"?"on":""}">RU</button><button data-l="en" class="${lang==="en"?"on":""}">EN</button></div></div>`; }
+// switching language mid-round redraws the current screen in place: same question, same answer state, no progress lost
+let rerender=null;
 let combo=0; function setCombo(n){combo=n;const c=$("#combo");if(!c)return;if(n>=2){c.innerHTML=I.bolt13+"×"+n;c.classList.remove("pop");void c.offsetWidth;c.classList.add("pop")}else c.innerHTML=""}
 function setProg(i,n){const p=$("#pbar");if(!p)return;p.querySelector("i").style.width=Math.round(i/n*100)+"%";if(i>=n)p.classList.add("ok")}
-const wireQuit=()=>{const q=$("#quit");if(q)q.onclick=()=>{location.hash="home"}};
+const wireQuit=()=>{const q=$("#quit");if(q)q.onclick=()=>{location.hash="home"};
+  app.querySelectorAll("#rl [data-l]").forEach(b=>b.onclick=()=>{ if(lang===b.dataset.l) return; lang=b.dataset.l; localStorage.setItem("drill.lang",lang);
+    if(rerender) rerender(); else app.querySelectorAll("#rl [data-l]").forEach(x=>x.classList.toggle("on",x.dataset.l===lang)); });};
+// a question that exists in both languages: q.s always returns the current one
+const mkQ=(S,t,ok)=>{const q={S,t}; if(ok!==undefined) q.ok=ok; Object.defineProperty(q,"s",{get(){return this.S[lang]??this.S.en??this.S.ru},enumerable:true}); return q};
+const other=()=>lang==="ru"?"en":"ru";
 
 // ---------- activity ----------
 const ACT_TARGET=2; // plan.md: 2 drill days a week, 3 build days
@@ -470,36 +477,54 @@ function finish(id,mode,correct,total,xp,ids,missedQ){
   const pct=total?correct/total:1; const msg=pct===1?L().perfect:pct>=.7?L().good:L().meh; const was=streak(), xpWas=xpToday();
   const all=ids||[id]; Promise.all(all.map((cid,k)=>post("/api/log",{id:cid,mode,xp:k===0?xp:0,correct,total}))).then(()=>{const m=$("#mom");if(m)m.innerHTML=momTiles(was,xpWas)});
   const hasMiss=missedQ&&missedQ.length;
+  const draw=()=>{ const msg=pct===1?L().perfect:pct>=.7?L().good:L().meh;
   app.innerHTML=`<div class="round">${rtop(100,true)}<div class="res"><span class="tag">${L().roundOver} · ${all.map(x=>"#"+x).join(", ")}</span><div class="n" style="margin-top:24px">${correct}<small>/${total}</small></div><div class="v">${msg}</div><div class="xp">+${xp} XP</div><div class="mom" id="mom">${momTiles(was,xpWas)}</div>${missRecap(missedQ)}</div>
     ${hasMiss?`<div class="act" style="flex-direction:row;margin-top:20px"><button class="btn blue full" id="rv">${L().reviewMisses} · ${missedQ.length}</button></div>`:""}
     <div class="act" style="flex-direction:row;gap:12px;margin-top:${hasMiss?"12":"36"}px"><button class="btn line" id="ag" style="flex:1">${L().again} ${kbd("R",1)}</button><button class="btn green" id="hm" style="flex:1.4">${L().home} ${kbd("Enter",1)}</button></div></div>`;
   wireQuit(); const again=()=>{location.hash=mode==="quick"?"quick":`play/${id}/${mode}`;route(true)}; $("#ag").onclick=again; $("#hm").onclick=()=>location.hash="home";
   if(hasMiss) $("#rv").onclick=()=>retryMisses(missedQ,(c,t,x)=>finish(id,mode+"-review",c,t,x,ids));
   document.onkeydown=e=>{if(e.key==="Enter")location.hash="home";else if(e.key==="r"||e.key==="R"||e.key==="к")again();else if(e.key==="Escape")location.hash="home"};
+  }; rerender=draw; draw();
 }
 function momTiles(was,xpWas){const s=streak(),x=xpToday();return `<div><b style="color:var(--fire)">${I.flame}${s}</b><span>${L().streak}${s!==was?` · ${L().was} ${was}`:""}</span></div><div><b style="color:var(--warn)">${I.bolt}${x}</b><span>${L().xpt}</span></div><div><b><span class="dy l1" style="width:14px;height:14px"></span>${L().todayw}</b><span>${L().onmap}</span></div>`}
 
 // ---------- true / false ----------
-function sentences(t){return t[lang].a.flatMap(a=>a.t.split(/(?<=[.!?])\s+/)).map(s=>s.trim()).filter(s=>{const w=s.split(/\s+/).length;return w>=8&&w<=28&&/^[A-ZА-ЯЁ]/.test(s)&&!/^(Поэтому|Потому|И |А |Плюс|Отсюда|So |And |But |Because|Which|That's|Plus|Then )/.test(s)})}
+const splitS=x=>x.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean);
+const okS=s=>{const w=s.split(/\s+/).length;return w>=8&&w<=28&&/^[A-ZА-ЯЁ]/.test(s)&&!/^(Поэтому|Потому|И |А |Плюс|Отсюда|So |And |But |Because|Which|That's|Plus|Then )/.test(s)};
+function sentences(t){return t[lang].a.flatMap(a=>splitS(a.t)).filter(okS)}
+// true statements with a twin in the other language: same paragraph, nearest position. Any sentence of that paragraph is still true.
+function trueQs(t){ const o=other(), out=[];
+  t[lang].a.forEach((a,p)=>{ const A=splitS(a.t), B=splitS((t[o].a[p]||{t:""}).t);
+    A.forEach((x,k)=>{ if(!okS(x)) return; let tw=null;
+      if(B.length){ const j=A.length>1&&B.length>1?Math.round(k/(A.length-1)*(B.length-1)):0; for(let d=0;d<B.length&&!tw;d++){ for(const c of [j-d,j+d]) if(!tw&&B[c]&&okS(B[c])) tw=B[c]; } tw=tw||B[Math.min(j,B.length-1)]; }
+      out.push(mkQ({[lang]:x,[o]:tw||x},t,true)); }); });
+  return out; }
+const liesQs=t=>{const d=window.DRILLS[t.n]||{}; return (d.lies?.[lang]||[]).map((x,k)=>mkQ({ru:d.lies.ru?.[k],en:d.lies.en?.[k]},t,false))};
+const clozeQs=t=>{const d=window.DRILLS[t.n]||{}; return (d.cloze?.[lang]||[]).map((x,k)=>mkQ({ru:d.cloze.ru?.[k],en:d.cloze.en?.[k]},t))};
 function buildTF(ids,n=10){
   const ts=ids.map(ticketFor).filter(Boolean); if(!ts.length) return []; const pool=[];
-  for(const t of ts){const d=window.DRILLS[t.n]||{}; (d.lies?.[lang]||[]).forEach(s=>pool.push({s,ok:false,t})); shuffle(sentences(t)).slice(0,6).forEach(s=>pool.push({s,ok:true,t}));}
+  for(const t of ts){ liesQs(t).forEach(q=>pool.push(q)); shuffle(trueQs(t)).slice(0,6).forEach(q=>pool.push(q)); }
   const secs=new Set(ts.map(t=>t.sec)); const extra=shuffle(window.TICKETS.filter(t=>secs.has(t.sec)&&!ts.includes(t))).slice(0,3);
-  for(const t of extra){(window.DRILLS[t.n]?.lies?.[lang]||[]).slice(0,1).forEach(s=>pool.push({s,ok:false,t}))}
+  for(const t of extra) liesQs(t).slice(0,1).forEach(q=>pool.push(q));
   const f=shuffle(pool.filter(p=>!p.ok)).slice(0,Math.ceil(n*0.4)); const tr=shuffle(pool.filter(p=>p.ok)).slice(0,n-f.length); return shuffle(f.concat(tr));
 }
 function tfScreen(title,q,i,n){ return `<div class="round">${rtop(Math.round(i/n*100))}<div class="body"><span class="tag">${esc(q.t[lang].topic)}</span><p class="stmt">${codify(q.s)}</p></div>
   <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←",1).replace('class="kbd dk"','class="kbd dk" style="left:14px"')}${L().false}</button><button class="ans" id="t">${L().true}${kbd("→",1).replace('class="kbd dk"','class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span>${kbd("Enter")} ${L().hintNext}</span><span>${kbd("M")} ${L().hintMore}</span><span>${kbd("Esc")} ${L().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`; }
 function runTF(qs,onDone,title,acc){
-  let i=0; acc=acc||{correct:0,xp:0,missedQ:[]}; setTimeout(()=>{},0);
-  const step=()=>{ if(i>=qs.length) return onDone(acc);
-    const q=qs[i]; app.innerHTML=tfScreen(title,q,i,qs.length); wireQuit(); setCombo(combo);
-    const answer=v=>{ if($("#sheet")) return; const ok=v===q.ok; beep(ok); setCombo(ok?combo+1:0); if(ok){acc.correct++;acc.xp+=1}else{acc.missedQ.push({kind:"tf",q})}
-      const picked=$(v?"#t":"#f"), other=$(v?"#f":"#t"); picked.classList.add("pick"); if(!ok) picked.classList.add("bad"); other.classList.add("dim"); picked.disabled=other.disabled=true; setProg(i+1,qs.length);
+  let i=0; acc=acc||{correct:0,xp:0,missedQ:[]};
+  const step=()=>{ if(i>=qs.length){ rerender=null; return onDone(acc); }
+    const q=qs[i]; let ans=null, moreOpen=false;
+    const show=(v,redraw)=>{ const ok=v===q.ok;
+      const picked=$(v?"#t":"#f"), oth=$(v?"#f":"#t"); picked.classList.add("pick"); if(!ok) picked.classList.add("bad"); oth.classList.add("dim"); picked.disabled=oth.disabled=true; setProg(i+1,qs.length);
       $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:q.ok?L().true:L().false,text:q.ok?"":q.t[lang].kill,q,btn:ok?"green":"red",btnLabel:L().next});
-      wireSheet(q,q.s,()=>{i++;step()}); if(!ok) $("#more").click(); };
-    $("#t").onclick=()=>answer(true); $("#f").onclick=()=>answer(false);
-    document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Escape")location.hash="home"};
+      wireSheet(q,q.s,()=>{i++;step()});
+      const m=$("#more"), open=m.onclick; m.onclick=()=>{moreOpen=true;open()}; if(moreOpen||(!ok&&!redraw)) m.click(); };
+    const answer=v=>{ if(ans!==null) return; ans=v; const ok=v===q.ok; beep(ok); setCombo(ok?combo+1:0); if(ok){acc.correct++;acc.xp+=1}else{acc.missedQ.push({kind:"tf",q})} show(v,false); };
+    const draw=()=>{ app.innerHTML=tfScreen(title,q,i,qs.length); wireQuit(); setCombo(combo);
+      if(ans!==null) return show(ans,true);
+      $("#t").onclick=()=>answer(true); $("#f").onclick=()=>answer(false);
+      document.onkeydown=e=>{if(e.key==="ArrowRight")answer(true);else if(e.key==="ArrowLeft")answer(false);else if(e.key==="Escape")location.hash="home"}; };
+    rerender=draw; draw();
   }; step();
 }
 function playTF(id){ combo=0; const qs=buildTF([id]); runTF(qs,acc=>finish(id,"tf",acc.correct,qs.length,acc.xp+(acc.correct===qs.length?3:0),null,acc.missedQ),L().tf); }
@@ -511,26 +536,36 @@ function gapScreen(q,i,n){ const answers=[]; let k=0;
   return {answers,html:`<div class="round">${rtop(Math.round(i/n*100))}<div class="body"><span class="tag">${esc(q.t[lang].topic)}</span><p class="cloze">${html}</p></div><div class="act"><button class="btn blue full big" id="chk">${L().check} ${kbd("Enter",1)}</button></div><div id="sheetSlot"></div></div>`}; }
 function runGap(qs,onDone,acc){
   let i=0; acc=acc||{correct:0,total:0,xp:0,missedQ:[]};
-  const step=()=>{ if(i>=qs.length) return onDone(acc);
-    const q=qs[i]; const {answers,html}=gapScreen(q,i,qs.length); app.innerHTML=html; wireQuit(); setCombo(combo); $("#g0").focus();
-    const check=()=>{ if($("#sheet")) return; let all=true; const misses=[];
-      answers.forEach((alts,j)=>{const el=$("#g"+j); const v=norm(el.value); const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1)); el.classList.add(ok?"ok":"bad"); el.disabled=true; acc.total++; if(ok){acc.correct++;acc.xp+=2}else{all=false;misses.push([el.value,alts[0]]); el.value=alts[0]}});
-      if(!all) acc.missedQ.push({kind:"gap",q});
-      beep(all); setCombo(all?combo+1:0); setProg(i+1,qs.length); $("#chk").closest(".act").style.display="none";
-      const text=all?"":misses.map(([v,a])=>`${L().youwrote} <code>${esc(v||"—")}</code> — ${L().correctis} <b>${esc(a)}</b>`).join("<br>");
-      const okN=answers.length-misses.length;
-      $("#sheetSlot").innerHTML=sheet({ok:all,title:all?L().resok:L().resbad,sub:answers.length>1?`${okN} ${L().of} ${answers.length}`:"",text,q,btn:all?"green":"red",btnLabel:L().next});
-      wireSheet(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()},bestPara(q.t,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.replace(/\|/g," ")))); if(!all) $("#more").click(); };
-    $("#chk").onclick=check; document.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}else if(e.key==="Escape")location.hash="home"};
+  const step=()=>{ if(i>=qs.length){ rerender=null; return onDone(acc); }
+    const q=qs[i]; let res=null, moreOpen=false; const typed=[];
+    const show=(answers,redraw)=>{ const {all,per,misses}=res;
+      answers.forEach((alts,j)=>{const el=$("#g"+j); if(!el) return; const ok=per[j]!==false; el.classList.add(ok?"ok":"bad"); el.disabled=true; if(!ok||!el.value) el.value=ok?(typed[j]||alts[0]):alts[0];});
+      setProg(i+1,qs.length); $("#chk").closest(".act").style.display="none";
+      const text=all?"":misses.map(([v,j])=>`${L().youwrote} <code>${esc(v||"—")}</code> — ${L().correctis} <b>${esc((answers[j]||[""])[0])}</b>`).join("<br>");
+      const okN=per.filter(x=>x).length;
+      $("#sheetSlot").innerHTML=sheet({ok:all,title:all?L().resok:L().resbad,sub:per.length>1?`${okN} ${L().of} ${per.length}`:"",text,q,btn:all?"green":"red",btnLabel:L().next});
+      wireSheet(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()},bestPara(q.t,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.replace(/\|/g," "))));
+      const m=$("#more"), open=m.onclick; m.onclick=()=>{moreOpen=true;open()}; if(moreOpen||(!all&&!redraw)) m.click(); };
+    const check=answers=>{ if(res) return; let all=true; const per=[], misses=[];
+      answers.forEach((alts,j)=>{const el=$("#g"+j); const raw=el.value; typed[j]=raw; const v=norm(raw); const ok=alts.some(a=>norm(a)===v)||(v.length>3&&alts.some(a=>norm(a).startsWith(v)&&v.length>=norm(a).length-1)); per.push(ok); acc.total++; if(ok){acc.correct++;acc.xp+=2}else{all=false;misses.push([raw,j])}});
+      if(!all) acc.missedQ.push({kind:"gap",q}); beep(all); setCombo(all?combo+1:0);
+      res={all,per,misses}; show(answers,false); };
+    const draw=()=>{ const {answers,html}=gapScreen(q,i,qs.length); app.innerHTML=html; wireQuit(); setCombo(combo);
+      answers.forEach((_,j)=>{const el=$("#g"+j); if(!el) return; if(typed[j]!=null) el.value=typed[j]; el.oninput=()=>{typed[j]=el.value};});
+      if(res) return show(answers,true);
+      if($("#g0")) $("#g0").focus();
+      $("#chk").onclick=()=>check(answers); document.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check(answers)}else if(e.key==="Escape")location.hash="home"}; };
+    rerender=draw; draw();
   }; step();
 }
-function playGap(id){ combo=0; const t=ticketFor(id); const qs=shuffle((window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t}))).slice(0,3); if(!qs.length) return home(); runGap(qs,acc=>finish(id,"gap",acc.correct,acc.total,acc.xp,null,acc.missedQ)); }
+function playGap(id){ combo=0; const t=ticketFor(id); const qs=shuffle(clozeQs(t)).slice(0,3); if(!qs.length) return home(); runGap(qs,acc=>finish(id,"gap",acc.correct,acc.total,acc.xp,null,acc.missedQ)); }
 
 // ---------- order the steps ----------
 function playOrder(id){
-  const t=ticketFor(id); const st=window.DRILLS[t.n]?.steps?.[lang]; if(!st) return home(); combo=0;
-  let cur=shuffle(st.items.map((s,i)=>i)); if(cur.every((v,i)=>v===i)) cur.reverse(); let sel=null, tries=0;
-  const render=(result)=>{
+  const t=ticketFor(id); const st0=window.DRILLS[t.n]?.steps?.[lang]; if(!st0) return home(); combo=0;
+  const ST=()=>window.DRILLS[t.n]?.steps?.[lang]||st0;
+  let cur=shuffle(st0.items.map((s,i)=>i)); if(cur.every((v,i)=>v===i)) cur.reverse(); let sel=null, tries=0, lastRes=null;
+  const render=(result)=>{ const st=ST();
     app.innerHTML=`<div class="round">${rtop(result&&result.ok?100:0,result&&result.ok)}<div class="body"><span class="tag">${esc(t[lang].topic)}</span><p class="q">${esc(st.title)}</p>
       <div class="steps">${cur.map((idx,pos)=>`<div class="step${sel===pos?" sel":""}${result?(idx===pos?" ok":" bad"):""}" data-pos="${pos}" draggable="${!result}"><span class="n">${pos+1}</span><span class="sx">${codify(st.items[idx])}</span><span class="mv"><button data-up="${pos}" aria-label="up">${I.up}</button><button data-dn="${pos}" aria-label="down">${I.down}</button></span></div>`).join("")}</div></div>
       ${result?"":`<div class="act"><button class="btn blue full big" id="chk">${L().check} ${kbd("Enter",1)}</button><div class="hint"><span>${kbd("↑")}${kbd("↓")} ${L().hintMove}</span><span>${kbd("Enter")} ${L().hintCheck}</span></div></div>`}<div id="sheetSlot"></div></div>`;
@@ -541,23 +576,25 @@ function playOrder(id){
     app.querySelectorAll(".step").forEach(li=>{const pos=+li.dataset.pos;
       li.onclick=()=>{if(result)return; if(sel===null){sel=pos;render()}else if(sel===pos){sel=null;render()}else move(sel,pos)};
       li.ondragstart=e=>{e.dataTransfer.setData("text",pos)}; li.ondragover=e=>e.preventDefault(); li.ondrop=e=>{e.preventDefault();move(+e.dataTransfer.getData("text"),pos)};});
-    const check=()=>{tries++;const n=cur.filter((v,i)=>v===i).length;const ok=n===cur.length;beep(ok);setCombo(ok?combo+1:0);render({ok,n});
-      const wrong=cur.map((v,i)=>v!==i?i+1:null).filter(Boolean);
-      $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:`${n} ${L().of} ${cur.length} ${L().inplace}`,text:ok?"":`${L().swapped}: ${wrong.join(", ")}`,q:{t,ok:true},btn:ok?"green":"red",btnLabel:ok?L().next:L().tryagain});
-      wireSheet({t,ok:true},st.title,ok?()=>finish(id,"order",1,1,tries===1?5:2):()=>render(),bestPara(t,st.title));};
+    const check=()=>{tries++;const n=cur.filter((v,i)=>v===i).length;const ok=n===cur.length;beep(ok);setCombo(ok?combo+1:0);drawResult({ok,n});};
     if($("#chk")) $("#chk").onclick=check;
     if(!result) document.onkeydown=e=>{if(e.key==="Enter")check();else if(e.key==="ArrowUp"&&sel!==null){e.preventDefault();move(sel,sel-1)}else if(e.key==="ArrowDown"&&sel!==null){e.preventDefault();move(sel,sel+1)}else if(e.key==="Escape")location.hash="home"};
-  }; render();
+  };
+  const drawResult=({ok,n})=>{ lastRes={ok,n}; render({ok,n}); const st=ST();
+      const wrong=cur.map((v,i)=>v!==i?i+1:null).filter(Boolean);
+      $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:`${n} ${L().of} ${cur.length} ${L().inplace}`,text:ok?"":`${L().swapped}: ${wrong.join(", ")}`,q:{t,ok:true},btn:ok?"green":"red",btnLabel:ok?L().next:L().tryagain});
+      wireSheet({t,ok:true},st.title,ok?()=>{rerender=null;finish(id,"order",1,1,tries===1?5:2)}:()=>{lastRes=null;render()},bestPara(t,st.title)); };
+  rerender=()=>lastRes?drawResult(lastRes):render(); render();
 }
 
 // ---------- voice ----------
 function playVoice(id){
-  const t=ticketFor(id); const d=t[lang]; let qi=0, transcripts=["","",""], rec=null, t0=null, tick=null, final="", interim="", recording=false;
+  const t=ticketFor(id); let qi=0, transcripts=["","",""], rec=null, t0=null, tick=null, final="", interim="", recording=false;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const fmt=s=>Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
   const speak=txt=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang=lang==="ru"?"ru-RU":"en-US";u.rate=.95;speechSynthesis.speak(u)}catch{}};
   const stopAll=()=>{recording=false;if(rec){try{rec.stop()}catch{}rec=null}if(tick){clearInterval(tick);tick=null}};
-  const render=()=>{
+  const render=()=>{ const d=t[lang];
     app.innerHTML=`<div class="round">${rtop(Math.round(qi/3*100))}<div class="body" style="gap:10px"><span class="qn">${lang==="ru"?"Вопрос":"Question"} ${qi+1} / 3</span><p class="q">${codify(d.qs[qi])}</p>
       <div class="vrow" style="margin-top:14px"><button class="btn line" id="ask">${I.speaker}${L().ask}</button><button class="btn blue" id="rec">${I.mic}${L().rec}</button><button class="btn red" id="stp" style="display:none">${I.stop}${L().stop}</button><span class="sp"></span><span class="timer" id="tm">0:00</span></div>
       ${SR?"":`<div class="banner" style="margin-top:4px">${I.warn}<span>${L().norec}</span></div>`}
@@ -571,11 +608,12 @@ function playVoice(id){
         rec.onresult=e=>{interim="";for(let k=e.resultIndex;k<e.results.length;k++){const r=e.results[k];if(r.isFinal)final+=r[0].transcript+" ";else interim+=r[0].transcript}transcripts[qi]=final;$("#tr").innerHTML=`<span class="lab">${L().said}</span><span class="rec"></span>${esc(final)}<span class="interim">${esc(interim)}</span>`};
         rec.onend=()=>{if(recording&&rec){try{rec.start()}catch{}}}; try{rec.start()}catch{}} };
     const stopRec=()=>{ if(!recording) return; stopAll(); transcripts[qi]=final; $("#rec").style.display=""; $("#stp").style.display="none"; $("#tr").innerHTML=`<span class="lab">${L().said}</span>${esc(final)||`<span class="interim">—</span>`}`; };
-    $("#ask").onclick=()=>speak(d.qs[qi]); $("#rec").onclick=startRec; $("#stp").onclick=stopRec;
+    $("#ask").onclick=()=>speak(t[lang].qs[qi]); $("#rec").onclick=startRec; $("#stp").onclick=stopRec;
     $("#nxq").onclick=()=>{ stopAll(); if(qi<2){qi++;render()} else reveal(); };
+    rerender=()=>{ if(recording){ stopAll(); transcripts[qi]=final; } render(); };
     document.onkeydown=e=>{if(e.key===" "&&!e.target.closest("input")){e.preventDefault();recording?stopRec():startRec()}else if(e.key==="Enter"){$("#nxq").click()}else if(e.key==="Escape"){stopAll();location.hash="home"}};
   };
-  const reveal=()=>{ try{speechSynthesis.cancel()}catch{}
+  const reveal=()=>{ try{speechSynthesis.cancel()}catch{} const d=t[lang]; rerender=reveal;
     const ids=t.core.filter(c=>byId(c)&&byId(c).st!=="parked"); if(!ids.length) ids.push(id);
     app.innerHTML=`<div class="round" style="min-height:0">${rtop(100,true)}<h2 class="h2" style="margin-top:28px">${L().reveal}</h2>
       ${d.qs.map((q,k)=>`<div class="rev" style="margin-top:28px"><span class="qn">${k+1} / 3</span><p class="q">${codify(q)}</p>${transcripts[k]?`<div class="tr" style="min-height:0;padding:12px 14px"><span class="lab">${L().said}</span>${esc(transcripts[k])}</div>`:""}<div class="ref" style="border-top:0;padding-top:4px"><span class="rq">${L().reference}</span><p>${codify(d.a[k].t)}</p></div><div class="kill"><b>${L().killh}:</b> ${d.kill}</div></div>${k<2?`<div class="rule" style="margin-top:28px"></div>`:""}`).join("")}
@@ -588,7 +626,7 @@ function playVoice(id){
       lastChanged=ids[0];
       app.innerHTML=`<div class="round">${rtop(100,true)}<div class="res"><span class="tag">${ids.map(x=>"#"+x).join(", ")} → ${L().statuses[st]}</span><div class="n" style="margin-top:24px;color:${{green:"var(--good)",yellow:"var(--warn)",red:"var(--crit)"}[st]}">${{green:"✓",yellow:"~",red:"✗"}[st]}</div><div class="v">${{green:L().g,yellow:L().y,red:L().r}[st]}</div><div class="xp">+${xp} XP</div><div class="mom">${momTiles(was,xpWas)}</div></div>
         <div class="act" style="flex-direction:row;gap:12px;margin-top:36px"><button class="btn green full big" id="hm">${L().home} ${kbd("Enter",1)}</button></div></div>`;
-      wireQuit(); $("#hm").onclick=()=>location.hash="home"; document.onkeydown=e=>{if(e.key==="Enter"||e.key==="Escape")location.hash="home"}; };
+      rerender=null; wireQuit(); $("#hm").onclick=()=>location.hash="home"; document.onkeydown=e=>{if(e.key==="Enter"||e.key==="Escape")location.hash="home"}; };
     app.querySelectorAll(".score button").forEach(b=>b.onclick=()=>scoreIt(b.dataset.s));
     document.onkeydown=e=>{if(e.key==="1")scoreIt("green");else if(e.key==="2")scoreIt("yellow");else if(e.key==="3")scoreIt("red");else if(e.key==="Escape")location.hash="home"};
   };
@@ -599,13 +637,13 @@ function playVoice(id){
 function quick(){
   const d=due().slice(0,3).map(i=>i.id); const nn=nextNew(); const ids=d.length?d:(nn?[nn.id]:[17]); combo=0;
   const qs=buildTF(ids,8);
-  runTF(qs,acc=>{ const ts=ids.map(ticketFor).filter(Boolean); const gq=shuffle(ts.flatMap(t=>(window.DRILLS[t.n]?.cloze?.[lang]||[]).map(s=>({s,t})))).slice(0,5);
+  runTF(qs,acc=>{ const ts=ids.map(ticketFor).filter(Boolean); const gq=shuffle(ts.flatMap(t=>clozeQs(t))).slice(0,5);
     runGap(gq,g=>finish(ids[0],"quick",acc.correct+g.correct,qs.length+g.total,acc.xp+g.xp,ids,acc.missedQ.concat(g.missedQ))); },L().quick);
 }
 
 // ---------- router ----------
 function route(){
-  document.onkeydown=null; try{speechSynthesis.cancel()}catch{} window.scrollTo(0,0);
+  document.onkeydown=null; rerender=null; try{speechSynthesis.cancel()}catch{} window.scrollTo(0,0);
   if(needLogin) return loginScreen();
   const h=location.hash.slice(1)||"home"; const [scr,a,b]=h.split("/");
   if(scr==="play"){const id=+a; if(!byId(id)) return home(); ({tf:playTF,gap:playGap,order:playOrder,voice:playVoice}[b]||home)(id); return;}
