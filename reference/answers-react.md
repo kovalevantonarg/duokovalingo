@@ -168,7 +168,7 @@ useEffect(() => {
 > **Default**: пиши без useMemo/useCallback. Добавляй когда видишь конкретный rerender или slow compute в Profiler.
 
 ### React Compiler (новый!)
-React 19+ имеет experimental compiler, который **автоматически memoize** где нужно. Если он включён — useMemo/useCallback можно во многих местах удалить.
+React Compiler — это build-time инструмент (Babel-плагин `babel-plugin-react-compiler`), а не фича рантайма React 19. Он **автоматически мемоизирует** компоненты и значения, и тогда большую часть useMemo/useCallback можно не писать. Работает лучше всего с React 19, но поддерживает и 17/18 (для них в конфиге задаётся target, детали в доках). Частая ошибка на интервью: сказать «компилятор есть только в React 19».
 
 ### Sources
 - [React docs — useMemo](https://react.dev/reference/react/useMemo)
@@ -356,7 +356,7 @@ Browser receives:
 ## #15 React Server Components (RSC)
 
 ### Что это
-Компоненты, которые **рендерятся ТОЛЬКО на сервере** и отправляют клиенту специальный formattedRSC payload (не HTML, не JSON).
+Компоненты, которые **рендерятся ТОЛЬКО на сервере** и отправляют клиенту специальный RSC payload (свой wire-формат, не HTML и не JSON).
 
 ### Отличие от SSR
 
@@ -473,19 +473,25 @@ function MyForm() {
 ### useOptimistic
 Оптимистичные UI updates до того как server action завершится.
 ```jsx
-const [optimisticTodos, addOptimistic] = useOptimistic(todos);
+const [optimisticTodos, addOptimistic] = useOptimistic(
+  todos,
+  (current, newTodo) => [...current, { ...newTodo, pending: true }]
+);
 
 async function handleSubmit(formData) {
-  addOptimistic({ id: 'temp', text: formData.get('text'), pending: true });
-  await createTodo(formData);
+  addOptimistic({ id: crypto.randomUUID(), text: formData.get('text') });
+  await createTodo(formData);   // вызывается внутри form action / transition
 }
 ```
+Второй аргумент (reducer) формально необязательный, но без него `addOptimistic(todo)` не добавит элемент, а **заменит весь список одним объектом**. Для списков reducer нужен всегда. Второй плюс reducer'а: если `todos` поменялся, пока action в полёте, React пересчитает оптимистичное состояние поверх свежего списка.
+
+Мостик к AI-UI: ровно так показывается сообщение пользователя в чате до ответа сервера — сразу в ленте, с pending-состоянием, а после подтверждения заменяется настоящим.
 
 ### Document metadata in components
 `<title>`, `<meta>` теперь работают прямо в JSX (раньше нужен был react-helmet).
 
-### React Compiler (experimental)
-Auto-memoization без useMemo/useCallback.
+### React Compiler
+См. #11 — там разобрано, что это build-time плагин и с какими версиями React работает.
 
 ### `ref` as prop
 Больше не нужен `forwardRef`:
@@ -602,6 +608,40 @@ function useFetch<T>(url: string) {
 ### Drill 4 — Optimized list with React.memo + useCallback
 Реализуй TodoList где adding/removing item не rerender'ит другие items.
 
+```jsx
+const Row = memo(function Row({ todo, onRemove }) {
+  return (
+    <li>
+      {todo.text}
+      <button onClick={() => onRemove(todo.id)}>×</button>
+    </li>
+  );
+});
+
+function TodoList() {
+  const [todos, setTodos] = useState([]);
+
+  // Стабильная ссылка: функциональный setState, поэтому deps пустые
+  const remove = useCallback(id => {
+    setTodos(ts => ts.filter(t => t.id !== id));
+  }, []);
+
+  const add = text =>
+    setTodos(ts => [...ts, { id: crypto.randomUUID(), text }]);
+
+  return (
+    <ul>
+      {todos.map(t => <Row key={t.id} todo={t} onRemove={remove} />)}
+    </ul>
+  );
+}
+```
+Почему это работает:
+- `onRemove` одна и та же функция для всех строк и между рендерами. Если бы я передавал `() => remove(t.id)` прямо в map, у каждой строки на каждом рендере был бы новый проп, и `memo` ничего бы не дал.
+- Объекты неизменённых todo остаются теми же ссылками (`filter` и spread их не копируют), поэтому shallow compare в `memo` проходит.
+- `key={t.id}`, а не индекс: при удалении из середины с индексом-ключом React сопоставит строки со сдвигом, и memo будет сравнивать не те пропсы (см. #13).
+- Цена: memo сам стоит сравнения пропсов на каждый рендер. На списке из 10 строк это экономия ни на чём; я бы сначала замерил профайлером, есть ли проблема. С React Compiler большую часть этого кода писать руками не нужно.
+
 ---
 
 ## What to drill before first interview
@@ -611,4 +651,4 @@ function useFetch<T>(url: string) {
 3. Объясни различие RSC и SSR за 60 секунд
 4. Реши проблему: "у нас Context Provider rerender'ит всё дерево, что делать?" — 3 варианта решения
 
-Last updated: 2026-05-08
+Last updated: 2026-09-22

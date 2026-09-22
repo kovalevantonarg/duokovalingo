@@ -21,7 +21,19 @@
 | Sat | System design | Drill 2 system design problems |
 | Sun | Behavioral | Refine 3 STAR stories вслух |
 
-Повторить второй раз с другими вопросами на каждой темe.
+Неделя 2 — не повтор, а то, чего нет в неделе 1:
+
+| День | 30 мин до build | Что |
+|------|------|------|
+| Mon | Agents & tool use | Loop, stopping criteria, HITL, injection через tool output |
+| Tue | Evals & quality | Golden set, LLM-as-judge, regression в CI |
+| Wed | Browser & web platform | Rendering pipeline, Core Web Vitals, a11y стриминга |
+| Thu | LLM engineering #2 | Fine-tuning vs RAG vs prompting, cost levers |
+| Fri | Coding rep | Tool-use агент с нуля |
+| Sat | System design | 2 новые задачи (не те, что в неделе 1) |
+| Sun | Behavioral | Конфликт, фидбэк, слабость, «почему сейчас» |
+
+Agents и Evals — именно то, где middle отличается от senior, поэтому им отдельные дни, а не «если останется время».
 
 ---
 
@@ -36,7 +48,7 @@
 3. **`this` в JS** — 4 правила. Что такое arrow function и что она делает с `this`?
 4. **`var` vs `let` vs `const`** — разница в hoisting, scope, temporal dead zone.
 5. **Promises**: `.then` chain vs async/await. Что вернёт `Promise.all` если один зафейлит? А `Promise.allSettled`? `Promise.race`?
-6. **Async/await pitfall**: что делает `for...of` с await vs `forEach` с await? (forEach НЕ ждёт)
+6. **Async/await pitfall**: что делает `for...of` с await vs `forEach` с await?
 7. **Debouncing vs throttling** — реализуй каждый. Когда что использовать.
 8. **Деструктуризация** — `const { a: { b = 'default' } = {} } = obj` — что произойдёт если obj.a undefined?
 9. **TypeScript: generics** — что такое `T extends U`, conditional types, infer.
@@ -123,7 +135,7 @@
 3. **Design Cursor's autocomplete** — debouncing, partial completion, cancellation, ranking.
 4. **Design a multi-tenant LLM app** — rate limiting per user, cost tracking, prompt isolation, key management.
 5. **Design "chat with my docs"** — upload, parse, chunk, embed, store, retrieve, answer.
-6. **Design a real-time collaboration editor** (Resend Email Editor):  CRDTs vs OT, presence, conflict resolution.
+6. **Design a real-time collaboration editor** (Resend Email Editor): CRDTs vs OT, presence, conflict resolution. Реальный кейс: у Resend есть multiplayer-редактор писем, сделан на Liveblocks — прочитай их пост перед любым разговором с Resend ([resend.com/blog/multiplayer-editor](https://resend.com/blog/multiplayer-editor)).
 7. **How would you cache LLM responses?** — semantic cache vs exact match. When to cache, when not.
 8. **How would you implement streaming responses end-to-end?** — SSE vs WebSocket vs HTTP streaming. Backpressure.
 9. **Rate limiting LLM API calls** — token bucket, leaky bucket, sliding window. Per user vs global.
@@ -156,7 +168,7 @@
 5. **Few-shot prompting** — пример, когда работает, когда не помогает.
 6. **Chain of thought** — что это, "let's think step by step", когда полезно.
 7. **Structured output** — JSON mode vs function calling vs Zod schema. Когда что у Anthropic/OpenAI.
-8. **Function calling / tool use** — как работает (модель не вызывает функцию сама, она возвращает intent), как ты loop'ишь.
+8. **Function calling / tool use** — как это работает на самом деле, кто исполняет функцию, и как ты строишь loop.
 9. **Streaming responses** — SSE format `data: {...}\n\n`. Как parse в JS. Как UI показать частичный ответ.
 10. **Token economics** — input tokens vs output tokens (output обычно в 3-5x дороже у Claude/GPT). Cost optimization tactics.
 11. **Hallucinations** — что это, как минимизировать (RAG, structured output, eval, temp=0).
@@ -183,7 +195,7 @@
 2. **Chunking strategies** — fixed size, semantic, sliding window. Trade-offs.
 3. **Chunk size** — почему 200-500 tokens обычно? Что произойдёт если 50? 5000?
 4. **Embeddings** — что такое vector embedding intuitively. Cosine similarity vs dot product vs Euclidean.
-5. **Embedding models** — OpenAI text-embedding-3, Voyage AI, Cohere. Размерность (768, 1536, 3072). Trade-off.
+5. **Embedding models** — OpenAI text-embedding-3, Voyage AI, Cohere. Какие размерности бывают и какой trade-off у большей размерности.
 6. **Vector databases** — Pinecone, Weaviate, pgvector, Chroma, Qdrant. Когда что.
 7. **pgvector** — как индексируется (HNSW vs IVF). Зачем.
 8. **Top-k retrieval** — типичные значения (5-10), почему не 100.
@@ -214,7 +226,7 @@
 4. **Stopping criteria** — final answer vs max iterations vs error. Как избежать infinite loop.
 5. **Memory в агенте** — short-term (conversation), long-term (vector DB, summaries).
 6. **Multi-agent vs single-agent** — когда multi нужен. Pitfall: complexity explosion.
-7. **LangGraph vs LangChain vs vanilla** — когда что. Honest opinion (LangChain критикуют за over-abstraction; LangGraph честнее как state machine).
+7. **LangGraph vs LangChain vs vanilla** — когда что, и что заставило бы тебя сменить выбор посреди проекта. Мнение формируй своё: если компания сидит на LangChain, заученный хейт против него вредит.
 8. **Agent observability** — Langfuse, Helicone, LangSmith. Что трекать (tokens, latency, tool calls, errors).
 9. **Error handling в агенте** — что делать если tool вернул ошибку? Retry с другим prompt? Surface to user?
 10. **Cost control** — max iterations, timeout, budget per task.
@@ -282,7 +294,7 @@
 - Time-box: 50% build, 25% tests, 25% README + polish.
 - README: explain decisions, trade-offs, what you'd do differently.
 - **Demo video (3 min Loom)** — часто впечатляет больше, чем код.
-- Don't over-engineer. **"v0, not v1"** (Resend's mantra).
+- Don't over-engineer. **"a v0, not a v1"** — формулировка из принципа «Keep shipping» на [resend.com/about](https://resend.com/about).
 
 ---
 
@@ -326,7 +338,7 @@
 1. **"What's the hardest engineering problem the team is wrestling with right now?"** — показывает что ты думаешь как контрибьютор
 2. **"How do you measure quality of LLM features in production?"** — показывает что ты понимаешь evals
 3. **"What does a product engineer ship in their first month here?"** — конкретика, не abstraction
-4. **"How do you decide between using a framework like LangChain vs building from scratch?"** — провоцирует discussion на techincal opinion
+4. **"How do you decide between using a framework like LangChain vs building from scratch?"** — провоцирует discussion на technical opinion
 5. **"What's a recent decision the team made that you disagreed with, but went along with?"** — psychological safety probe
 6. **"How does the team think about AI feature reliability vs shipping speed?"** — показывает sensitivity к их trade-offs
 7. **"What's the cultural difference between this company and your previous places?"** — личный insight

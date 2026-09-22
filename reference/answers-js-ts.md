@@ -324,7 +324,7 @@ type B = MyAwaited<Promise<Promise<number>>>; // number
 | `Omit<T, K>` | без указанных ключей | `Omit<User, 'password'>` |
 | `Record<K, V>` | dict с ключами K и значениями V | `Record<string, number>` |
 | `Exclude<T, U>` | T минус U (для unions) | `Exclude<'a'\|'b', 'a'>` → `'b'` |
-| `Extract<T, U>` | пересечение | `Extract<'a'\|'b'\|number, string>` → `'a'\|'b'` |
+| `Extract<T, U>` | оставить члены union, совместимые с U (это не `&`) | `Extract<'a'\|'b'\|number, string>` → `'a'\|'b'` |
 | `NonNullable<T>` | убирает null и undefined | `NonNullable<string\|null>` → `string` |
 | `ReturnType<T>` | тип возврата функции | `ReturnType<typeof fn>` |
 | `Parameters<T>` | tuple типов параметров | `Parameters<typeof fn>` |
@@ -482,17 +482,21 @@ async function mapWithLimit<T, R>(
   limit: number,
   fn: (item: T) => Promise<R>
 ): Promise<R[]> {
-  const results: R[] = [];
+  const results: R[] = new Array(items.length);
   const executing = new Set<Promise<void>>();
-  for (const item of items) {
-    const p = fn(item).then(r => { results.push(r); executing.delete(p as any); });
-    executing.add(p as any);
+  for (const [i, item] of items.entries()) {
+    const p = fn(item).then(r => {   // тип Promise<void> выводится сам, каст не нужен
+      results[i] = r;          // по индексу, а не push: сохраняем порядок входа
+      executing.delete(p);
+    });
+    executing.add(p);
     if (executing.size >= limit) await Promise.race(executing);
   }
   await Promise.all(executing);
   return results;
 }
 ```
+Два места, которые интервьюер в этом коде проверяет специально: `results.push` вернул бы результаты в порядке завершения, а не в порядке входа, поэтому пишем по индексу; и никаких `as any` — типы здесь сходятся сами (проверено `tsc --strict`), а лишний каст на ревью читается как «не понимаю, что тут происходит».
 
 ---
 
@@ -505,4 +509,4 @@ async function mapWithLimit<T, R>(
 
 Если все 4 — done без подглядываний → JS/TS секцию **знаешь на интервью уровень**.
 
-Last updated: 2026-05-08
+Last updated: 2026-09-22

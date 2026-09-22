@@ -27,20 +27,22 @@ Total: 60-90 секунд устно. Если длиннее — interviewer т
 
 ## Q1 — "Tell me about yourself" (60-90 секунд)
 
+> **Таймлайн — одна версия во всех ответах.** Публичный пивот с апреля 2026. Проект 1 (Bro Code Chat, RAG с эвалами 9/9) — shipped и живой. Проект 2 (research-агент) — в работе. `[X months]` — когда реально начались первые LLM-эксперименты до публичного пивота: вписать одну цифру и не менять между ответами. Никаких «day N of 90»: формат с дедлайном снят, а счётчик дней на собесе мгновенно устаревает и вызывает вопрос «а что было потом».
+
 ### Структура (3 части по ~20с)
 
 **Part 1 — Who I am professionally** (15-20s)
 > "I'm Anton Kovalev, a senior frontend engineer with 10 years of experience — mostly React, TypeScript, Next.js, design systems, and performance work. Currently at dats.team, based in Buenos Aires."
 
 **Part 2 — What I'm doing now** (20-30s)
-> "Six months ago I started a deliberate pivot into AI engineering. I'm running a 90-day public journey — three shipped projects, weekly writing, all on kovalevanton.xyz. Right now I'm 25 days in, working on a 'chat with docs' RAG project as proof one. The throughline: AI engineering = product engineering for a new substrate, and frontend skills (UX, streaming UI, state management) translate directly."
+> "Since April I've been doing a deliberate, public pivot into AI engineering, building in the open on kovalevanton.xyz. Project one, a chat-with-docs RAG app with evals, is shipped and live; now I'm building a research agent on the Anthropic SDK. The throughline: AI engineering = product engineering for a new substrate, and frontend skills (UX, streaming UI, state management) translate directly."
 
 **Part 3 — Why this conversation** (15-20s)
 > "I'm specifically looking at small AI startups where product engineers ship, not coordinate. [Company] caught my attention because [1 specific reason — see Q3]. That's why I'm here."
 
 ### Ready-to-deliver English version
 
-> "I'm Anton, a senior frontend engineer — 10 years, mostly React, TypeScript, design systems and performance. Based in Buenos Aires, currently at dats.team. Six months ago I started a deliberate pivot into AI engineering — running a 90-day public build journey at kovalevanton.xyz. Three projects, weekly writeups, working in the open. Day 25 right now, building a chat-with-docs RAG demo as project one. Frontend skills — streaming UI, state, accessibility, performance — translate directly to AI products. I'm looking specifically at small teams where product engineers ship features end-to-end. [Company-specific hook]."
+> "I'm Anton, a senior frontend engineer — 10 years, mostly React, TypeScript, design systems and performance. Based in Buenos Aires, currently at dats.team. Since April I've been pivoting into AI engineering in public, at kovalevanton.xyz. I shipped a chat-with-docs RAG app — full pipeline, evals nine out of nine, live — and now I'm building a research agent that turns a company name into a cited dossier. Frontend skills — streaming UI, state, accessibility, performance — translate directly to AI products. I'm looking specifically at small teams where product engineers ship features end-to-end. [Company-specific hook]."
 
 ### Drilling tips
 
@@ -68,14 +70,14 @@ Total: 60-90 секунд устно. Если длиннее — interviewer т
 > "After ~10 years of building React/TS frontends, I noticed I was solving the same UX problems on different products — auth flows, design systems, infinite scrolls, perf optimization. The interesting work was shifting."
 
 **Action (что сделал в response)**
-> "Last year I started building LLM apps as side projects. First a chat with bro-mode persona [Bro Code Chat], then a small RAG over my own notes. The technical surface was new — streaming UIs, agentic loops, eval harnesses, prompt engineering — but my frontend toolkit transferred almost 100%. Just applied to a substrate that didn't exist 18 months ago."
+> "[X months] ago I started building LLM apps as side projects, and this spring I went all in, publicly. The first real one is Bro Code Chat: a RAG app over a book, with retrieval, reranking, streaming and an eval set, and it's live. The technical surface was new — streaming UIs, agentic loops, eval harnesses, prompt engineering — but my frontend toolkit transferred almost entirely."
 
 **Conviction (why now committed)**
 > "AI products live or die on UX. The streaming chat, the citation interaction, the agentic flow — that's frontend depth + LLM plumbing. There aren't many engineers with both. So I'm doing 90 days in public — three shipped projects, all writeups on my site — to make that combination undeniable."
 
 ### Ready English version (60-70s)
 
-> "After 10 years of frontend, I noticed I was solving the same UX problems on different products. Last year I started building LLM apps on the side — first a chat persona project, then a RAG demo. The technical surface was genuinely new — streaming, agents, evals — but my React + TypeScript skills transferred almost 100%. AI products live or die on UX, and there aren't many engineers who do both deep frontend and the LLM plumbing. That's why I'm doing 90 days in public — three shipped projects with writeups — to make that combination undeniable. Day 25 right now."
+> "After 10 years of frontend, I noticed I was solving the same UX problems on different products. [X months] ago I started building LLM apps on the side, and this spring I made it a public pivot. I shipped a RAG app with evals and I'm now building a research agent. The technical surface was genuinely new — streaming, agents, evals — but my React + TypeScript skills transferred almost 100%. AI products live or die on UX, and there aren't many engineers who do both deep frontend and the LLM plumbing. That's why I'm building in public, shipped projects with writeups, to make that combination undeniable."
 
 ### Variants по компании
 
@@ -215,12 +217,14 @@ For каждой target company, заранее напиши 3-sentence answer. 
 **A**ction: 1) understood their view 2) presented mine с evidence 3) sought outside input / data / experiment 4) agreed на decision (mine / theirs / hybrid)
 **R**esult: outcome + retrospective
 
-### Two flavors
+### Статус: своей реальной истории пока нет
+
+Ниже два шаблона формы, а не готовые ответы. Детали во втором (auth state при фоновом refresh) — пример того, как звучит конкретика, а не факт из твоей биографии: произносить его как свой нельзя. До первого скрина: выбрать реальный случай из «Story options» внизу и вписать его в одну из форм. Этот же вопрос отрабатывается в приложении (билет «Конфликт, обратная связь, слабость»).
 
 **Flavor 1: I was right (надо carefully — show humility)**
 > "Tech lead wanted X, I argued for Y based on [data/principle]. We disagreed for a week. Eventually I proposed a small POC я built over weekend showing [evidence]. He agreed Y was better. We shipped Y, [outcome]. Looking back — я could've started с POC instead of arguing first. Lesson: build evidence faster than arguing."
 
-**Flavor 2: I was wrong (often more impressive)**
+**Flavor 2: I was wrong (often more impressive)** — *пример формы, детали заменить своими*
 > "Я pushed for X для new feature. Senior engineer disagreed, argued Y. I had strong opinion based on prior experience, но didn't have direct evidence. We agreed на small spike — он built Y prototype, я built X. After 2 days было clear Y handled edge cases I hadn't seen — auth state during background refresh. We went с Y. Lesson: 'I've done this before' ≠ 'I'm right here'. Now я default к prototype-first when disagreement is technical."
 
 ### Anti-patterns
@@ -289,7 +293,9 @@ For каждой target company, заранее напиши 3-sentence answer. 
 
 ### Template
 
-> "Two years out, I want to be a deeply effective AI product engineer — owning meaty surface areas of an AI product end-to-end. That probably looks like: senior or staff IC at a small-to-mid AI startup, leading 1-2 features that real users depend on, mentoring 1-2 newer engineers, and continuing to write publicly. I'm not trying to climb a management ladder — I'm trying to deepen craft в AI product engineering specifically. If [company] is the right fit, that 2-year arc happens here."
+> "My bet is that the hardest unsolved part of AI products is the layer between the model and the user: agent UIs that show what's happening, streaming that doesn't feel broken, eval results that actually change the product. In two years I want to be the person a team trusts with that layer end to end — as a senior IC, not a manager, shipping it at [company]. And I want a public track record to show for it: [one concrete artifact you'd want to exist by then — an open-source tool, a writeup series, a shipped feature]."
+
+Черновик ставки — подправь под то, во что реально веришь. Главное, чтобы в ответе была одна конкретная ставка и один конкретный артефакт: «deeply effective, meaty surface areas» не отличается от ответа любого другого кандидата.
 
 ### Variants
 
@@ -378,15 +384,15 @@ For each story:
 
 ### The full version (90s)
 
-> "I've been a frontend engineer for 10 years — React, TypeScript, design systems, performance, the usual modern stack. About 18 months ago I started building LLM apps as side projects — a chat persona project I called Bro Code Chat, then a RAG demo over my notes, then experiments with agents.
+> "I've been a frontend engineer for 10 years — React, TypeScript, design systems, performance, the usual modern stack. About [X months] ago I started building LLM apps as side projects, and this spring I went all in: Bro Code Chat, a RAG app with evals that's live, then agents.
 
-> Two things became obvious. One: the technical surface of AI engineering — streaming UIs, tool use loops, eval harnesses, prompt engineering — was new and interesting to me in a way frontend hadn't been for years. Two: my frontend toolkit transferred almost entirely. UX state machines, perf-aware streaming renders, accessibility for chat, design systems for AI components — all the same skills, applied to a substrate that didn't exist 18 months ago.
+> Two things became obvious. One: the technical surface of AI engineering — streaming UIs, tool use loops, eval harnesses, prompt engineering — was new and interesting to me in a way frontend hadn't been for years. Two: my frontend toolkit transferred almost entirely. UX state machines, perf-aware streaming renders, accessibility for chat, design systems for AI components — all the same skills, applied to a substrate that's only a few years old.
 
-> So six months ago I committed publicly. 90-day journey, three shipped projects, weekly writing. I'm at day 25 right now, working on chat-with-docs. The throughline is: AI products live or die on UX, and there aren't many engineers who do both deep frontend AND the LLM plumbing. I want to be one of them, somewhere where I can ship that combo daily."
+> So in April I committed publicly: building in the open, shipped projects, writing as I go. Chat-with-docs is shipped with evals; now I'm building a research agent. The throughline is: AI products live or die on UX, and there aren't many engineers who do both deep frontend AND the LLM plumbing. I want to be one of them, somewhere where I can ship that combo daily."
 
 ### Trim to 30s (recruiter screens)
 
-> "10 years frontend, started building LLM apps 18 months ago, hit on the fact that frontend skills + LLM plumbing is a rare combo. So I'm doing 90 days in public — 3 projects, weekly writing on kovalevanton.xyz. Day 25. Looking for AI startup where product engineers ship that combo end-to-end."
+> "10 years frontend, started building LLM apps [X months] ago, hit on the fact that frontend skills + LLM plumbing is a rare combo. So I'm building in public on kovalevanton.xyz: a RAG app with evals is live, a research agent is in progress. Looking for AI startup where product engineers ship that combo end-to-end."
 
 ### Personalize hooks (per company)
 
@@ -442,4 +448,4 @@ Total: ~5 hours. Repeat next week. To week 4 (interview reps starting) — you s
 - [interview-prep.md](interview-prep.md) — three-tier strategy, sequencing
 - [interview-log.md](interview-log.md) — записи каждого реального раунда
 
-Last updated: 2026-05-09
+Last updated: 2026-09-22
