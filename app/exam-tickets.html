@@ -119,25 +119,25 @@
 <script src="sources.js"></script>
 <script>
 const UI={
- ru:{sub:"Вытяни билет. Отвечай — печатая или вслух, 3–4 минуты на три вопроса. Эталон только после.",
+ ru:{sub:"Новая тема? Начни с «Разбора с нуля». Для самопроверки ответь на три вопроса, затем сравни с эталоном.",
      draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
      meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",src:"Источники",fixedN:"исправлено",was:"Было: ",said:"Источник: ",
-     verif:n=>`Каждый факт сверён с первоисточником ${n}. Под ответом — «Источники»: утверждение, что говорит источник, ссылка. Формулировки утверждений на английском, как в документации.`,
+     verif:n=>`Под ответом — журнал источников от ${n}: утверждения, пояснения и ссылки. Для изучения механизма открой «Разбор с нуля». Конкретные лимиты и параметры зависят от модели и версии API.`,
      st:{ok:"✓ подтверждено",fix:"исправлено по источнику",fix2:"исправлено при перепроверке",soft:"смягчено: первоисточника нет"},
      ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
      idle:"Ни одного билета не вытянуто.<br>Печатать можно где угодно — главное доставать из головы, а не узнавать в готовом тексте.",
      resetd:"Сброшено. Все билеты снова в колоде.",
-     hint:"Отвечай, пока не иссякнешь. Только потом — «Показать эталон». Откроешь раньше — это чтение вместо вспоминания, билет сгорел.",
+     hint:"Если тема новая, сначала изучи разбор. Если уже знакома — попробуй ответить без подсказки и только потом открой эталон.",
      foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>Оценку 0–10 записывай в <code>learning-log.md</code>. Здесь ничего не сохраняется — это экзаменатор, а не трекер."},
- en:{sub:"Draw a ticket. Answer by typing or out loud, 3–4 minutes for three questions. Reference answer only after.",
+ en:{sub:"New topic? Start with the detailed lesson in Russian. To practise recall, answer the three questions before opening the reference.",
      draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
      meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",src:"Sources",fixedN:"corrected",was:"Was: ",said:"Source says: ",
-     verif:n=>`Every fact checked against a primary source on ${n}. Under each answer, Sources lists the claim, what the source says, and the link.`,
+     verif:n=>`The source ledger dated ${n} lists claims, explanations and links. Use the detailed lesson to learn the mechanism. Exact limits and parameters depend on the model and API version.`,
      st:{ok:"✓ verified",fix:"corrected per source",fix2:"corrected on re-check",soft:"hedged: no primary source found"},
      ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
      idle:"No ticket drawn yet.<br>Typing works anywhere — what matters is producing from memory, not recognising a finished text.",
      resetd:"Reset. All tickets back in the deck.",
-     hint:"Answer until you run dry. Only then hit Show reference. Opening early turns recall into reading and wastes the ticket.",
+     hint:"For a new topic, read the lesson first. For a familiar topic, try answering from memory before opening the reference.",
      foot:"The reference is written the way the answer sounds out loud — connected speech, not a checklist. Judge yourself on whether you could say it, not on ticking items off.<br><br>Typing is the default and works anywhere. Out loud once or twice a week, when the house is quiet — fluency under pressure only comes from speaking.<br><br>Log your 0–10 in <code>learning-log.md</code>. Nothing is saved here — this is an examiner, not a tracker."}
 };
 
@@ -214,6 +214,7 @@ function show(t){
       <div class="tnum">${lang==="ru"?"Билет":"Ticket"} ${t.n} · ${t.tag}</div>
       <div class="ttopic">${d.topic}</div>
       <div class="tmeta">${L().meta}</div>
+      <p><a href="study.html#t${t.n}" style="color:var(--acc);font-weight:600">${lang==="ru"?"Разбор с нуля: объяснение, примеры и практика →":"Detailed lesson, examples and practice (Russian) →"}</a></p>
       <ol class="qs">${d.qs.map(q=>`<li>${q}</li>`).join("")}</ol>
       <textarea id="mine" placeholder="${L().ph}"></textarea>
       <div class="tools">

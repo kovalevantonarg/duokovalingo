@@ -347,7 +347,7 @@ function wireHeader(){ const lo=$("#lo"); if(lo) lo.onclick=async()=>{await fetc
 const MODE_ICON={voice:I.mic14,tf:I.bolt13,gap:I.pen,order:I.sort,ticket:I.doc};
 function chips(id,hot){ const t=ticketFor(id); if(!t) return ""; const d=window.DRILLS[t.n]||{};
   const b=(m,label)=>`<button class="chip${hot===m?" hot":""}" onclick="location.hash='play/${id}/${m}'">${MODE_ICON[m]}${label}</button>`;
-  return `<div class="chips">${b("voice",L().voice)}${b("tf","T/F")}${d.cloze?b("gap",L().gap):""}${d.steps?b("order",L().order):""}<a class="chip" href="exam-tickets.html#t${t.n}">${I.doc}${L().ticket} ${t.n}</a></div>`; }
+  return `<div class="chips">${b("voice",L().voice)}${b("tf","T/F")}${d.cloze?b("gap",L().gap):""}${d.steps?b("order",L().order):""}<a class="chip" href="study.html#t${t.n}">${lang==="ru"?"Разбор с нуля":"Learn (RU)"}</a><a class="chip" href="exam-tickets.html#t${t.n}">${I.doc}${L().ticket} ${t.n}</a></div>`; }
 function itemRow(i,sub){ const st=i.st||"new"; return `<div class="item"><span class="sw ${st}${isDue(i)?" due":""}"></span><div class="it"><div class="t"><span class="id">#${i.id}</span>${esc(i.t)}</div><div class="s">${sub}</div>${chips(i.id)}</div>${chips(i.id)}</div>`; }
 function rtop(pct,ok){ return `<div class="rtop"><button class="x" id="quit" aria-label="${L().quit}">${I.x}</button><div class="pbar${ok?" ok":""}" id="pbar"><i style="width:${pct}%"></i></div><span class="combo" id="combo"></span><div class="seg rl" id="rl" role="group" aria-label="language"><button data-l="ru" class="${lang==="ru"?"on":""}">RU</button><button data-l="en" class="${lang==="en"?"on":""}">EN</button></div></div>`; }
 // switching language mid-round redraws the current screen in place: same question, same answer state, no progress lost

@@ -2,6 +2,14 @@
 
 Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 
+## Detailed lessons
+
+`study.html#t1` opens the Russian lesson for ticket 1; all 50 tickets have one.
+Edit `lessons-content.md`, then run `node build-lessons.mjs` to regenerate the
+committed `lessons.js`. No runtime Markdown library or deployment build is needed.
+`node build-lessons.mjs --check` verifies coverage, required sections and freshness.
+Interview references remain bilingual in `tickets.js`; lessons are in Russian.
+
 ## Vercel project `drill` (root directory: `app`)
 
 Environment variables (all targets):
