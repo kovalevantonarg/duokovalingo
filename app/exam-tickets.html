@@ -63,6 +63,24 @@
   .atext{font-size:14.5px;line-height:1.65;color:var(--fg);margin:0}
   .kill{margin-top:6px;padding:11px 13px;background:#1d1512;border-left:2px solid var(--bad);border-radius:0 6px 6px 0;font-size:13px;color:#e8b6ae;line-height:1.6}
   .kill b{color:#ffd9d2}
+  .verif{font-size:11.5px;color:var(--dim2);margin:-6px 0 14px;line-height:1.5}
+  .src{margin:8px 0 0;font-size:12px}
+  .src summary{cursor:pointer;color:var(--dim2);list-style:none;display:inline-flex;gap:6px;align-items:center;font-size:11.5px;letter-spacing:.04em;padding:3px 0}
+  .src summary::-webkit-details-marker{display:none}
+  .src summary::before{content:"▸";font-size:10px;transition:transform .15s}
+  .src[open] summary::before{transform:rotate(90deg)}
+  .src .sfix{color:#e8b86a}
+  .src ul{list-style:none;margin:8px 0 4px;padding:0;display:flex;flex-direction:column;gap:8px}
+  .src li{background:var(--panel2);border-radius:6px;padding:8px 10px;border-left:2px solid var(--acc2);line-height:1.5}
+  .src li.s-fix,.src li.s-fix2{border-left-color:#e8b86a}
+  .src li.s-soft{border-left-color:var(--dim2)}
+  .src .badge{display:inline-block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);margin-bottom:3px}
+  .src li.s-fix .badge,.src li.s-fix2 .badge{color:#e8b86a}
+  .src .sc{color:var(--fg);font-size:12.5px}
+  .src li.s-fix .sc{color:var(--dim)}
+  .src .se{color:var(--dim);font-size:12px;margin-top:2px}
+  .src a{display:block;margin-top:4px;color:var(--acc2);font-family:var(--mono);font-size:11px;word-break:break-all;text-decoration:none}
+  .src a:hover{text-decoration:underline}
   code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:.92em;color:var(--fg)}
   .idle{color:var(--dim2);text-align:center;padding:48px 16px;font-size:14px;line-height:1.75}
   .list{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
@@ -98,11 +116,14 @@
 <footer id="foot"></footer>
 
 <script src="tickets.js"></script>
+<script src="sources.js"></script>
 <script>
 const UI={
  ru:{sub:"Вытяни билет. Отвечай — печатая или вслух, 3–4 минуты на три вопроса. Эталон только после.",
      draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
-     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",
+     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",src:"Источники",fixedN:"исправлено",was:"Было: ",said:"Источник: ",
+     verif:n=>`Каждый факт сверён с первоисточником ${n}. Под ответом — «Источники»: утверждение, что говорит источник, ссылка. Формулировки утверждений на английском, как в документации.`,
+     st:{ok:"✓ подтверждено",fix:"исправлено по источнику",fix2:"исправлено при перепроверке",soft:"смягчено: первоисточника нет"},
      ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
      idle:"Ни одного билета не вытянуто.<br>Печатать можно где угодно — главное доставать из головы, а не узнавать в готовом тексте.",
      resetd:"Сброшено. Все билеты снова в колоде.",
@@ -110,7 +131,9 @@ const UI={
      foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>Оценку 0–10 записывай в <code>learning-log.md</code>. Здесь ничего не сохраняется — это экзаменатор, а не трекер."},
  en:{sub:"Draw a ticket. Answer by typing or out loud, 3–4 minutes for three questions. Reference answer only after.",
      draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
-     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",
+     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",src:"Sources",fixedN:"corrected",was:"Was: ",said:"Source says: ",
+     verif:n=>`Every fact checked against a primary source on ${n}. Under each answer, Sources lists the claim, what the source says, and the link.`,
+     st:{ok:"✓ verified",fix:"corrected per source",fix2:"corrected on re-check",soft:"hedged: no primary source found"},
      ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
      idle:"No ticket drawn yet.<br>Typing works anywhere — what matters is producing from memory, not recognising a finished text.",
      resetd:"Reset. All tickets back in the deck.",
@@ -125,6 +148,15 @@ const stage=$("stage"), timer=$("timer"), chips=$("chips");
 const L=()=>UI[lang];
 const D=t=>t[lang];
 
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short=u=>{try{const x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname+x.hash).replace(/\/$/,"")}catch{return u}};
+function srcList(n,slots){
+  const xs=((window.SOURCES||{})[n]||[]).filter(x=>x.w.some(w=>slots.includes(w))); if(!xs.length) return "";
+  const nf=xs.filter(x=>x.s!=="ok").length, fx=x=>x.s==="fix"||x.s==="fix2";
+  return `<details class="src"><summary>${L().src} · ${xs.length}${nf?` · <span class="sfix">${nf} ${L().fixedN}</span>`:""}</summary><ul>${
+    xs.map(x=>`<li class="s-${x.s}"><div class="badge">${L().st[x.s]}</div>${x.c?`<div class="sc">${x.s==="fix"?L().was:""}${esc(x.c)}</div>`:""}<div class="se">${fx(x)&&x.c?L().said:""}${esc(x.e)}</div>${
+      x.u.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(short(u))}</a>`).join("")}</li>`).join("")}</ul></details>`;
+}
 function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
 function stopTimer(){if(tick){clearInterval(tick);tick=null}}
 function startTimer(){
@@ -212,8 +244,9 @@ function reveal(){
   stage.querySelector(".card").insertAdjacentHTML("beforeend",`
     <div class="ans">
       <h3>${L().std}</h3>
-      ${d.a.map((b,i)=>`<div class="ablock"><div class="aq">${i+1}. ${b.q}</div><p class="atext">${b.t}</p></div>`).join("")}
-      <div class="kill">${L().kill}${d.kill}</div>
+      ${window.SOURCES?`<div class="verif">${L().verif(new Date(window.SOURCES_CHECKED).toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{day:"numeric",month:"long",year:"numeric"}))}</div>`:""}
+      ${d.a.map((b,i)=>`<div class="ablock"><div class="aq">${i+1}. ${b.q}</div><p class="atext">${b.t}</p>${srcList(cur.n,[i])}</div>`).join("")}
+      <div class="kill">${L().kill}${d.kill}</div>${srcList(cur.n,["k","d"])}
     </div>`);
   $("reveal").disabled=true;
 }
