@@ -19,7 +19,7 @@
 @media(min-width:700px){:root{--gut:32px}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font-family:'Golos Text',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45;font-weight:500;-webkit-font-smoothing:antialiased;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+body{background:var(--bg);color:var(--fg);font-family:'Golos Text',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45;font-weight:500;-webkit-font-smoothing:antialiased;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);overflow-x:hidden}
 a{color:var(--blue);text-decoration:none}a:hover{color:#ffa088}
 button{font:inherit;cursor:pointer;color:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -28,7 +28,7 @@ svg{flex:none}
 .sp{flex:1}
 /* header */
 .hdr{display:flex;align-items:center;gap:10px;height:60px;padding:0 var(--gut);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top);box-sizing:content-box}
-.wm{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;color:var(--fg);display:inline-flex;align-items:baseline;gap:7px}.wm:hover{color:var(--fg)}
+.wm{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;color:var(--fg);display:inline-flex;align-items:baseline;gap:7px}.wm:hover{color:var(--fg)}.wmfull{display:none}@media(min-width:700px){.wmfull{display:inline}.wmshort{display:none}}
 .wm small{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase}
 .stat{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:15px;font-family:'Unbounded','Golos Text',sans-serif}.stat.fire{color:var(--fire)}.stat.xp{color:var(--dim)}
 .icb{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -191,7 +191,7 @@ svg{flex:none}
 .meta div{display:flex;flex-direction:column;gap:2px}.meta .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);font-weight:700}.meta .v{font-size:16px;color:var(--fg);font-weight:700;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}.meta .v.ov{color:var(--warn)}
 /* login */
 .login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px var(--gut);gap:18px}
-.login .wm{font-size:30px}.login form{display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px}
+.login .wm{font-size:clamp(22px,7vw,30px)}.login form{display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px}
 .login input{height:52px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:18px;padding:0 16px;outline:none}.login input:focus{border-color:var(--blue)}
 .login .err{color:var(--crit);font-size:14px;font-weight:700;min-height:20px;text-align:center}
 /* motion */
@@ -311,7 +311,7 @@ function beep(ok){ if(!snd) return; try{AC=AC||new (window.AudioContext||window.
 
 // ---------- shared pieces ----------
 const kbd=(k,dk)=>`<span class="kbd${dk?" dk":""}">${k}</span>`;
-function header(){ return `<header class="hdr"><a class="wm" href="#home">duokovalingo<small>core-40</small></a><span class="sp"></span><span class="stat fire">${I.flame}${streak()}</span><span class="stat xp" style="margin-left:6px">${I.bolt}${xpToday()}</span><button class="icb${snd?"":" off"}" id="snd" aria-label="sound" style="margin-left:8px">${I.sound}</button>${DB.auth?`<button class="icb" id="lo" aria-label="${L().logout}" title="${L().logout}">${I.out}</button>`:""}<div class="seg"><button id="ru" class="${lang==="ru"?"on":""}">RU</button><button id="en" class="${lang==="en"?"on":""}">EN</button></div></header>`; }
+function header(){ return `<header class="hdr"><a class="wm" href="#home"><span class="wmfull">duokovalingo</span><span class="wmshort">duo</span><small>core-40</small></a><span class="sp"></span><span class="stat fire">${I.flame}${streak()}</span><span class="stat xp" style="margin-left:6px">${I.bolt}${xpToday()}</span><button class="icb${snd?"":" off"}" id="snd" aria-label="sound" style="margin-left:8px">${I.sound}</button>${DB.auth?`<button class="icb" id="lo" aria-label="${L().logout}" title="${L().logout}">${I.out}</button>`:""}<div class="seg"><button id="ru" class="${lang==="ru"?"on":""}">RU</button><button id="en" class="${lang==="en"?"on":""}">EN</button></div></header>`; }
 function wireHeader(){ const lo=$("#lo"); if(lo) lo.onclick=async()=>{await fetch("/api/logout",{method:"POST"}); DB={items:[],history:[]}; live=false; loginScreen();}; const r=$("#ru"),e=$("#en"),s=$("#snd"); if(r) r.onclick=()=>{lang="ru";localStorage.setItem("drill.lang",lang);route()}; if(e) e.onclick=()=>{lang="en";localStorage.setItem("drill.lang",lang);route()}; if(s) s.onclick=()=>{snd=!snd;localStorage.setItem("drill.snd",snd?"on":"off");s.classList.toggle("off",!snd);beep(true)}; }
 const MODE_ICON={voice:I.mic14,tf:I.bolt13,gap:I.pen,order:I.sort,ticket:I.doc};
 function chips(id,hot){ const t=ticketFor(id); if(!t) return ""; const d=window.DRILLS[t.n]||{};
