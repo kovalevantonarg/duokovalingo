@@ -29,6 +29,7 @@ svg{flex:none}
 /* header */
 .hdr{display:flex;align-items:center;gap:10px;height:60px;padding:0 var(--gut);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top);box-sizing:content-box}
 .wm{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;color:var(--fg);display:inline-flex;align-items:baseline;gap:7px}.wm:hover{color:var(--fg)}.wmfull{display:none}@media(min-width:700px){.wmfull{display:inline}.wmshort{display:none}}
+@media(max-width:430px){.wm small{display:none}}
 .wm small{white-space:nowrap;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase}
 .stat{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:15px;font-family:'Unbounded','Golos Text',sans-serif}.stat.fire{color:var(--fire)}.stat.xp{color:var(--dim)}
 .icb{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -655,5 +656,6 @@ window.addEventListener("hashchange",()=>route());
 loadState().then(async()=>{await flushPending(); route();});
 </script>
 <div id="tip" role="tooltip"></div>
+<script src="ptr.js" defer></script>
 </body>
 </html>

@@ -315,5 +315,6 @@ $("#en").onclick=()=>{lang="en";try{localStorage.setItem("drill.lang",lang)}catc
 (()=>{try{const ref=document.referrer; if(ref){const u=new URL(ref); if(u.origin===location.origin&&!u.pathname.endsWith("roadmap.html")){ $("#back").href=ref; $("#back").onclick=e=>{e.preventDefault(); history.back();}; }}}catch{}})();
 render(); load().then(render);
 </script>
+<script src="ptr.js" defer></script>
 </body>
 </html>
