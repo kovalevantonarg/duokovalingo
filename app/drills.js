@@ -108,7 +108,20 @@ window.DRILLS = {
 27:{lies:{ru:["React сопоставляет хуки по имени, поэтому условия ломают только одноимённые.","useMemo стоит ставить везде по умолчанию — хуже не будет."],
          en:["React matches hooks by name, so conditions only break same-named hooks.","useMemo should go everywhere by default — it can't hurt."]},
     cloze:{ru:["React хранит состояние хуков в списке и сопоставляет по [[порядку вызова|порядку|call order]].","Cleanup вызывается перед [[следующим|next]] запуском эффекта и при размонтировании.","key равный [[index|индексу]] ломается при reorder: React переиспользует состояние не тех элементов."],
-           en:["React stores hook state in a list and matches by [[call order|order]].","Cleanup runs before the [[next]] run of the effect and on unmount.","key equal to [[index]] breaks on reorder: React reuses the wrong elements' state."]}}
+           en:["React stores hook state in a list and matches by [[call order|order]].","Cleanup runs before the [[next]] run of the effect and on unmount.","key equal to [[index]] breaks on reorder: React reuses the wrong elements' state."]}},
+28:{lies:{ru:["Fine-tuning — правильный первый шаг, если модель не знает нужных фактов.","RAG требует переобучения модели при каждом обновлении источника."],
+         en:["Fine-tuning is the right first move if the model doesn't know the facts you need.","RAG requires retraining the model every time the source data updates."]},
+    cloze:{ru:["Knowledge gap чинится через [[RAG]], behavior gap — сначала через [[prompt engineering|промпт]].","Обновление источника в RAG — это [[re-index|переиндексация]], а не re-train.","Fine-tuning без [[eval-сьюта|eval harness]] — это дообучение вслепую."],
+           en:["A knowledge gap gets fixed with [[RAG]], a behavior gap first with [[prompt engineering|prompting]].","Updating RAG's source is a [[re-index]], not a re-train.","Fine-tuning without an [[eval harness|eval suite]] is fine-tuning blind."]}},
+29:{lies:{ru:["Лучший ответ на «твоя слабость» — назвать сильную сторону в замаскированном виде.","История про конфликт сильнее без описания сути разногласия."],
+         en:["The best answer to 'what's your weakness' is a strength in disguise.","A conflict story is stronger without describing what the actual disagreement was about."]},
+    cloze:{ru:["Слабость без [[механизма компенсации|способа с этим справляться]] — это не ответ, а уклонение.","Фидбэк без [[изменения поведения|конкретного действия]] — это просто история, не рост.","Конфликт: Situation — Task — Action — [[Result]]."],
+           en:["A weakness with no [[compensating mechanism|way of coping with it]] is a dodge, not an answer.","Feedback without a [[behavior change|concrete action]] is just a story, not growth.","Conflict: Situation — Task — Action — [[Result]]."]}},
+30:{lies:{ru:["Лучший способ показать лидерство без власти — говорить громче своего мнения на митингах.","«Почему уходишь сейчас» лучше отвечать через недовольство текущим местом — это честно."],
+         en:["The best way to show leadership without authority is being the loudest voice with an opinion in meetings.","The honest way to answer 'why leaving now' is through dissatisfaction with your current place."]},
+    cloze:{ru:["Влияние без формальной власти доказывается через [[метрику|инцидент]], а не через факт «я предложил».","«Почему уходишь» — формула: ценишь → [[что не даёт расти|не растёт в нужном направлении]] → почему именно сейчас.","Быстрое обучение: честный ответ и [[питч пивота|pivot pitch]] — одна и та же история."],
+           en:["Influence without formal authority is proven with a [[metric|incident]], not the fact that you suggested it.","'Why leaving' formula: what you value → [[what doesn't let you grow|the growth cap]] → why now specifically.","Learning fast: the honest answer and the [[pivot pitch]] are the same story."]}}
+
 };
 
 // steps: correct order. {title, items}. The UI shuffles and asks to restore.
@@ -132,6 +145,9 @@ const STEPS = {
 22:{ru:{title:"Лестница экономии, от дешёвого рычага к сложному",items:["Роутинг моделей","Prompt caching на статичном префиксе","Короче выходы: max_tokens, сжатый формат","Дистилляция входов дешёвой моделью","Обрезка истории","Batch API","Семантический кэш","Prompt compression"]},
     en:{title:"The savings ladder, cheapest lever to most complex",items:["Model routing","Prompt caching on the static prefix","Shorter outputs: max_tokens, terse format","Input distillation with a cheap model","History trimming","Batch API","Semantic cache","Prompt compression"]}},
 26:{ru:{title:"Event loop: порядок выполнения",items:["Весь синхронный код текущего скрипта","Вся очередь микрозадач — промисы, queueMicrotask","Рендеринг, если нужен","Одна макрозадача — setTimeout, I/O","Снова микрозадачи"]},
-    en:{title:"Event loop: execution order",items:["All synchronous code of the current script","The entire microtask queue — promises, queueMicrotask","Rendering, if needed","One macrotask — setTimeout, I/O","Microtasks again"]}}
+    en:{title:"Event loop: execution order",items:["All synchronous code of the current script","The entire microtask queue — promises, queueMicrotask","Rendering, if needed","One macrotask — setTimeout, I/O","Microtasks again"]}},
+28:{ru:{title:"От дешёвого к дорогому: в каком порядке пробуешь?",items:["Prompt engineering — переформулировать инструкцию","Structured output / tool use — заставить формат","RAG — добавить факты, которых не хватает","Дистилляция — перенести поведение в модель подешевле","Fine-tuning — изменить поведение весов напрямую"]},
+    en:{title:"Cheapest to most expensive: what order do you try things in?",items:["Prompt engineering — reword the instruction","Structured output / tool use — force the format","RAG — add the facts that are missing","Distillation — move the behavior into a cheaper model","Fine-tuning — change the weights' behavior directly"]}}
+
 };
 for (const n in STEPS) window.DRILLS[n].steps = STEPS[n];
