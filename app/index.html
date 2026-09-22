@@ -131,6 +131,7 @@ svg{flex:none}
 @media(min-width:700px){.stmt{font-size:30px}.q{font-size:28px}}
 .body{display:flex;flex-direction:column;gap:16px;margin-top:28px}
 @media(min-width:700px){.body{margin-top:48px}}
+#sheetSlot{margin-top:auto}#sheetSlot:empty{display:none}.act:not([style*="none"])+#sheetSlot{margin-top:0}
 .act{margin-top:auto;padding:24px 0 calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
 .pair{display:flex;gap:12px}
 .ans{position:relative;flex:1;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-weight:700;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px;padding:0;transition:transform 120ms,opacity 120ms,background var(--spring),border-color var(--spring),color var(--spring)}
@@ -432,7 +433,11 @@ function itemScreen(id){
 }
 
 // ---------- verdict sheet ----------
-function bestPara(t,text){const words=new Set((text.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[]));let best=t[lang].a[0],bs=-1;for(const a of t[lang].a){const w=a.t.toLowerCase().match(/[a-zа-яё0-9_]{4,}/g)||[];const sc=w.filter(x=>words.has(x)).length/Math.sqrt(w.length||1);if(sc>bs){bs=sc;best=a}}return best}
+// which reference paragraph explains this statement: rare shared words (idf over the 3 paragraphs), shared word pairs, and the paragraph's own label
+function bestPara(t,text){const tok=x=>(x.toLowerCase().match(/[a-zа-яё0-9_]+(?:\.[0-9]+)?/g)||[]).filter(w=>w.length>=3||/\d/.test(w));
+  const q=tok(text), qs=new Set(q), paras=t[lang].a.map(a=>({a,w:tok(a.t),l:new Set(tok(a.q))}));
+  const df=w=>paras.filter(p=>p.w.includes(w)).length||1, bi=ws=>new Set(ws.slice(1).map((w,i)=>ws[i]+" "+w)), qb=bi(q);
+  let best=paras[0].a,bs=-1; for(const p of paras){const ps=new Set(p.w),pb=bi(p.w);let sc=0; for(const w of qs){if(ps.has(w)) sc+=Math.log(1+paras.length/df(w)); if(p.l.has(w)) sc+=2} for(const b of qb) if(pb.has(b)) sc+=1.5; if(sc>bs){bs=sc;best=p.a}} return best}
 function sheet({ok,title,sub,text,q,btn,btnLabel}){
   return `<div class="sheet ${ok?"ok":"bad"}" id="sheet"><div style="display:flex;flex-direction:column;gap:10px"><div class="h"><span class="mark">${ok?I.check:I.xs}</span><span>${title}</span>${sub?`<span class="sep">·</span><span>${sub}</span>`:""}</div>${text?`<p class="vp">${text}</p>`:""}</div>
     <div class="links"><button id="more">${L().more}</button>${(DB.explain&&live&&q)?`<button id="expl">${I.spark}${L().explain}</button>`:""}${q?`<a href="exam-tickets.html#t${q.t.n}" style="margin-left:auto">${L().ticket} ${q.t.n} →</a>`:""}</div><div id="moreBox" style="display:contents"></div>
@@ -515,7 +520,7 @@ function runGap(qs,onDone,acc){
       const text=all?"":misses.map(([v,a])=>`${L().youwrote} <code>${esc(v||"—")}</code> — ${L().correctis} <b>${esc(a)}</b>`).join("<br>");
       const okN=answers.length-misses.length;
       $("#sheetSlot").innerHTML=sheet({ok:all,title:all?L().resok:L().resbad,sub:answers.length>1?`${okN} ${L().of} ${answers.length}`:"",text,q,btn:all?"green":"red",btnLabel:L().next});
-      wireSheet(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()}); if(!all) $("#more").click(); };
+      wireSheet(q,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.split("|")[0]),()=>{i++;step()},bestPara(q.t,q.s.replace(/\[\[(.+?)\]\]/g,(_,a)=>a.replace(/\|/g," ")))); if(!all) $("#more").click(); };
     $("#chk").onclick=check; document.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check()}else if(e.key==="Escape")location.hash="home"};
   }; step();
 }
