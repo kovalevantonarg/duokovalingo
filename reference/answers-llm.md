@@ -56,13 +56,7 @@ LLM не видят слова. Они видят **токены** — числ�
 ### Что это
 **Максимум токенов (input + output) которое модель может обработать в одном запросе.**
 
-| Модель | Context window |
-|--------|---------------|
-| Claude Sonnet 4.6 | 200k tokens (~150k words) |
-| Claude Opus 4.6 | 200k tokens |
-| Claude Haiku 4.5 | 200k tokens |
-| GPT-4o | 128k tokens |
-| Gemini 2.5 | 1M+ tokens |
+Цифры я не запоминаю таблицей — они меняются с каждым релизом (например, у Anthropic топовые модели давно перешли на 1M-токенное окно по умолчанию, у более лёгких моделей окно меньше). На интервью я бы сказал: "не помню точную цифру наизусть, но конкретно у [модель] она такая-то — проверяю на docs.claude.com в день интервью", и назвал бы порядок величины, а не выдуманное число.
 
 ### Что произойдёт при превышении
 
@@ -133,7 +127,10 @@ top_p = 1.0 → все токены
 - top_p используют когда хотят "не уходить в редкие токены" но варьировать в разумном диапазоне
 
 ### Pitfall — temperature = 0 НЕ строго детерминистично
-В production GPT/Claude `temp=0` ОБЫЧНО даёт same output, но не 100% — есть batch routing, GPU non-determinism. Для true reproducibility у Anthropic есть `seed` parameter (beta).
+В production GPT/Claude `temp=0` ОБЫЧНО даёт same output, но не 100% — есть batch routing, GPU non-determinism. У Anthropic нет `seed` параметра (это фича OpenAI, не путать) — истинной reproducibility на Claude сейчас не добиться сэмплинг-параметрами вообще.
+
+### Важно: temperature/top_p/top_k deprecated на новых моделях
+На моделях, вышедших после Claude Opus 4.6 (то есть на всей текущей линейке), `temperature`, `top_p` и `top_k` **deprecated** — non-default значение возвращает `400 error`. Официальная рекомендация Anthropic: управлять поведением через prompting, а не sampling-параметры. Это не косметическое изменение — весь "when to use temp=0.3-0.7 vs 1+" playbook выше стоит знать как концепцию (логит-скейлинг, как это работает), но не как рабочий рецепт для текущих моделей.
 
 ### Sources
 - [Anthropic — temperature parameter](https://docs.claude.com/en/api/messages#body-temperature)
@@ -214,7 +211,7 @@ let messages = [{ role: 'user', content: 'What is the weather in Buenos Aires?' 
 
 while (true) {
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: process.env.ANTHROPIC_MODEL, // не хардкодь версию — проверь актуальную на docs.claude.com/en/docs/about-claude/models
     max_tokens: 1024,
     tools,
     messages,
@@ -304,11 +301,11 @@ while (true) {
   for (const event of events) {
     if (!event.startsWith('data: ')) continue;
     const data = event.slice(6);
-    if (data === '[DONE]') return;
-    
+
     const parsed = JSON.parse(data);
-    if (parsed.type === 'content_block_delta') {
-      appendToUI(parsed.delta.text);
+    if (parsed.type === 'message_stop') return; // Claude's end-of-stream event — NOT '[DONE]', that's OpenAI's sentinel
+    if (parsed.type === 'content_block_delta' && parsed.delta.type === 'text_delta') {
+      appendToUI(parsed.delta.text); // guard delta.type — thinking_delta/input_json_delta exist too
     }
   }
 }
@@ -333,10 +330,12 @@ message_stop → конец
 - **Markdown rendering progressive** — не парси весь stream каждый раз, используй streaming markdown parser
 
 ### Vercel AI SDK
-Делает всё это за тебя:
+Делает всё это за тебя. Актуальный (v5+) импорт и API другие, чем были раньше:
 ```tsx
-import { useChat } from 'ai/react';
-const { messages, input, handleSubmit, isLoading } = useChat();
+import { useChat } from '@ai-sdk/react'; // не 'ai/react' — этот путь убрали
+const { messages, sendMessage, status } = useChat();
+// input/handleInputChange/handleSubmit убрали в v5 — состояние инпута теперь своё,
+// отправка через sendMessage({ text: input })
 ```
 
 ### Sources
@@ -369,14 +368,31 @@ User: ...
 { 
   response_format: { 
     type: "json_schema",
-    json_schema: { name: "user", schema: zodSchemaToJsonSchema(UserSchema) }
+    json_schema: { name: "user", schema: zodToJsonSchema(UserSchema) }
   }
 }
 ```
 **Гарантирует** соответствие JSON Schema. Reliable.
 
-### Подход 4: Anthropic Tool Use as structured output
-Используй tool как "force schema":
+### Подход 4: Anthropic native structured output (`output_config`) — актуальный способ
+Anthropic теперь поддерживает schema-guaranteed output нативно, без обхода через tool use:
+```js
+const response = await client.messages.create({
+  model: 'claude-opus-5',
+  max_tokens: 1024,
+  messages: [...],
+  output_config: {
+    format: {
+      type: 'json_schema',
+      schema: zodToJsonSchema(UserSchema), // Zod → JSON Schema
+    },
+  },
+});
+```
+Это должен быть первый ответ на "как получить structured output у Anthropic в проде" — а не подход ниже.
+
+### Подход 5 (legacy): Tool Use как обходной путь для structured output
+До появления `output_config` схему форсировали через tool_choice — используй tool как "force schema":
 ```js
 const tools = [{
   name: 'extract_user',
@@ -389,14 +405,15 @@ const tools = [{
 
 // Model returns tool_use with parsed args matching schema
 ```
+Стоит знать как приём (и для моделей без нативной поддержки), но это уже не первый выбор.
 
-### Подход 5: Vercel AI SDK `generateObject`
+### Подход 6: Vercel AI SDK `generateObject`
 ```ts
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
 const { object } = await generateObject({
-  model: anthropic('claude-sonnet-4-6'),
+  model: anthropic('claude-opus-5'),
   schema: z.object({ name: z.string(), email: z.string().email() }),
   prompt: 'Extract user info from: ...',
 });
@@ -405,8 +422,8 @@ const { object } = await generateObject({
 
 ### Когда какой
 - Quick prototyping → AI SDK `generateObject`
+- Production Anthropic → native `output_config` (fallback: tool use, если модель старая)
 - Production OpenAI → Structured Outputs
-- Production Anthropic → Tool use as schema OR AI SDK
 - Avoid: prompt-only для production
 
 ### Sources
@@ -418,21 +435,15 @@ const { object } = await generateObject({
 
 ## #24 Token economics
 
-### Базовые pricing (на 2026, ориентировочно — verify перед интервью)
+### Базовые pricing (порядок величины — конкретные цифры и модели меняются, verify перед интервью)
 
-**Claude Sonnet 4.6**:
-- Input: ~$3/1M tokens
-- Output: ~$15/1M tokens (5x dearer)
+Я не держу в голове конкретные модели и цены — держу в голове **соотношения**, они устойчивее:
+- Между тиерами (fast / mid / frontier) — разница в цене на порядок с каждым шагом вверх.
+- **Output обычно в 3-5x дороже input** — это архитектурное свойство, не специфика одной модели, держится годами.
+- Cache-read — на порядок дешевле обычного input.
+- Batch API — примерно вдвое дешевле realtime.
 
-**Claude Opus 4.6**:
-- Input: ~$15/1M
-- Output: ~$75/1M
-
-**Claude Haiku 4.5**:
-- Input: ~$1/1M
-- Output: ~$5/1M
-
-**Output обычно 3-5x дороже input**.
+Актуальные модели и точные цифры — на anthropic.com/pricing в день интервью, не по памяти.
 
 ### Стратегии cost optimization
 
@@ -544,13 +555,15 @@ Claude tends лучше resist injection чем older / less aligned models.
 ### Trade-off
 Каждый шаг up в "smartness" → expensive + slower.
 
-### Claude family (на 2026)
+### Claude family (тиры, не конкретные версии — имена меняются каждые несколько месяцев)
 
-| Model | Speed | Cost | Smartness | Use cases |
+| Тир | Speed | Cost | Smartness | Use cases |
 |-------|-------|------|-----------|-----------|
-| **Haiku 4.5** | Fastest | Cheapest | Good | Classification, extraction, simple chat, routing decisions |
-| **Sonnet 4.6** | Fast | Mid | Great | General chat, RAG, agents, most production work |
-| **Opus 4.6** | Slowest | Most expensive | Best | Hard reasoning, complex code, research, edge cases |
+| **Haiku (fast tier)** | Fastest | Cheapest | Good | Classification, extraction, simple chat, routing decisions |
+| **Sonnet (mid tier)** | Fast | Mid | Great | General chat, RAG, agents, most production work |
+| **Opus (frontier tier)** | Slowest | Most expensive | Best | Hard reasoning, complex code, research, edge cases |
+
+Я специально не называю конкретные версии — таблица с версией в заголовке устаревает за месяцы. Актуальные имена и цены — docs.claude.com/en/docs/about-claude/models в день интервью, я не рискую цитировать версию по памяти.
 
 ### Practical heuristics
 
@@ -603,24 +616,26 @@ Now process: "Get me 3 burgers"
 System: "Before answering, write your reasoning in <thinking>...</thinking> tags."
 ```
 
-Anthropic models имеют built-in extended thinking mode (`thinking: { type: 'enabled', budget_tokens: ... }`).
+Anthropic models имеют built-in extended thinking mode. Актуальная форма — adaptive thinking: `thinking: { type: 'adaptive' }`, глубина reasoning регулируется отдельно через `output_config: { effort: 'low'|'medium'|'high' }` (старая форма `{ type: 'enabled', budget_tokens }` — legacy path).
+
+Важно для cost-разговора: thinking-токены биллятся как **output** tokens — при разнице output/input в 3-5x включить extended thinking всем запросам подряд может быть реальным cost-багом, не только latency-компромиссом. Я бы включал точечно, под задачи, которым правда нужен multi-step reasoning.
 
 ### Hallucinations
 **Модель уверенно говорит неправду.**
 
-Mitigations:
-- RAG (модель видит ground truth)
-- `temperature = 0`
-- Structured output (constraints)
-- Eval suite (catch regressions)
-- Citation requirement ("for each claim, cite source")
+Mitigations — и ни одно не решает проблему целиком:
+- RAG снижает, но не убирает hallucination — модель может достать правильный документ и всё равно наврать число из него.
+- Structured output (constraints) — гарантирует форму ответа, не его правдивость.
+- Eval suite (catch regressions) — ловит деградацию, не устраняет базовую склонность модели уверенно врать.
+- Citation requirement ("for each claim, cite source") — помогает только если ты ещё и проверяешь, что цитата реально подтверждает claim; модели уверенно цитируют не то тоже.
+- ~~`temperature = 0`~~ — на текущих моделях этот параметр deprecated (см. #19); даже когда работал, делал неправильные ответы стабильно неправильными, а не правильными.
 
 ### Anthropic vs OpenAI — главные отличия
 
-- **Anthropic**: longer context window default, prompt caching, native tool use, conversational style более refined
-- **OpenAI**: Structured Outputs с strict JSON schema, более широкий ecosystem, Realtime API (voice)
-- **Latency**: comparable для similar tier models
-- **Pricing**: comparable
+- **Anthropic**: prompt caching, native tool use, теперь и нативный structured output (`output_config`)
+- **OpenAI**: более широкий ecosystem, Realtime API (voice)
+- "Longer context window by default" — больше не дифференциатор Anthropic конкретно: у топовых моделей всех вендоров сейчас окна порядка миллиона токенов, и даже внутри одной линейки Anthropic младшие модели остаются на 200k, пока старшие уже на 1M — сравнивать нужно модель к модели, а не вендора к вендору.
+- По latency/pricing у меня пока нет своего мнения на объёме — не гонял оба в проде достаточно, чтобы иметь цифру, а не общие слова.
 
 Выбор обычно по: alignment с use case, current contracts, team familiarity.
 
@@ -643,7 +658,7 @@ Mitigations:
 export async function POST(req: Request) {
   const { messages } = await req.json();
   const stream = await client.messages.stream({
-    model: 'claude-sonnet-4-6',
+    model: process.env.ANTHROPIC_MODEL, // текущая модель — не хардкодь версию
     max_tokens: 1024,
     messages,
   });
@@ -674,4 +689,4 @@ Given input/output token counts, compute cost для Haiku/Sonnet/Opus. Add prom
 
 Если все 4 — confident → LLM core знаешь на interview-уровень.
 
-Last updated: 2026-05-08
+Last updated: 2026-09-22
