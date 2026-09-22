@@ -1,1 +1,1 @@
-{ "name": "drill", "private": true, "type": "module", "engines": { "node": "22.x" } }
+{ "name": "duokovalingo", "private": true, "type": "module", "engines": { "node": "22.x" } }

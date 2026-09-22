@@ -1,4 +1,4 @@
-# drill — deploy notes
+# duokovalingo — deploy notes
 
 Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 
