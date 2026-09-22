@@ -29,7 +29,7 @@ svg{flex:none}
 /* header */
 .hdr{display:flex;align-items:center;gap:10px;height:60px;padding:0 var(--gut);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top);box-sizing:content-box}
 .wm{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.01em;color:var(--fg);display:inline-flex;align-items:baseline;gap:7px}.wm:hover{color:var(--fg)}.wmfull{display:none}@media(min-width:700px){.wmfull{display:inline}.wmshort{display:none}}
-.wm small{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase}
+.wm small{white-space:nowrap;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase}
 .stat{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:15px;font-family:'Unbounded','Golos Text',sans-serif}.stat.fire{color:var(--fire)}.stat.xp{color:var(--dim)}
 .icb{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);display:inline-flex;align-items:center;justify-content:center;padding:0}
 .icb.off{opacity:.45}
@@ -38,6 +38,7 @@ svg{flex:none}
 /* page */
 .page{max-width:964px;margin:0 auto;padding:24px var(--gut) 48px;display:flex;flex-direction:column}
 .sec{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim2);font-weight:700;display:flex;justify-content:space-between;align-items:baseline;margin-top:32px}.sec:first-child{margin-top:0}
+.rmlink{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:22px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(100deg,rgba(255,122,89,.14),rgba(255,122,89,0) 70%),var(--panel);color:var(--fg)}.rmlink:hover{color:var(--fg);border-color:var(--blue)}.rmlink .rmt{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:15px}.rmlink .rms{flex:1;color:var(--dim);font-size:13.5px;min-width:0}.rmlink svg{color:var(--blue);flex:none}
 .sec .r{letter-spacing:0;text-transform:none;font-size:13px;color:var(--dim);font-weight:600;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-top:10px}
 .item{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-top:1px solid var(--line)}.item:first-child{border-top:0}
@@ -86,14 +87,33 @@ svg{flex:none}
 .cell.due::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--blue);border:2px solid var(--bg);box-sizing:border-box}
 .cell.pop{animation:pop var(--spring)}
 @media(min-width:700px){.cell{width:36px;height:32px;font-size:12px;border-radius:9px}}
-.heat{display:flex;gap:4px}.wk{display:flex;flex-direction:column;gap:4px}
-.dy{width:13px;height:13px;border-radius:3px;background:var(--panel2);border:1px solid var(--line);box-sizing:border-box;transition:background var(--std)}
-.dy.l1{background:var(--l1);border-color:var(--l1)}.dy.l2{background:var(--l2);border-color:var(--l2)}.dy.l3{background:var(--l3);border-color:var(--l3)}
-.dy.today{box-shadow:0 0 0 1.5px var(--fg)}
-@media(min-width:700px){.dy{width:15px;height:15px}}
-.hcard{padding:16px;display:flex;flex-direction:column;gap:10px}.hrow{display:flex;gap:10px;align-items:flex-start;overflow-x:auto}
-.dows{display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;color:var(--dim2);line-height:13px}@media(min-width:700px){.dows{line-height:15px}}
-.months{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--dim2)}
+.actv{padding:16px;display:flex;flex-direction:column;gap:18px}
+.astats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media(min-width:700px){.astats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ast{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+.ast .v{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:22px;line-height:1;letter-spacing:-.02em;display:flex;align-items:center;gap:6px}
+.ast .v.fire{color:var(--fire)}.ast .v small{font-size:13px;color:var(--dim2);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-weight:600;letter-spacing:0}
+.ast .l{color:var(--dim);font-size:13px;margin-top:7px;line-height:1.3}.ast .l span{display:block;color:var(--dim2);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11.5px;margin-top:2px}
+.ast .mini{height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}.ast .mini i{display:block;height:100%;background:var(--blue);border-radius:2px}
+.hgrid{display:grid;grid-template-columns:26px minmax(0,calc(var(--w)*30px));column-gap:8px;row-gap:6px}
+.hmonths,.hcells,.hbars{display:grid;grid-template-columns:repeat(var(--w),minmax(0,1fr));column-gap:3px}
+.hmonths span{font-size:11px;font-weight:700;color:var(--dim2);white-space:nowrap;overflow:visible}
+.hcells{grid-template-rows:repeat(7,auto);grid-auto-flow:column;row-gap:3px}
+.hdows{display:grid;grid-template-rows:repeat(7,1fr);row-gap:3px;font-size:10px;font-weight:700;color:var(--dim2);align-items:center}
+.dy{display:block;aspect-ratio:1;border-radius:3px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line);transition:background var(--std)}
+.dy.l1{background:#4a2a2c;box-shadow:none}.dy.l2{background:#8a4332;box-shadow:none}.dy.l3{background:#d05f42;box-shadow:none}.dy.l4{background:#ff9a7c;box-shadow:none}
+.dy.today{box-shadow:0 0 0 1.5px var(--fg)}.dy.fut{visibility:hidden}
+.hcells .dy{cursor:default}
+.hrl{font-size:10px;font-weight:700;color:var(--dim2);align-self:end;line-height:1}
+.hbars{position:relative;height:36px;align-items:end;margin-top:4px}
+.wbar{display:block;height:max(2px,calc(var(--h)*100%));background:var(--dim3);border-radius:2px 2px 0 0}
+.wbar.met{background:var(--blue)}.wbar.cur{outline:1px solid var(--fg);outline-offset:1px}
+.tline{position:absolute;left:0;right:0;bottom:calc(var(--t)*100%);border-top:1px dashed var(--dim2);pointer-events:none;z-index:1}
+.hleg{display:flex;align-items:center;gap:4px;font-size:11.5px;color:var(--dim2);font-weight:600;flex-wrap:wrap}
+.hleg .dy{width:11px;height:11px}.hleg span:first-child{margin-right:4px}.hleg span:nth-child(7){margin-left:4px}.hleg .sp{flex:1}
+.tl-key{display:inline-flex;align-items:center;gap:6px}.tl-key i{width:16px;border-top:1px dashed var(--dim2)}
+#tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;padding:8px 10px;border-radius:9px;background:#f3efe6;color:#0b1220;font-size:13px;font-weight:600;line-height:1.35;box-shadow:0 6px 24px rgba(0,0,0,.45);opacity:0;transition:opacity 80ms}
+#tip.on{opacity:1}#tip small{display:block;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;color:#4b5b78;margin-bottom:2px}
 /* rounds */
 .round{max-width:640px;margin:0 auto;padding:20px var(--gut) 0;display:flex;flex-direction:column;min-height:100dvh}
 @media(min-width:700px){.round{padding-top:32px}}
@@ -240,7 +260,7 @@ const I={
 // ---------- i18n ----------
 const UI={
  ru:{today:"Сегодня",due:"повторить",newi:"новое · не открывал",ship:"ship",quick:"Быстрый раунд",quickm:"5 мин",quickd:"Правда/ложь и пропуски по тому, что due сегодня. Без выбора, без сочинений.",start:"Начать",
-     wall:"Стена",sessions:"Сессии",offline:"Офлайн · результаты копятся локально. Запусти <code>node today.mjs serve</code> и открой <code>localhost:4040</code>.",
+     wall:"Стена",sessions:"Сессии",act:"Активность",actDays:"дн. занятий",actDaysW:"дня в неделю",streakL:"серия, дней",best:"лучшая",thisWeek:"эта неделя",weeksMet:"нед. с целью",cards30:"карточек за 30 дней",lastS:"последняя сессия",todayW:"сегодня",rhythm:"ритм",weekOf:"неделя с",target:"цель",lessA:"меньше",moreA:"больше",noAct:"без занятий",cardsN:n=>{const m=n%10,h=n%100;return m===1&&h!==11?"карточка":(m>=2&&m<=4&&(h<12||h>14))?"карточки":"карточек"},offline:"Офлайн · результаты копятся локально. Запусти <code>node today.mjs serve</code> и открой <code>localhost:4040</code>.",
      pending:"не синхронизировано",true:"Правда",false:"Ложь",check:"Проверить",next:"Дальше",again:"Ещё раз",tryagain:"Ещё раз",home:"Домой",quit:"Выйти",
      tf:"Правда или ложь",gap:"Пропуск",order:"Порядок",voice:"Голос",ticket:"Билет",
      ask:"Вслух",rec:"Говорить",stop:"Стоп",reveal:"Эталон",selfscore:"Как прошло?",selfsub:"Честно — это твоя же метрика. Только это меняет <b>#ID</b> на стене.",g:"Сказал уверенно",y:"Шатко",r:"Не смог",
@@ -249,11 +269,12 @@ const UI={
      resok:"Верно",resbad:"Мимо",inplace:"на месте",of:"из",youwrote:"Ты написал",correctis:"правильно",swapped:"Не на своих местах",
      more:"Подробнее",explain:"Объяснить иначе",thinking:"Думаю…",
      roundOver:"Раунд окончен",missedTitle:"Ошибки в этом раунде",reviewMisses:"Повторить ошибки",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это материал на завтра.",xpt:"XP сегодня",streak:"серия",was:"было",onmap:"на карте",todayw:"сегодня",
+     roadmap:"Роадмап",roadmapd:"откуда идём, где сейчас, что дальше",
      statuses:{green:"уверенно",yellow:"шатко",red:"мимо",new:"не открывал",parked:"запарковано"},overdue:"просрочено",days:"д",ago:"назад",never:"ни разу",
      nothing:"Ничего не due — бери новое.",drill:"Дриллить",last:"Последний дрилл",dueh:"Due",interval:"Интервал",lastmode:"Последний режим",cold:"уверенно",shaky:"шатко",missed:"мимо",neww:"новое",
      hintNext:"дальше",hintMore:"подробнее",hintQuit:"выйти",hintCheck:"проверить",hintSpeak:"говорить / стоп",hintNextQ:"следующий вопрос",hintMove:"двигать",wk:"нед.",cell:"клетка",ofw:"из",pw:"Пароль",enter:"Войти",wrongpw:"Не тот пароль",logout:"Выйти",noserver:"Сервер не настроен"},
  en:{today:"Today",due:"revisit",newi:"new · never opened",ship:"ship",quick:"Quick round",quickm:"5 min",quickd:"True/false and gaps over what's due today. No choosing, no typing essays.",start:"Start",
-     wall:"The wall",sessions:"Sessions",offline:"Offline · results queue locally. Run <code>node today.mjs serve</code> then open <code>localhost:4040</code>.",
+     wall:"The wall",sessions:"Sessions",act:"Activity",actDays:"active days",actDaysW:"days a week",streakL:"day streak",best:"best",thisWeek:"this week",weeksMet:"weeks on target",cards30:"cards in 30 days",lastS:"last session",todayW:"today",rhythm:"rhythm",weekOf:"week of",target:"target",lessA:"less",moreA:"more",noAct:"no practice",cardsN:n=>n===1?"card":"cards",offline:"Offline · results queue locally. Run <code>node today.mjs serve</code> then open <code>localhost:4040</code>.",
      pending:"not synced",true:"True",false:"False",check:"Check",next:"Continue",again:"Again",tryagain:"Try again",home:"Home",quit:"Quit",
      tf:"True or false",gap:"Gap",order:"Order",voice:"Voice",ticket:"Ticket",
      ask:"Ask out loud",rec:"Speak",stop:"Stop",reveal:"Reveal",selfscore:"How did it go?",selfsub:"Honestly — it's your own metric. This is the only thing that changes <b>#ID</b> on the wall.",g:"Said it cold",y:"Shaky",r:"Couldn't",
@@ -262,18 +283,20 @@ const UI={
      resok:"Correct",resbad:"Miss",inplace:"in place",of:"of",youwrote:"You wrote",correctis:"the answer is",swapped:"Out of place",
      more:"More",explain:"Explain differently",thinking:"Thinking…",
      roundOver:"Round over",missedTitle:"Mistakes this round",reviewMisses:"Retry mistakes",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",xpt:"XP today",streak:"streak",was:"was",onmap:"on the map",todayw:"today",
+     roadmap:"Roadmap",roadmapd:"where we came from, where we are, what's next",
      statuses:{green:"cold",yellow:"shaky",red:"missed",new:"never opened",parked:"parked"},overdue:"overdue",days:"d",ago:"ago",never:"never",
      nothing:"Nothing due — take the new one.",drill:"Drill it",last:"Last drilled",dueh:"Due",interval:"Interval",lastmode:"Last mode",cold:"cold",shaky:"shaky",missed:"missed",neww:"new",
      hintNext:"next",hintMore:"more",hintQuit:"quit",hintCheck:"check",hintSpeak:"speak / stop",hintNextQ:"next question",hintMove:"move",wk:"wk",cell:"cell",ofw:"of",pw:"Password",enter:"Sign in",wrongpw:"Wrong password",logout:"Sign out",noserver:"Server not configured"}
 };
-const SEC={llm:"LLM",rag:"RAG",agents:"Agents",sysd:"System design",behav:"Behavioral",bonus:"Depth",meta:"Meta",js:"JS/TS",react:"React"};
+const SEC={llm:"LLM",rag:"RAG",agents:"Agents",sysd:"System design",behav:"Behavioral",bonus:"Depth",meta:"Meta",js:"JavaScript",ts:"TypeScript",react:"React",web:"Browser"};
 const INTERVAL={red:1,yellow:3,green:7};
 const NEW_ORDER=[38,39,22,25,23,32,27,28,29,30,31,40,35,36,37,42];
 let lang=localStorage.getItem("drill.lang")||"ru";
 const L=()=>UI[lang];
 const $=s=>document.querySelector(s); const app=$("#app");
-const iso=d=>d.toISOString().slice(0,10); const TODAY=iso(new Date());
-const days=f=>Math.floor((new Date(TODAY)-new Date(f))/864e5);
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; const TODAY=iso(new Date());
+const dLocal=s=>new Date(s+"T12:00:00");
+const days=f=>Math.round((dLocal(TODAY)-dLocal(f))/864e5);
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // wrap code-ish tokens (max_tokens, tool_result, text/event-stream, temperature = 0) in <code>
@@ -284,7 +307,11 @@ const fmtDate=()=>new Date().toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{wee
 let DB=window.STATE||{items:[],history:[]}, live=false;
 let pending=JSON.parse(localStorage.getItem("drill.pending")||"[]");
 let needLogin=false;
-async function loadState(){ needLogin=false; try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){DB=await r.json(); live=true;} else if(r.status===401){needLogin=true;}}catch{} if(!live&&!needLogin) for(const p of pending) applyLocal(p); }
+async function loadState(){ needLogin=false; try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){DB=await r.json(); live=true;} else if(r.status===401){needLogin=true;}}catch{} if(!live&&!needLogin) for(const p of pending) applyLocal(p); if(!needLogin) await syncCatalog(); }
+// tickets.js is the catalog: any core id a ticket points to must exist as an item, or progress on it is dropped
+async function syncCatalog(){ const miss=[]; for(const t of window.TICKETS||[]){ if(t.sec==="parked") continue; for(const id of t.core||[]) if(!DB.items.some(i=>i.id===id)&&!miss.some(m=>m.id===id)) miss.push({id,s:t.sec,t:t.en.topic}); }
+  if(!miss.length) return; if(live){ try{const r=await fetch("/api/sync",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({items:miss})}); if(r.ok){DB=await r.json(); return}}catch{} }
+  for(const m of miss) DB.items.push({...m,st:"new"}); DB.items.sort((a,b)=>a.id-b.id); }
 function loginScreen(err){
   app.innerHTML=`<div class="login"><a class="wm">duokovalingo<small>core-40</small></a><form id="lf"><input type="password" id="pw" placeholder="${L().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${L().enter}</button><div class="err">${err||""}</div></form></div>`;
   $("#lf").onsubmit=async e=>{e.preventDefault(); const b=$("#lf button"); b.disabled=true;
@@ -301,7 +328,7 @@ const due=()=>DB.items.filter(i=>ivOf(i)&&i.last).map(i=>({...i,over:days(i.last
 const ivOf=i=>i.iv||INTERVAL[i.st];
 const isDue=i=>!!(i.last&&ivOf(i)&&days(i.last)-ivOf(i)>=0);
 const nextNew=()=>NEW_ORDER.map(byId).find(i=>i&&i.st==="new");
-function streak(){const set=new Set(DB.history.map(h=>h.d));let n=0,d=new Date(TODAY);if(!set.has(TODAY)) d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+function streak(){const set=new Set(DB.history.filter(h=>h.ids&&h.ids.length).map(h=>h.d));let n=0,d=dLocal(TODAY);if(!set.has(TODAY)) d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
 const xpToday=()=>(DB.history.find(h=>h.d===TODAY)||{}).xp||0;
 let lastChanged=null; // cell id to pop on Home
 
@@ -325,10 +352,59 @@ let combo=0; function setCombo(n){combo=n;const c=$("#combo");if(!c)return;if(n>
 function setProg(i,n){const p=$("#pbar");if(!p)return;p.querySelector("i").style.width=Math.round(i/n*100)+"%";if(i>=n)p.classList.add("ok")}
 const wireQuit=()=>{const q=$("#quit");if(q)q.onclick=()=>{location.hash="home"}};
 
+// ---------- activity ----------
+const ACT_TARGET=2; // plan.md: 2 drill days a week, 3 build days
+function activity(){
+  const W=innerWidth>=700?26:18, loc=lang==="ru"?"ru-RU":"en-GB";
+  const H=Object.fromEntries(DB.history.filter(x=>x.ids&&x.ids.length).map(x=>[x.d,x]));
+  const t=dLocal(TODAY), mon=new Date(t); mon.setDate(t.getDate()-((t.getDay()+6)%7)); const start=new Date(mon); start.setDate(mon.getDate()-7*(W-1));
+  const lvl=c=>c===0?0:c===1?1:c<=3?2:c<=6?3:4;
+  const fmt=(dt,o)=>dt.toLocaleDateString(loc,o||{weekday:"short",day:"numeric",month:"short"});
+  let cells="",bars="",prevM=-1,activeDays=0,weekDays=[],mlab=[];
+  for(let w=0;w<W;w++){ let wd=0; const wk0=new Date(start); wk0.setDate(start.getDate()+w*7);
+    if(wk0.getMonth()!==prevM){ mlab.push([w,fmt(wk0,{month:"short"}).replace(".","")]); prevM=wk0.getMonth(); }
+    for(let r=0;r<7;r++){ const dt=new Date(wk0); dt.setDate(wk0.getDate()+r); const k=iso(dt); const x=H[k]; const c=x?x.ids.length:0;
+      if(k>TODAY){cells+=`<i class="dy fut"></i>`;continue}
+      if(c){wd++;activeDays++}
+      const names=x?x.ids.slice(0,4).map(id=>{const it=byId(id);return `#${id} ${esc(it?it.t:"")}`}).join("<br>")+(x.ids.length>4?`<br>+${x.ids.length-4}`:""):"";
+      cells+=`<i class="dy l${lvl(c)}${k===TODAY?" today":""}" data-tip="${c?`<b>${c} ${L().cardsN(c)}${x.xp?` · ${x.xp} XP`:""}</b><br>${names}`:L().noAct}" data-sub="${esc(fmt(dt))}"></i>`; }
+    weekDays.push(wd);
+    bars+=`<i class="wbar${wd>=ACT_TARGET?" met":""}${w===W-1?" cur":""}" style="--h:${Math.min(wd,4)/4}" data-tip="${wd} ${L().ofw} ${ACT_TARGET} ${L().actDays}" data-sub="${L().weekOf} ${esc(fmt(wk0,{day:"numeric",month:"short"}))}"></i>`; }
+  if(mlab.length>1&&mlab[1][0]-mlab[0][0]<3) mlab.shift(); // first partial month would collide with the next label
+  const monthsRow=mlab.map(([w,m])=>`<span style="grid-column:${w+1}/span 4">${m}</span>`).join("");
+  // best streak over all history
+  const ds=Object.keys(H).sort(); let best=0,run=0,prev=null; for(const d of ds){ run=prev&&days(prev)-days(d)===1?run+1:1; best=Math.max(best,run); prev=d; }
+  const cur=streak(), thisWeek=weekDays[weekDays.length-1], last=ds.length?days(ds[ds.length-1]):null;
+  const last30=DB.history.filter(x=>days(x.d)<=29).reduce((n,x)=>n+(x.ids?x.ids.length:0),0), xp30=DB.history.filter(x=>days(x.d)<=29).reduce((n,x)=>n+(x.xp||0),0);
+  const metWeeks=weekDays.slice(-4).filter(x=>x>=ACT_TARGET).length;
+  const dl=lang==="ru"?["Пн","","Ср","","Пт","","Вс"]:["Mon","","Wed","","Fri","","Sun"];
+  return `<div class="sec"><span>${L().act}</span><span class="r">${activeDays} ${L().actDays} · ${W} ${L().wk}</span></div>
+  <div class="card actv">
+    <div class="astats">
+      <div class="ast"><div class="v fire">${I.flame}${cur}</div><div class="l">${L().streakL}<span>${L().best} ${best}</span></div></div>
+      <div class="ast"><div class="v">${thisWeek}<small>/${ACT_TARGET}</small></div><div class="l">${L().thisWeek}<span>${metWeeks} ${L().ofw} 4 ${L().weeksMet}</span></div><div class="mini"><i style="width:${Math.min(1,thisWeek/ACT_TARGET)*100}%"></i></div></div>
+      <div class="ast"><div class="v">${last30}</div><div class="l">${L().cards30}<span>${xp30} XP</span></div></div>
+      <div class="ast"><div class="v">${last===null?"—":last===0?L().todayW:last+L().days}</div><div class="l">${L().lastS}<span>${last===null?"":last===0?"":L().ago}</span></div></div>
+    </div>
+    <div class="hgrid" style="--w:${W}">
+      <span></span><div class="hmonths">${monthsRow}</div>
+      <div class="hdows">${dl.map(x=>`<span>${x}</span>`).join("")}</div><div class="hcells">${cells}</div>
+      <span class="hrl">${L().rhythm}</span><div class="hbars"><span class="tline" style="--t:${ACT_TARGET/4}"></span>${bars}</div>
+    </div>
+    <div class="hleg"><span>${L().lessA}</span><i class="dy l0"></i><i class="dy l1"></i><i class="dy l2"></i><i class="dy l3"></i><i class="dy l4"></i><span>${L().moreA}</span><span class="sp"></span><span class="tl-key"><i></i>${L().target} ${ACT_TARGET} ${L().actDaysW}</span></div>
+  </div>`;
+}
+// tooltip for the activity grid: hover with a mouse, tap on touch
+function tipShow(el,x,y){ const tp=$("#tip"); if(!tp) return; tp.innerHTML=(el.dataset.sub?`<small>${el.dataset.sub}</small>`:"")+el.dataset.tip; const w=tp.offsetWidth,hh=tp.offsetHeight; tp.style.left=Math.max(8,Math.min(innerWidth-w-8,x-w/2))+"px"; tp.style.top=Math.max(8,y-hh-12)+"px"; tp.classList.add("on"); }
+const tipHide=()=>{const tp=$("#tip"); if(tp) tp.classList.remove("on")};
+document.addEventListener("pointermove",e=>{ if(e.pointerType!=="mouse") return; const el=e.target.closest(".actv [data-tip]"); el?tipShow(el,e.clientX,e.clientY):tipHide(); });
+document.addEventListener("pointerdown",e=>{ if(e.pointerType==="mouse") return; const el=e.target.closest(".actv [data-tip]"); if(el){const rc=el.getBoundingClientRect(); tipShow(el,rc.left+rc.width/2,rc.top)} else tipHide(); });
+addEventListener("scroll",tipHide,{passive:true}); addEventListener("hashchange",tipHide);
+
 // ---------- home ----------
 function home(){
   const d=due(), nn=nextNew(); const top=d.slice(0,2); const active=DB.items.filter(i=>i.st!=="parked"); const n=s=>active.filter(i=>i.st===s).length;
-  let h=header()+`<div class="page"><div class="sec"><span>${L().today}</span><span class="r">${fmtDate()}</span></div><div class="card">`;
+  let h=header()+`<div class="page"><a class="rmlink" href="roadmap.html"><span class="rmt">${L().roadmap}</span><span class="rms">${L().roadmapd}</span>${I.arrow}</a><div class="sec"><span>${L().today}</span><span class="r">${fmtDate()}</span></div><div class="card">`;
   h+=top.length?top.map(i=>itemRow(i,`${L().due} · <span class="ov">${i.over}${L().days} ${L().overdue}</span>`)).join(""):`<div class="item"><div class="it"><div class="s">${L().nothing}</div></div></div>`;
   if(nn) h+=itemRow(nn,L().newi);
   if(DB.today_overrides?.ship) h+=`<div class="item" style="align-items:center"><span class="sw ship" style="margin-top:0"></span><div class="it"><div class="t"><span class="id">${L().ship}</span>${esc(DB.today_overrides.ship)}</div></div></div>`;
@@ -336,15 +412,10 @@ function home(){
   h+=`<div class="card quick"><div class="qi"><div class="qt">${L().quick}<span>${L().quickm}</span></div><p class="sub">${L().quickd}</p></div>${kbd("Enter",1)}<button class="btn blue big" onclick="location.hash='quick'">${L().start} ${I.arrow}</button></div>`;
   if(!live) h+=`<div class="banner">${I.warn}<span>${L().offline}${pending.length?` · <b>${pending.length}</b> ${L().pending}`:""}</span></div>`;
   h+=`<div class="sec"><span>${L().wall}</span><span class="r">${n("green")} ${L().cold} · ${n("yellow")} ${L().shaky} · ${n("new")} ${L().neww} · ${DB.items.length-active.length} ${L().statuses.parked}</span></div><div class="card wall">`;
-  for(const s of ["llm","rag","agents","sysd","behav","bonus","meta","js","react"]){const its=DB.items.filter(i=>i.s===s); if(!its.length) continue; const g=its.filter(i=>i.st==="green").length; const parked=its.every(i=>i.st==="parked");
+  for(const s of ["llm","rag","agents","sysd","behav","js","ts","react","web","bonus","meta"]){const its=DB.items.filter(i=>i.s===s); if(!its.length) continue; const g=its.filter(i=>i.st==="green").length; const parked=its.every(i=>i.st==="parked");
     h+=`<div class="wsec"><div class="wlab"><span>${SEC[s]} <span class="c">${parked?L().statuses.parked:g+"/"+its.length}</span></span></div><div class="cells">`+its.map(i=>`<button class="cell ${i.st}${isDue(i)?" due":""}${lastChanged===i.id?" pop":""}" title="#${i.id} ${esc(i.t)} · ${L().statuses[i.st]}" onclick="location.hash='item/${i.id}'">${i.id}</button>`).join("")+`</div></div>`;}
   h+=`</div>`;
-  // heat map 12 weeks
-  const counts=Object.fromEntries(DB.history.map(x=>[x.d,x.ids.length])); const end=new Date(TODAY); const dow=(end.getDay()+6)%7; const start=new Date(end); start.setDate(end.getDate()-dow-7*11);
-  let cols="",months=new Set();for(let w=0;w<12;w++){let col="";for(let r=0;r<7;r++){const dt=new Date(start);dt.setDate(start.getDate()+w*7+r);const k=iso(dt);const c=counts[k]||0;const lvl=c===0?0:c===1?1:c<=3?2:3;if(r===0)months.add(dt.toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{month:"short"}));col+=`<div class="dy l${lvl}${k===TODAY?" today":""}" title="${k}${c?" · "+c:""}"></div>`}cols+=`<div class="wk">${col}</div>`}
-  const sessions=DB.history.filter(x=>days(x.d)<=84).length;
-  const dl=lang==="ru"?["Пн","","Ср","","Пт","","Вс"]:["Mon","","Wed","","Fri","","Sun"];
-  h+=`<div class="sec"><span>${L().sessions}</span><span class="r">${sessions} · 12 ${L().wk}</span></div><div class="card hcard"><div class="months">${[...months].map(m=>`<span>${m}</span>`).join("")}</div><div class="hrow"><div class="dows">${dl.map(x=>`<span>${x}</span>`).join("")}</div><div class="heat">${cols}</div></div></div></div>`;
+  h+=activity()+`</div>`;
   app.innerHTML=h; wireHeader(); lastChanged=null;
   document.onkeydown=e=>{if(e.key==="Enter"&&!e.target.closest("button,a,input")){location.hash="quick"}};
 }
@@ -540,5 +611,6 @@ function route(){
 window.addEventListener("hashchange",()=>route());
 loadState().then(async()=>{await flushPending(); route();});
 </script>
+<div id="tip" role="tooltip"></div>
 </body>
 </html>

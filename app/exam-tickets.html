@@ -21,6 +21,10 @@
     padding:0 0 70px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
   }
   .wrap{max-width:800px;margin:0 auto;padding:0 16px}
+  .topnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .topnav a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 10px;border:1px solid var(--line2);border-radius:10px;color:var(--fg);text-decoration:none;font-weight:600;font-size:14px;background:var(--panel)}
+  .topnav a.rm{padding:0 14px;color:var(--dim)}
+  .topnav a:active{transform:scale(.97);opacity:.9}
   header{padding:20px 0 14px;padding-top:calc(20px + env(safe-area-inset-top));border-bottom:1px solid var(--line);margin-bottom:18px}
   h1{font-family:'Unbounded','Golos Text',sans-serif;font-size:15px;margin:0 0 3px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:800}
   .sub{font-size:12px;color:var(--dim2);line-height:1.6}
@@ -74,7 +78,8 @@
 <body>
 <div class="wrap">
 <header>
-  <h1>Билеты — Core-40</h1>
+  <nav class="topnav"><a class="back" id="back" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg><span id="backl">duokovalingo</span></a><a class="rm" href="roadmap.html" id="rml">Роадмап</a></nav>
+  <h1 id="h1">Билеты</h1>
   <div class="sub" id="sub"></div>
 </header>
 
@@ -114,7 +119,7 @@ const UI={
 };
 
 const T=window.TICKETS;
-let lang="ru", cur=null, t0=null, tick=null, seen=new Set();
+let lang=(()=>{try{return localStorage.getItem("drill.lang")||"ru"}catch{return "ru"}})(), cur=null, t0=null, tick=null, seen=new Set();
 const $=id=>document.getElementById(id);
 const stage=$("stage"), timer=$("timer"), chips=$("chips");
 const L=()=>UI[lang];
@@ -134,11 +139,12 @@ function chrome(){
   $("sub").innerHTML=L().sub; $("draw").textContent=L().draw;
   $("reveal").textContent=L().reveal; $("reset").textContent=L().reset;
   $("allh").textContent=L().all; $("foot").innerHTML=L().foot;
+  $("h1").textContent=lang==="ru"?"Билеты":"Tickets"; $("rml").textContent=lang==="ru"?"Роадмап":"Roadmap";
   $("ru").className=lang==="ru"?"on":""; $("en").className=lang==="en"?"on":"";
   renderChips();
 }
-const SEC={llm:["LLM engineering","LLM engineering"],rag:["RAG","RAG"],agents:["Агенты","Agents"],sysd:["Системный дизайн","System design"],behav:["Behavioral","Behavioral"],bonus:["Глубина","Depth"],parked:["Запарковано — проверка","Parked — check"]};
-const ORDER=["llm","rag","agents","sysd","behav","bonus","parked"];
+const SEC={llm:["LLM engineering","LLM engineering"],rag:["RAG","RAG"],agents:["Агенты","Agents"],sysd:["Системный дизайн","System design"],behav:["Behavioral","Behavioral"],js:["JavaScript","JavaScript"],ts:["TypeScript","TypeScript"],react:["React","React"],web:["Браузер и веб-платформа","Browser and web platform"],bonus:["Глубина","Depth"],parked:["Быстрая проверка JS/React","Quick JS/React check"]};
+const ORDER=["llm","rag","agents","sysd","behav","js","ts","react","web","bonus","parked"];
 function renderChips(){
   chips.innerHTML="";
   ORDER.forEach(sec=>{
@@ -212,7 +218,7 @@ function reveal(){
   $("reveal").disabled=true;
 }
 function setLang(l){
-  lang=l; chrome();
+  lang=l; try{localStorage.setItem("drill.lang",l)}catch{} chrome();
   if(cur){const t=cur; seen.delete(t.n); show(t);}
   else stage.innerHTML=`<div class="idle">${L().idle}</div>`;
 }
@@ -227,6 +233,8 @@ $("reset").onclick=()=>{
   stage.innerHTML=`<div class="idle">${L().resetd}</div>`;
   renderChips();
 };
+(()=>{let hops=0; addEventListener("hashchange",()=>hops++);
+  try{const ref=document.referrer; if(ref){const u=new URL(ref); if(u.origin===location.origin&&!u.pathname.endsWith("exam-tickets.html")){ $("back").href=ref; $("back").onclick=e=>{e.preventDefault(); history.go(-(hops+1));}; }}}catch{}})();
 chrome();
 if(!openFromHash()) stage.innerHTML=`<div class="idle">${L().idle}</div>`;
 window.addEventListener("hashchange",openFromHash);

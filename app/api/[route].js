@@ -1,4 +1,4 @@
-// drill API — one Vercel function, five routes: login, logout, state, log, done, explain.
+// drill API — one Vercel function: login, logout, state, log, done, sync, roadmap, explain.
 // Storage: Supabase RPC guarded by DRILL_DB_KEY (anon key can only call the functions; the tables live in a private schema).
 // Auth: single password (DRILL_PASSWORD) → HMAC-signed HttpOnly cookie (DRILL_SECRET), 90 days.
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -30,6 +30,27 @@ async function rpc(fn, args = {}) {
 const load = () => rpc("drill_load");
 const save = (data) => rpc("drill_save", { p_data: data });
 const out = (db) => ({ ...db, auth: true, explain: !!AKEY });
+
+const SECS = new Set(["llm", "rag", "agents", "sysd", "behav", "bonus", "meta", "js", "ts", "react", "web"]);
+// add catalog items the client knows about (new tickets) but the stored state doesn't have yet
+function syncItems(db, list) {
+  let added = 0;
+  for (const x of Array.isArray(list) ? list.slice(0, 200) : []) {
+    const id = Number(x && x.id);
+    if (!Number.isInteger(id) || id < 1 || id > 999 || !SECS.has(x.s) || db.items.some((i) => i.id === id)) continue;
+    db.items.push({ id, s: x.s, t: String(x.t || "").slice(0, 120), st: "new" }); added++;
+  }
+  if (added) db.items.sort((a, b) => a.id - b.id);
+  return added;
+}
+// roadmap: milestone marks (date or null) and counters (applications, interviews)
+function setRoadmap(db, p) {
+  const key = String(p.key || ""); if (!/^[a-z0-9-]{1,40}$/.test(key)) return false;
+  db.roadmap = db.roadmap || { marks: {}, counts: {} }; db.roadmap.marks = db.roadmap.marks || {}; db.roadmap.counts = db.roadmap.counts || {};
+  if (p.type === "mark") { if (p.val) db.roadmap.marks[key] = /^\d{4}-\d{2}-\d{2}$/.test(p.val) ? p.val : new Date().toISOString().slice(0, 10); else delete db.roadmap.marks[key]; return true; }
+  if (p.type === "count") { const v = Math.max(0, Math.min(999, Math.round(Number(p.val) || 0))); db.roadmap.counts[key] = v; return true; }
+  return false;
+}
 
 function logHit(db, p) {
   const it = db.items.find((i) => i.id === Number(p.id)); if (!it) return false;
@@ -65,6 +86,15 @@ export default async function handler(req, res) {
     if (route === "log" || route === "done") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
       const db = await load(); if (!logHit(db, body)) return res.status(400).json({ error: "bad id" });
+      await save(db); return res.status(200).json(out(db));
+    }
+    if (route === "sync") {
+      if (req.method !== "POST") return res.status(405).json({ error: "method" });
+      const db = await load(); if (syncItems(db, body.items)) await save(db); return res.status(200).json(out(db));
+    }
+    if (route === "roadmap") {
+      if (req.method !== "POST") return res.status(405).json({ error: "method" });
+      const db = await load(); if (!setRoadmap(db, body)) return res.status(400).json({ error: "bad roadmap op" });
       await save(db); return res.status(200).json(out(db));
     }
     if (route === "explain") {

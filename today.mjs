@@ -119,6 +119,20 @@ if (cmd === "serve") {
       console.log(`  ${p.d || TODAY}  #${p.id}  ${p.mode || ""}  ${p.st ? "-> " + p.st : ""}  +${p.xp || 0}xp`);
       return json(res, 200, out());
     }
+    if (req.method === "POST" && url.pathname === "/api/sync") {
+      const p = await body(req); const SECS = new Set(["llm","rag","agents","sysd","behav","bonus","meta","js","ts","react","web"]); let added = 0;
+      for (const x of Array.isArray(p.items) ? p.items.slice(0, 200) : []) { const id = Number(x && x.id); if (!Number.isInteger(id) || id < 1 || id > 999 || !SECS.has(x.s) || byId(id)) continue; db.items.push({ id, s: x.s, t: String(x.t || "").slice(0, 120), st: "new" }); added++; }
+      if (added) { db.items.sort((a, b) => a.id - b.id); save(); writeHtml(); console.log(`  synced ${added} new items`); }
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && url.pathname === "/api/roadmap") {
+      const p = await body(req); const key = String(p.key || ""); if (!/^[a-z0-9-]{1,40}$/.test(key)) return json(res, 400, { error: "bad key" });
+      db.roadmap = db.roadmap || { marks: {}, counts: {} }; db.roadmap.marks ||= {}; db.roadmap.counts ||= {};
+      if (p.type === "mark") { if (p.val) db.roadmap.marks[key] = String(p.val).slice(0, 10); else delete db.roadmap.marks[key]; }
+      else if (p.type === "count") db.roadmap.counts[key] = Math.max(0, Math.min(999, Math.round(Number(p.val) || 0)));
+      else return json(res, 400, { error: "bad type" });
+      save(); return json(res, 200, out());
+    }
     if (req.method === "POST" && url.pathname === "/api/explain") {
       const p = await body(req); const key = apiKey();
       if (!key) return json(res, 400, { error: "no ANTHROPIC_API_KEY (env or .env next to today.mjs)" });
