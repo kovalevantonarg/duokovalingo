@@ -115,8 +115,8 @@ svg{flex:none}
 #tip{position:fixed;z-index:50;pointer-events:none;max-width:260px;padding:8px 10px;border-radius:9px;background:#f3efe6;color:#0b1220;font-size:13px;font-weight:600;line-height:1.35;box-shadow:0 6px 24px rgba(0,0,0,.45);opacity:0;transition:opacity 80ms}
 #tip.on{opacity:1}#tip small{display:block;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;color:#4b5b78;margin-bottom:2px}
 /* rounds */
-.round{max-width:640px;margin:0 auto;padding:20px var(--gut) 0;display:flex;flex-direction:column;min-height:100dvh}
-@media(min-width:700px){.round{padding-top:32px}}
+.round{max-width:640px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) calc(var(--gut) + env(safe-area-inset-right)) 0 calc(var(--gut) + env(safe-area-inset-left));display:flex;flex-direction:column;min-height:100dvh;box-sizing:border-box}
+@media(min-width:700px){.round{padding-top:calc(32px + env(safe-area-inset-top))}}
 .rtop{display:flex;align-items:center;gap:14px}.rtop .rl{height:32px;flex:none}.rtop .rl button{padding:0 9px;font-size:11px}
 .x{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--dim2);background:transparent;border:0;padding:0;margin-left:-6px}.x:hover{color:var(--fg)}
 .pbar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
@@ -212,7 +212,7 @@ svg{flex:none}
 .meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:22px}@media(min-width:700px){.meta{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .meta div{display:flex;flex-direction:column;gap:2px}.meta .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);font-weight:700}.meta .v{font-size:16px;color:var(--fg);font-weight:700;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace}.meta .v.ov{color:var(--warn)}
 /* login */
-.login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px var(--gut);gap:18px}
+.login{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(24px + env(safe-area-inset-top)) var(--gut) calc(24px + env(safe-area-inset-bottom));gap:18px;box-sizing:border-box}
 .login .wm{font-size:clamp(22px,7vw,30px)}.login form{display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px}
 .login input{height:52px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:18px;padding:0 16px;outline:none}.login input:focus{border-color:var(--blue)}
 .login .err{color:var(--crit);font-size:14px;font-weight:700;min-height:20px;text-align:center}
@@ -516,7 +516,7 @@ function runTF(qs,onDone,title,acc){
     const q=qs[i]; let ans=null, moreOpen=false;
     const show=(v,redraw)=>{ const ok=v===q.ok;
       const picked=$(v?"#t":"#f"), oth=$(v?"#f":"#t"); picked.classList.add("pick"); if(!ok) picked.classList.add("bad"); oth.classList.add("dim"); picked.disabled=oth.disabled=true; setProg(i+1,qs.length);
-      $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:q.ok?L().true:L().false,text:q.ok?"":q.t[lang].kill,q,btn:ok?"green":"red",btnLabel:L().next});
+      $("#sheetSlot").innerHTML=sheet({ok,title:ok?L().resok:L().resbad,sub:q.ok?L().true:L().false,text:"",q,btn:ok?"green":"red",btnLabel:L().next});
       wireSheet(q,q.s,()=>{i++;step()});
       const m=$("#more"), open=m.onclick; m.onclick=()=>{moreOpen=true;open()}; if(moreOpen||(!ok&&!redraw)) m.click(); };
     const answer=v=>{ if(ans!==null) return; ans=v; const ok=v===q.ok; beep(ok); setCombo(ok?combo+1:0); if(ok){acc.correct++;acc.xp+=1}else{acc.missedQ.push({kind:"tf",q})} show(v,false); };
