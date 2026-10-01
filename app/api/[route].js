@@ -31,6 +31,7 @@ async function rpc(fn, args = {}) {
 const load = () => rpc("drill_load");
 const save = (data) => rpc("drill_save", { p_data: data });
 const out = (db) => ({ ...db, auth: true, explain: !!AKEY });
+export { stFromScore };
 
 const SECS = new Set(["llm", "rag", "agents", "sysd", "behav", "bonus", "meta", "js", "ts", "react", "web"]);
 // add catalog items the client knows about (new tickets) but the stored state doesn't have yet
@@ -66,6 +67,19 @@ function logHit(db, p) {
   if (p.mode) it.lastMode = String(p.mode).slice(0, 20);
   if (p.transcript) it.lastAnswer = String(p.transcript).slice(0, 600);
   return true;
+}
+
+// exam attempt: store the graded answer and count it as a drill session for the ticket's core items
+const stFromScore = (sc) => (sc >= 8 ? "green" : sc >= 5 ? "yellow" : "red");
+function logExam(db, p, g) {
+  const n = Number(p.n); if (!Number.isInteger(n) || n < 1 || n > 999) return [];
+  const d = new Date().toISOString().slice(0, 10);
+  db.exams = Array.isArray(db.exams) ? db.exams : [];
+  db.exams.push({ n, lang: p.lang === "en" ? "en" : "ru", d, t: Date.now(), score: g.score, q: g.questions, chars: String(p.answer || "").length,
+    answer: String(p.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300) });
+  if (db.exams.length > 400) db.exams.splice(0, db.exams.length - 400);
+  for (const id of (Array.isArray(p.core) ? p.core : []).slice(0, 10)) logHit(db, { id, d, st: stFromScore(g.score), xp: g.score, mode: "exam" });
+  return db.exams.filter((e) => e.n === n).slice(-20);
 }
 
 export default async function handler(req, res) {
@@ -108,7 +122,8 @@ export default async function handler(req, res) {
       if (j.stop_reason === "max_tokens") return res.status(502).json({ error: "grader ran out of tokens, try again" });
       const text = (j.content || []).map((c) => c.text || "").join("");
       let g; try { g = parseJson(text); } catch { return res.status(502).json({ error: "bad grader output: " + text.slice(0, 200) }); }
-      return res.status(200).json(g);
+      let attempts = []; try { const db = await load(); attempts = logExam(db, body, g); await save(db); } catch (e) { g.saveError = e.message; }
+      return res.status(200).json({ ...g, attempts });
     }
     if (route === "explain") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });

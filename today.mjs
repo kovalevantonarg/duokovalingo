@@ -142,7 +142,12 @@ if (cmd === "serve") {
       const j = await r.json(); if (!r.ok) return json(res, 502, { error: j.error?.message || ("api " + r.status) });
       if (j.stop_reason === "max_tokens") return json(res, 502, { error: "grader ran out of tokens, try again" });
       console.log(`  check    ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
-      try { return json(res, 200, parseJson((j.content || []).map((c) => c.text || "").join(""))); } catch { return json(res, 502, { error: "bad grader output" }); }
+      let g; try { g = parseJson((j.content || []).map((c) => c.text || "").join("")); } catch { return json(res, 502, { error: "bad grader output" }); }
+      db.exams = Array.isArray(db.exams) ? db.exams : [];
+      db.exams.push({ n: Number(p.n), lang: p.lang === "en" ? "en" : "ru", d: TODAY, t: Date.now(), score: g.score, q: g.questions, chars: String(p.answer || "").length, answer: String(p.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300) });
+      for (const id of (Array.isArray(p.core) ? p.core : []).slice(0, 10)) logHit({ id, st: g.score >= 8 ? "green" : g.score >= 5 ? "yellow" : "red", xp: g.score, mode: "exam" });
+      save(); writeHtml();
+      return json(res, 200, { ...g, attempts: db.exams.filter((e) => e.n === Number(p.n)).slice(-20) });
     }
     if (req.method === "POST" && url.pathname === "/api/explain") {
       const p = await body(req); const key = apiKey();
