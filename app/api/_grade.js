@@ -4,7 +4,7 @@ export function checkPrompt(p) {
   const ru = p.lang === "ru";
   const sys = `You are a senior interviewer at an AI product startup grading one practice answer from a candidate: a senior frontend engineer (10 years, TypeScript) moving into AI engineering. You have the three questions, the candidate's typed answer, and a reference answer the candidate has NOT seen yet.
 Grade the substance, not the style. Be exact and honest: a polite grade teaches nothing. Write everything in ${ru ? "Russian (technical terms and API names stay in English)" : "English"}.
-Return ONLY a JSON object, no prose around it, with these keys:
+Return a JSON object with these keys:
 "score": integer 0-10 (10 = would pass a senior follow-up; 7 = right idea, gaps an interviewer would probe; 4 = partial; 1 = mostly wrong or empty).
 "verdict": one or two sentences, direct, what the interviewer would think.
 "covered": array of short strings, the points the candidate got right (0-6).
@@ -28,6 +28,26 @@ ${(p.ref || []).map((a, i) => `${i + 1}. ${a.q}: ${a.t}`).join("\n")}
 Common trap: ${p.kill || ""}`;
   return { sys, user };
 }
+// JSON schema for output_config.format: the API constrains decoding to it, so the reply always parses.
+// (Number bounds aren't supported by the API; parseJson clamps.)
+const S = (t, d) => ({ type: t, description: d });
+export const GRADE_SCHEMA = {
+  type: "object", additionalProperties: false,
+  required: ["score", "verdict", "covered", "missing", "wrong", "questions", "followup", "language", "next"],
+  properties: {
+    score: S("integer", "0-10"),
+    verdict: S("string", "one or two sentences"),
+    covered: { type: "array", items: { type: "string" } },
+    missing: { type: "array", items: { type: "string" } },
+    wrong: { type: "array", items: { type: "object", additionalProperties: false, required: ["said", "actually"], properties: { said: S("string", ""), actually: S("string", "") } } },
+    questions: { type: "array", items: { type: "integer" }, description: "exactly 3 scores 0-10, one per question" },
+    followup: S("string", ""),
+    language: { type: "array", items: { type: "object", additionalProperties: false, required: ["from", "to"], properties: { from: S("string", ""), to: S("string", "") } } },
+    next: S("string", ""),
+  },
+};
+export const GRADE_BODY = (model, sys, user) => ({ model, max_tokens: 3000, system: sys, messages: [{ role: "user", content: user }], output_config: { format: { type: "json_schema", schema: GRADE_SCHEMA } } });
+
 export function parseJson(text) {
   const s = String(text || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   const a = s.indexOf("{"), b = s.lastIndexOf("}");
