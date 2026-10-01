@@ -272,6 +272,7 @@ const UI={
      more:"Подробнее",explain:"Объяснить иначе",thinking:"Думаю…",
      roundOver:"Раунд окончен",missedTitle:"Ошибки в этом раунде",reviewMisses:"Повторить ошибки",perfect:"Чисто.",good:"Хорошо.",meh:"Норм. Мимо — это материал на завтра.",xpt:"XP сегодня",streak:"серия",was:"было",onmap:"на карте",todayw:"сегодня",
      roadmap:"Роадмап",roadmapd:"откуда идём, где сейчас, что дальше",
+     learn:"Разбор",learnd:"каждая тема с нуля: термины, механика, примеры",
      statuses:{green:"уверенно",yellow:"шатко",red:"мимо",new:"не открывал",parked:"запарковано"},overdue:"просрочено",days:"д",ago:"назад",never:"ни разу",
      nothing:"Ничего не due — бери новое.",drill:"Дриллить",last:"Последний дрилл",dueh:"Due",interval:"Интервал",lastmode:"Последний режим",cold:"уверенно",shaky:"шатко",missed:"мимо",neww:"новое",
      hintNext:"дальше",hintMore:"подробнее",hintQuit:"выйти",hintCheck:"проверить",hintSpeak:"говорить / стоп",hintNextQ:"следующий вопрос",hintMove:"двигать",wk:"нед.",cell:"клетка",ofw:"из",pw:"Пароль",enter:"Войти",wrongpw:"Не тот пароль",logout:"Выйти",noserver:"Сервер не настроен"},
@@ -286,6 +287,7 @@ const UI={
      more:"More",explain:"Explain differently",thinking:"Thinking…",
      roundOver:"Round over",missedTitle:"Mistakes this round",reviewMisses:"Retry mistakes",perfect:"Clean.",good:"Good.",meh:"Fine. The misses are tomorrow's material.",xpt:"XP today",streak:"streak",was:"was",onmap:"on the map",todayw:"today",
      roadmap:"Roadmap",roadmapd:"where we came from, where we are, what's next",
+     learn:"Lessons",learnd:"every topic from zero: terms, mechanism, examples",
      statuses:{green:"cold",yellow:"shaky",red:"missed",new:"never opened",parked:"parked"},overdue:"overdue",days:"d",ago:"ago",never:"never",
      nothing:"Nothing due — take the new one.",drill:"Drill it",last:"Last drilled",dueh:"Due",interval:"Interval",lastmode:"Last mode",cold:"cold",shaky:"shaky",missed:"missed",neww:"new",
      hintNext:"next",hintMore:"more",hintQuit:"quit",hintCheck:"check",hintSpeak:"speak / stop",hintNextQ:"next question",hintMove:"move",wk:"wk",cell:"cell",ofw:"of",pw:"Password",enter:"Sign in",wrongpw:"Wrong password",logout:"Sign out",noserver:"Server not configured"}
@@ -347,7 +349,7 @@ function wireHeader(){ const lo=$("#lo"); if(lo) lo.onclick=async()=>{await fetc
 const MODE_ICON={voice:I.mic14,tf:I.bolt13,gap:I.pen,order:I.sort,ticket:I.doc};
 function chips(id,hot){ const t=ticketFor(id); if(!t) return ""; const d=window.DRILLS[t.n]||{};
   const b=(m,label)=>`<button class="chip${hot===m?" hot":""}" onclick="location.hash='play/${id}/${m}'">${MODE_ICON[m]}${label}</button>`;
-  return `<div class="chips">${b("voice",L().voice)}${b("tf","T/F")}${d.cloze?b("gap",L().gap):""}${d.steps?b("order",L().order):""}<a class="chip" href="study.html#t${t.n}">${lang==="ru"?"Разбор с нуля":"Learn (RU)"}</a><a class="chip" href="exam-tickets.html#t${t.n}">${I.doc}${L().ticket} ${t.n}</a></div>`; }
+  return `<div class="chips">${b("voice",L().voice)}${b("tf","T/F")}${d.cloze?b("gap",L().gap):""}${d.steps?b("order",L().order):""}<a class="chip" href="learn.html#t${t.n}">${I.doc}${L().learn}</a><a class="chip" href="exam-tickets.html#t${t.n}">${I.doc}${L().ticket} ${t.n}</a></div>`; }
 function itemRow(i,sub){ const st=i.st||"new"; return `<div class="item"><span class="sw ${st}${isDue(i)?" due":""}"></span><div class="it"><div class="t"><span class="id">#${i.id}</span>${esc(i.t)}</div><div class="s">${sub}</div>${chips(i.id)}</div>${chips(i.id)}</div>`; }
 function rtop(pct,ok){ return `<div class="rtop"><button class="x" id="quit" aria-label="${L().quit}">${I.x}</button><div class="pbar${ok?" ok":""}" id="pbar"><i style="width:${pct}%"></i></div><span class="combo" id="combo"></span><div class="seg rl" id="rl" role="group" aria-label="language"><button data-l="ru" class="${lang==="ru"?"on":""}">RU</button><button data-l="en" class="${lang==="en"?"on":""}">EN</button></div></div>`; }
 // switching language mid-round redraws the current screen in place: same question, same answer state, no progress lost
@@ -413,7 +415,7 @@ addEventListener("scroll",tipHide,{passive:true}); addEventListener("hashchange"
 // ---------- home ----------
 function home(){
   const d=due(), nn=nextNew(); const top=d.slice(0,2); const active=DB.items.filter(i=>i.st!=="parked"); const n=s=>active.filter(i=>i.st===s).length;
-  let h=header()+`<div class="page"><a class="rmlink" href="roadmap.html"><span class="rmt">${L().roadmap}</span><span class="rms">${L().roadmapd}</span>${I.arrow}</a><div class="sec"><span>${L().today}</span><span class="r">${fmtDate()}</span></div><div class="card">`;
+  let h=header()+`<div class="page"><a class="rmlink" href="roadmap.html"><span class="rmt">${L().roadmap}</span><span class="rms">${L().roadmapd}</span>${I.arrow}</a><a class="rmlink" href="learn.html"><span class="rmt">${L().learn}</span><span class="rms">${L().learnd}</span>${I.arrow}</a><div class="sec"><span>${L().today}</span><span class="r">${fmtDate()}</span></div><div class="card">`;
   h+=top.length?top.map(i=>itemRow(i,`${L().due} · <span class="ov">${i.over}${L().days} ${L().overdue}</span>`)).join(""):`<div class="item"><div class="it"><div class="s">${L().nothing}</div></div></div>`;
   if(nn) h+=itemRow(nn,L().newi);
   if(DB.today_overrides?.ship) h+=`<div class="item" style="align-items:center"><span class="sw ship" style="margin-top:0"></span><div class="it"><div class="t"><span class="id">${L().ship}</span>${esc(DB.today_overrides.ship)}</div></div></div>`;

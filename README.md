@@ -30,17 +30,15 @@ Reading-first failed twice. Build-first is the format now.
 | File | What it is |
 |---|---|
 | `today.mjs` + `queue.json` | The dispatcher + state. `serve` runs the app, `done` logs from the terminal, `html` regenerates progress.html. |
-| `app/` | The game. `index.html` (SPA), `tickets.js` (27 tickets as data), `drills.js` (traps, cloze, step sequences), `exam-tickets.html` (classic mode), `api/[route].js` (Vercel function: login, state, log, done, explain), PWA manifest + icons. |
+| `app/` | The game. `index.html` (SPA), `tickets.js` (50 tickets as data), `drills.js` (traps, cloze, step sequences), `exam-tickets.html` (classic mode + graded check), `api/[route].js` (Vercel function: login, state, log, done, sync, roadmap, explain, check), PWA manifest + icons. |
 | `plan.md` | Current plan. Applications first, drilling around them. |
 | `anton-os.md` | One page. Start Rule, four roles. Never grows. |
 | `learning-log.md` | Every session, every score, every gap. Source of truth. |
 | `learning-system.md` | The drill protocol. |
 | `core-40-priority.md` | The 40 must-know questions. |
-| `core-40-deck.html` | Same 40 as flashcards. Open on phone. |
-| `exam-tickets.html` | 27 exam tickets, all 42 queue items. RU/EN, spoken-prose reference, "where people fail". |
 | `progress.html` | The wall, session heat map, due timeline. Cells open their ticket. |
 | `concepts.md` | My own wording. The only version that survives an interview. |
-| `lesson-NN-*.md` | Lesson, English. `lesson-NN-RU.md` — comprehension check, terms stay English. |
+| `app/learn.html` | «Разбор с нуля»: a from-zero lesson per ticket, RU/EN, with sources. Replaced the lesson-NN-*.md files. |
 | `english-pack.md` | Self-intro, STAR stories, phrase bank. |
 | `follow-list.md` | ~25 accounts + the 20-min Friday protocol. |
 | `interview-log.md` | Real interview reps. |

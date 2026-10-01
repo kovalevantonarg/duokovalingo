@@ -2,13 +2,19 @@
 
 Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 
-## Detailed lessons
+## Lessons ("Разбор с нуля")
 
-`study.html#t1` opens the Russian lesson for ticket 1; all 50 tickets have one.
-Edit `lessons-content.md`, then run `node build-lessons.mjs` to regenerate the
-committed `lessons.js`. No runtime Markdown library or deployment build is needed.
-`node build-lessons.mjs --check` verifies coverage, required sections and freshness.
-Interview references remain bilingual in `tickets.js`; lessons are in Russian.
+`learn.html#t1` opens the from-zero lesson for ticket 1, RU and EN; all 50 tickets have one.
+Data: `lessons/L{n}.json` (+ `lessons/index.json` with titles and word counts), loaded on demand.
+Each lesson: why they ask, sections (terms defined on first use, mechanism, real outputs, frontend
+parallel, traps), glossary, decoding of the reference answer, self-check, sources.
+
+## Exam check
+
+`exam-tickets.html`: "Check my answer" POSTs the typed answer + the hidden reference to `/api/check`
+(prompt and JSON schema in `api/_grade.js`, shared with `today.mjs`). The grade is stored in
+`db.exams` and counts as a drill session for the ticket's core items (score 8+ green, 5–7 yellow,
+else red). Needs `ANTHROPIC_API_KEY`; `DRILL_MODEL` picks the model (default `claude-sonnet-5`).
 
 ## Vercel project `drill` (root directory: `app`)
 
