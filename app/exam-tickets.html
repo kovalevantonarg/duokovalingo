@@ -55,6 +55,27 @@
   .tools{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
   .count{font-size:11.5px;color:var(--dim2);margin-left:auto}
 
+  .grade{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:14px 16px}
+  .grade .gh{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .grade .score{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:26px;line-height:1;color:var(--acc)}
+  .grade .score small{font-size:12px;color:var(--dim2);font-family:var(--mono);font-weight:500;margin-left:2px}
+  .grade .score.g{color:#5dd39e}.grade .score.y{color:#e8b86a}.grade .score.r{color:var(--bad)}
+  .grade .qs3{display:flex;gap:6px;margin-left:auto}
+  .grade .qs3 span{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--line2);color:var(--dim)}
+  .grade .verdict{font-size:14.5px;line-height:1.55;margin:0 0 12px}
+  .grade h4{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:12px 0 6px;font-weight:600}
+  .grade ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5;color:var(--fg)}
+  .grade li{margin:0 0 5px}
+  .grade .ok li::marker{color:#5dd39e}.grade .miss li::marker{color:#e8b86a}.grade .bad li::marker{color:var(--bad)}
+  .grade .bad li b{color:#ffd9d2;font-weight:600}.grade .bad li i{color:var(--dim);font-style:normal}
+  .grade .lng li s{color:var(--dim2)}.grade .lng li b{font-weight:600;color:#ffd9c9}
+  .grade .fu{margin-top:12px;padding:10px 12px;border-left:2px solid var(--acc);background:var(--panel);border-radius:0 8px 8px 0;font-size:13.5px;color:var(--fg)}
+  .grade .fu span{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:3px}
+  .grade .nx{margin-top:10px;font-size:13px;color:var(--dim)}
+  .grade.err{color:var(--dim);font-size:13.5px}
+  .grade.err a{color:var(--acc)}
+  button.chk{background:var(--panel);border-color:var(--acc);color:var(--acc)}
+  button.chk.busy{opacity:.6;cursor:progress}
   .hint{margin-top:14px;padding:11px 13px;background:var(--panel2);border-left:2px solid var(--line2);border-radius:0 6px 6px 0;font-size:12.5px;color:var(--dim)}
   .ans{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
   .ans h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 14px;font-weight:600}
@@ -121,7 +142,7 @@
 const UI={
  ru:{sub:"Новая тема? Начни с «Разбора с нуля». Для самопроверки ответь на три вопроса, затем сравни с эталоном.",
      draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
-     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",src:"Источники",fixedN:"исправлено",was:"Было: ",said:"Источник: ",
+     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",check:"Проверить ответ",checking:"Проверяю…",outof:"из 10",q3:"В",covered:"Попал",missing:"Не хватает",wrong:"Неверно",langh:"Как сказать по-английски",fu:"Следующий вопрос интервьюера",nxt:"Дальше: ",short:"Напиши хотя бы пару предложений, тогда будет что проверять.",nokey:"Проверка выключена: на сервере нет ANTHROPIC_API_KEY. Добавь ключ в переменные окружения проекта на Vercel и передеплой.",fail:"Не удалось проверить: ",login:"Нужно войти в приложение (главная страница), тогда проверка заработает и здесь.",src:"Источники",fixedN:"исправлено",was:"Было: ",said:"Источник: ",
      verif:n=>`Под ответом — журнал источников от ${n}: утверждения, пояснения и ссылки. Для изучения механизма открой «Разбор с нуля». Конкретные лимиты и параметры зависят от модели и версии API.`,
      st:{ok:"✓ подтверждено",fix:"исправлено по источнику",fix2:"исправлено при перепроверке",soft:"смягчено: первоисточника нет"},
      ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
@@ -131,7 +152,7 @@ const UI={
      foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>Оценку 0–10 записывай в <code>learning-log.md</code>. Здесь ничего не сохраняется — это экзаменатор, а не трекер."},
  en:{sub:"New topic? Start with the detailed lesson in Russian. To practise recall, answer the three questions before opening the reference.",
      draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
-     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",src:"Sources",fixedN:"corrected",was:"Was: ",said:"Source says: ",
+     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",check:"Check my answer",checking:"Checking…",outof:"out of 10",q3:"Q",covered:"Covered",missing:"Missing",wrong:"Wrong",langh:"How an engineer would say it",fu:"Interviewer's next question",nxt:"Next: ",short:"Write at least a couple of sentences first, then there is something to check.",nokey:"Checking is off: the server has no ANTHROPIC_API_KEY. Add it to the project's environment variables on Vercel and redeploy.",fail:"Could not check: ",login:"Log in on the home page first; then checking works here too.",src:"Sources",fixedN:"corrected",was:"Was: ",said:"Source says: ",
      verif:n=>`The source ledger dated ${n} lists claims, explanations and links. Use the detailed lesson to learn the mechanism. Exact limits and parameters depend on the model and API version.`,
      st:{ok:"✓ verified",fix:"corrected per source",fix2:"corrected on re-check",soft:"hedged: no primary source found"},
      ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
@@ -220,8 +241,10 @@ function show(t){
       <div class="tools">
         <button id="copy">${L().copy}</button>
         <button class="ghost" id="clr">${L().clear}</button>
+        <button class="chk" id="chk">${L().check}</button>
         <span class="count" id="cnt">0 ${L().chars}</span>
       </div>
+      <div id="gradeBox"></div>
       <div class="hint">${L().hint}</div>
     </div>`;
   const ta=$("mine"), cnt=$("cnt");
@@ -230,8 +253,37 @@ function show(t){
     try{await navigator.clipboard.writeText(ta.value);}catch(e){ta.select();document.execCommand("copy");}
     $("copy").textContent=L().copied; setTimeout(()=>{$("copy").textContent=L().copy},1200);
   };
-  $("clr").onclick=()=>{ta.value="";cnt.textContent="0 "+L().chars;ta.focus()};
+  $("clr").onclick=()=>{ta.value="";cnt.textContent="0 "+L().chars;$("gradeBox").innerHTML="";ta.focus()};
+  $("chk").onclick=()=>checkAnswer(t,ta.value);
   window.scrollTo({top:0,behavior:"smooth"});
+}
+function scoreCls(n){return n>=8?"g":n>=5?"y":"r"}
+async function checkAnswer(t,text){
+  const box=$("gradeBox"), btn=$("chk"), d=D(t);
+  if(text.trim().length<40){box.innerHTML=`<div class="grade err">${L().short}</div>`;return}
+  btn.disabled=true; btn.classList.add("busy"); btn.textContent=L().checking;
+  try{
+    const r=await fetch("/api/check",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({n:t.n,lang,topic:d.topic,qs:d.qs,answer:text,ref:d.a,kill:d.kill.replace(/<[^>]+>/g,"")})});
+    let j={}; try{j=await r.json()}catch{}
+    if(!r.ok){
+      const msg=r.status===401?L().login:j.error==="no_key"?L().nokey:j.error==="too_short"?L().short:L().fail+(j.error||r.status);
+      box.innerHTML=`<div class="grade err">${esc(msg)}</div>`; return;
+    }
+    const li=(xs,f)=>xs.map(x=>`<li>${f?f(x):esc(x)}</li>`).join("");
+    box.innerHTML=`<div class="grade">
+      <div class="gh"><div class="score ${scoreCls(j.score)}">${j.score}<small>${L().outof}</small></div>
+        ${j.questions?.length===3?`<div class="qs3">${j.questions.map((q,i)=>`<span>${L().q3}${i+1} · ${q}</span>`).join("")}</div>`:""}</div>
+      <p class="verdict">${esc(j.verdict)}</p>
+      ${j.covered?.length?`<h4>${L().covered}</h4><ul class="ok">${li(j.covered)}</ul>`:""}
+      ${j.missing?.length?`<h4>${L().missing}</h4><ul class="miss">${li(j.missing)}</ul>`:""}
+      ${j.wrong?.length?`<h4>${L().wrong}</h4><ul class="bad">${li(j.wrong,w=>`<b>${esc(w.said)}</b> <i>→ ${esc(w.actually)}</i>`)}</ul>`:""}
+      ${j.language?.length?`<h4>${L().langh}</h4><ul class="lng">${li(j.language,w=>`<s>${esc(w.from)}</s> → <b>${esc(w.to)}</b>`)}</ul>`:""}
+      ${j.followup?`<div class="fu"><span>${L().fu}</span>${esc(j.followup)}</div>`:""}
+      ${j.next?`<div class="nx">${L().nxt}${esc(j.next)}</div>`:""}
+    </div>`;
+    box.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }catch(e){ box.innerHTML=`<div class="grade err">${esc(L().fail+e.message)}</div>`; }
+  finally{ btn.disabled=false; btn.classList.remove("busy"); btn.textContent=L().check; }
 }
 function draw(){
   const pool=T.filter(t=>!seen.has(t.n));

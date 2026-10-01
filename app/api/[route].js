@@ -1,7 +1,8 @@
-// drill API — one Vercel function: login, logout, state, log, done, sync, roadmap, explain.
+// drill API — one Vercel function: login, logout, state, log, done, sync, roadmap, explain, check.
 // Storage: Supabase RPC guarded by DRILL_DB_KEY (anon key can only call the functions; the tables live in a private schema).
 // Auth: single password (DRILL_PASSWORD) → HMAC-signed HttpOnly cookie (DRILL_SECRET), 90 days.
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { checkPrompt, parseJson } from "./_grade.js";
 
 const env = (k) => process.env[k] || "";
 const SB = env("SUPABASE_URL"), ANON = env("SUPABASE_ANON_KEY"), DBKEY = env("DRILL_DB_KEY");
@@ -96,6 +97,17 @@ export default async function handler(req, res) {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
       const db = await load(); if (!setRoadmap(db, body)) return res.status(400).json({ error: "bad roadmap op" });
       await save(db); return res.status(200).json(out(db));
+    }
+    if (route === "check") {
+      if (req.method !== "POST") return res.status(405).json({ error: "method" });
+      if (!AKEY) return res.status(400).json({ error: "no_key" });
+      if (!body || String(body.answer || "").trim().length < 40) return res.status(400).json({ error: "too_short" });
+      const { sys, user } = checkPrompt(body);
+      const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": AKEY, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODEL, max_tokens: 1200, system: sys, messages: [{ role: "user", content: user }] }) });
+      const j = await r.json(); if (!r.ok) return res.status(502).json({ error: j.error?.message || ("api " + r.status) });
+      const text = (j.content || []).map((c) => c.text || "").join("");
+      let g; try { g = parseJson(text); } catch { return res.status(502).json({ error: "bad grader output" }); }
+      return res.status(200).json(g);
     }
     if (route === "explain") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
