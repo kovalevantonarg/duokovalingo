@@ -11,6 +11,7 @@ import { createServer } from "node:http";
 import { exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, extname } from "node:path";
+import { checkPrompt, parseJson } from "./app/api/_grade.js";
 
 const FILE = new URL("./queue.json", import.meta.url);
 const HTML = new URL("./progress.html", import.meta.url);
@@ -132,6 +133,15 @@ if (cmd === "serve") {
       else if (p.type === "count") db.roadmap.counts[key] = Math.max(0, Math.min(999, Math.round(Number(p.val) || 0)));
       else return json(res, 400, { error: "bad type" });
       save(); return json(res, 200, out());
+    }
+    if (req.method === "POST" && url.pathname === "/api/check") {
+      const key = apiKey(); if (!key) return json(res, 400, { error: "no_key" });
+      const p = await body(req); if (!p || String(p.answer || "").trim().length < 40) return json(res, 400, { error: "too_short" });
+      const { sys, user } = checkPrompt(p);
+      const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODEL, max_tokens: 1200, system: sys, messages: [{ role: "user", content: user }] }) });
+      const j = await r.json(); if (!r.ok) return json(res, 502, { error: j.error?.message || ("api " + r.status) });
+      console.log(`  check    ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
+      try { return json(res, 200, parseJson((j.content || []).map((c) => c.text || "").join(""))); } catch { return json(res, 502, { error: "bad grader output" }); }
     }
     if (req.method === "POST" && url.pathname === "/api/explain") {
       const p = await body(req); const key = apiKey();
