@@ -6,7 +6,7 @@ import { checkPrompt, parseJson, GRADE_BODY } from "./_grade.js";
 
 const env = (k) => process.env[k] || "";
 const SB = env("SUPABASE_URL"), ANON = env("SUPABASE_ANON_KEY"), DBKEY = env("DRILL_DB_KEY");
-const PW = env("DRILL_PASSWORD"), SECRET = env("DRILL_SECRET"), AKEY = env("ANTHROPIC_API_KEY"), MODEL = env("DRILL_MODEL") || "claude-sonnet-5";
+const PW = env("DRILL_PASSWORD"), SECRET = env("DRILL_SECRET"), AKEY = env("ANTHROPIC_API_KEY"), MODEL = env("DRILL_MODEL") || "claude-sonnet-5-5";
 const INTERVAL = { red: 1, yellow: 3, green: 7 }; // base intervals; green grows on repeat success
 const MAX_IV = 90, EASE = 2;
 const COOKIE = "drill";

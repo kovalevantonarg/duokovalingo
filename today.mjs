@@ -94,7 +94,7 @@ if (cmd === "serve") {
   const port = Number(process.argv[3] || 4040);
   const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".css": "text/css", ".png": "image/png", ".md": "text/plain; charset=utf-8" };
   const apiKey = () => { if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY; const envp = join(DIR, ".env"); if (!existsSync(envp)) return ""; const m = readFileSync(envp, "utf8").match(/^\s*ANTHROPIC_API_KEY\s*=\s*"?([^"\n]+)"?/m); return m ? m[1].trim() : ""; };
-  const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5";
+  const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5-5";
   const CACHE = join(DIR, "explain-cache.json");
   const cache = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
   const out = () => ({ ...db, auth: false, explain: !!apiKey() });

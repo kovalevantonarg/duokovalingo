@@ -14,7 +14,7 @@ parallel, traps), glossary, decoding of the reference answer, self-check, source
 `exam-tickets.html`: "Check my answer" POSTs the typed answer + the hidden reference to `/api/check`
 (prompt and JSON schema in `api/_grade.js`, shared with `today.mjs`). The grade is stored in
 `db.exams` and counts as a drill session for the ticket's core items (score 8+ green, 5–7 yellow,
-else red). Needs `ANTHROPIC_API_KEY`; `DRILL_MODEL` picks the model (default `claude-sonnet-5`).
+else red). Needs `ANTHROPIC_API_KEY`; `DRILL_MODEL` picks the model (default `claude-sonnet-5-5`).
 
 ## Vercel project `drill` (root directory: `app`)
 
