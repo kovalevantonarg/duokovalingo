@@ -1,4 +1,4 @@
-// Activity card on Home: streak, weekly rhythm, heatmap of the last weeks and its tooltip.
+// Activity card on Home: streak, this week vs target, heatmap of the last weeks and its tooltip.
 import { icon } from "../icons.js";
 import { state } from "../state.js";
 import { byId, streak } from "../store.js";
@@ -21,7 +21,6 @@ export function activity() {
   const fmt = (dt, o) =>
     dt.toLocaleDateString(loc, o || { weekday: "short", day: "numeric", month: "short" });
   let cells = "",
-    bars = "",
     prevM = -1,
     activeDays = 0,
     weekDays = [],
@@ -60,7 +59,6 @@ export function activity() {
       cells += `<i class="dy l${lvl(c)}${k === TODAY ? " today" : ""}" data-tip="${c ? `<b>${c} ${ui().cardsN(c)}${x.xp ? ` · ${x.xp} XP` : ""}</b><br>${names}` : ui().noAct}" data-sub="${esc(fmt(dt))}"></i>`;
     }
     weekDays.push(wd);
-    bars += `<i class="wbar${wd >= ACT_TARGET ? " met" : ""}${w === W - 1 ? " cur" : ""}" style="--h:${Math.min(wd, 4) / 4}" data-tip="${wd} ${ui().ofw} ${ACT_TARGET} ${ui().actDays}" data-sub="${ui().weekOf} ${esc(fmt(wk0, { day: "numeric", month: "short" }))}"></i>`;
   }
   if (mlab.length > 1 && mlab[1][0] - mlab[0][0] < 3) mlab.shift(); // first partial month would collide with the next label
   const monthsRow = mlab.map(([w, m]) => `<span style="grid-column:${w + 1}/span 4">${m}</span>`).join("");
@@ -95,9 +93,8 @@ export function activity() {
     <div class="hgrid" style="--w:${W}">
       <span></span><div class="hmonths">${monthsRow}</div>
       <div class="hdows">${dl.map((x) => `<span>${x}</span>`).join("")}</div><div class="hcells">${cells}</div>
-      <span class="hrl">${ui().rhythm}</span><div class="hbars"><span class="tline" style="--t:${ACT_TARGET / 4}"></span>${bars}</div>
     </div>
-    <div class="hleg"><span>${ui().lessA}</span><i class="dy l0"></i><i class="dy l1"></i><i class="dy l2"></i><i class="dy l3"></i><i class="dy l4"></i><span>${ui().moreA}</span><span class="sp"></span><span class="tl-key"><i></i>${ui().target} ${ACT_TARGET} ${ui().actDaysW}</span></div>
+    <div class="hleg"><span>${ui().lessA}</span><i class="dy l0"></i><i class="dy l1"></i><i class="dy l2"></i><i class="dy l3"></i><i class="dy l4"></i><span>${ui().moreA}</span></div>
   </div>`;
 }
 

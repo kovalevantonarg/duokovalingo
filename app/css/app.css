@@ -714,8 +714,7 @@ svg {
   row-gap: 6px;
 }
 .hmonths,
-.hcells,
-.hbars {
+.hcells {
   display: grid;
   grid-template-columns: repeat(var(--w), minmax(0, 1fr));
   column-gap: 3px;
@@ -774,41 +773,6 @@ svg {
 .hcells .dy {
   cursor: default;
 }
-.hrl {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--dim2);
-  align-self: end;
-  line-height: 1;
-}
-.hbars {
-  position: relative;
-  height: 36px;
-  align-items: end;
-  margin-top: 4px;
-}
-.wbar {
-  display: block;
-  height: max(2px, calc(var(--h) * 100%));
-  background: var(--dim3);
-  border-radius: 2px 2px 0 0;
-}
-.wbar.met {
-  background: var(--accent);
-}
-.wbar.cur {
-  outline: 1px solid var(--fg);
-  outline-offset: 1px;
-}
-.tline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--t) * 100%);
-  border-top: 1px dashed var(--dim2);
-  pointer-events: none;
-  z-index: 1;
-}
 .hleg {
   display: flex;
   align-items: center;
@@ -827,18 +791,6 @@ svg {
 }
 .hleg span:nth-child(7) {
   margin-left: 4px;
-}
-.hleg .sp {
-  flex: 1;
-}
-.tl-key {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.tl-key i {
-  width: 16px;
-  border-top: 1px dashed var(--dim2);
 }
 #tip {
   position: fixed;
