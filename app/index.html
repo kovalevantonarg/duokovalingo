@@ -364,7 +364,7 @@ const mkQ=(S,t,ok)=>{const q={S,t}; if(ok!==undefined) q.ok=ok; Object.definePro
 const other=()=>lang==="ru"?"en":"ru";
 
 // ---------- activity ----------
-const ACT_TARGET=2; // plan.md: 2 drill days a week, 3 build days
+const ACT_TARGET=2; // target: 2 drill days a week
 function activity(){
   const W=innerWidth>=700?26:18, loc=lang==="ru"?"ru-RU":"en-GB";
   const H=Object.fromEntries(DB.history.filter(x=>x.ids&&x.ids.length).map(x=>[x.d,x]));

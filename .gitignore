@@ -5,3 +5,8 @@ node_modules/
 Claude outputs/
 app/state.js
 explain-cache.json
+
+# personal notes and local progress: kept on disk, never committed
+_private/
+queue.json
+progress.html

@@ -169,12 +169,12 @@ if (cmd !== "serve") {
   for (const i of d.slice(0, 2)) console.log(`  #${i.id} ${i.t}  [${i.st}, ${i.over}d overdue]`);
   if (d.length > 2) console.log(`  (+${d.length - 2} more in the backlog - ignore them, 2 is the cap)`);
   console.log("\nNEW  (pre-test cold first, then lesson)");
-  console.log(nn ? `  #${nn.id} ${nn.t}` : "  queue empty - pick from reference/interview-question-bank.md");
+  console.log(nn ? `  #${nn.id} ${nn.t}` : "  queue empty");
   if (db.today_overrides?.ship) console.log(`\nSHIP\n  ${db.today_overrides.ship}`);
   const five = d[0] || nn;
   console.log(`\n5-MINUTE VERSION (bad day, still counts)`);
   console.log(`  #${five.id} out loud, 60 sec, then: node today.mjs done ${five.id} <g|y|r>`);
-  console.log(`\n-> open a Claude session, say "drill", point it at learning-system.md`);
+  console.log(`\n-> open a Claude session, say "drill", point it at _private/learning-system.md`);
   console.log(`   log it:  node today.mjs done <id> <g|y|r>   |   play:  node today.mjs serve   |   picture:  open progress.html\n`);
 }
 

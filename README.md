@@ -1,53 +1,26 @@
-# superhuman — interview prep & AI learning
+# duokovalingo
 
-Private. Contains interview scores, weak spots and job-search material.
+A drill app for AI-engineering and frontend interviews: 50 exam tickets (LLM, RAG, agents, system design, JS/TS, React, browser), quick games built from them, a from-zero lesson per ticket with sources, and an answer checker that grades a typed answer against the hidden reference.
 
-## Start here
+Live as a password-gated PWA on Vercel; progress is stored in Supabase.
 
-The app lives in `app/` and runs in three places with one codebase:
+## Layout
 
-- **Cloud (Vercel):** password-gated, progress in Supabase. Open it from any device, add to the iPhone home screen (it's a PWA). Project `drill` on Vercel; env vars listed in `app/README.md`.
-- **Local:** `node today.mjs serve` → `localhost:4040`, same app, no password, progress in `queue.json`.
-- **Terminal:** `node today.mjs` prints today's card. `node today.mjs pull` copies cloud progress into `queue.json` + `progress.html` (needs `DRILL_URL` and `DRILL_PASSWORD` in `.env`).
-
-Cloud is the source of truth once you use it; `pull` keeps the local files in step.
-
-Two revisits, one new item, one ship task. No deciding what to study — that was the part that kept killing sessions.
-Finished an item: `node today.mjs done <id> <g|y|r>`. Whole picture: `node today.mjs status`.
-
-## The loop
-
-1. Build a slice of `scout` (separate repo) — code first, running in ~45 min
-2. Read the lesson that explains what the code touched
-3. Answer the recall questions cold, out loud
-4. Write the concept in my own words into `concepts.md`
-5. Log the score in `learning-log.md`
-
-Reading-first failed twice. Build-first is the format now.
-
-## Files
-
-| File | What it is |
+| Path | What |
 |---|---|
-| `today.mjs` + `queue.json` | The dispatcher + state. `serve` runs the app, `done` logs from the terminal, `html` regenerates progress.html. |
-| `app/` | The game. `index.html` (SPA), `tickets.js` (50 tickets as data), `drills.js` (traps, cloze, step sequences), `exam-tickets.html` (classic mode + graded check), `api/[route].js` (Vercel function: login, state, log, done, sync, roadmap, explain, check), PWA manifest + icons. |
-| `plan.md` | Current plan. Applications first, drilling around them. |
-| `anton-os.md` | One page. Start Rule, four roles. Never grows. |
-| `learning-log.md` | Every session, every score, every gap. Source of truth. |
-| `learning-system.md` | The drill protocol. |
-| `core-40-priority.md` | The 40 must-know questions. |
-| `progress.html` | The wall, session heat map, due timeline. Cells open their ticket. |
-| `concepts.md` | My own wording. The only version that survives an interview. |
-| `app/learn.html` | «Разбор с нуля»: a from-zero lesson per ticket, RU/EN, with sources. Replaced the lesson-NN-*.md files. |
-| `english-pack.md` | Self-intro, STAR stories, phrase bank. |
-| `follow-list.md` | ~25 accounts + the 20-min Friday protocol. |
-| `interview-log.md` | Real interview reps. |
-| `resend-dossier.md` | Primary target. |
-| `morning-routine.md` | 15 min: AI news in English IS the English practice. |
-| `reference/` | Full answers (7 files) — read only AFTER a failed recall. |
+| `app/` | The deployed app (Vercel root directory). See `app/README.md` for routes, env vars and where the logic lives. |
+| `app/lib/srs.js` | Spaced-repetition rules, shared by the API, the local server and the browser. |
+| `app/api/` | One Vercel function: auth, progress, the answer checker. |
+| `app/tickets.js`, `drills.js`, `sources.js`, `lessons/` | Study content: reference answers, game data, fact ledger, lessons. |
+| `today.mjs` | Local server and terminal helper (`serve`, `status`, `done`, `pull`). |
+| `scripts/` | Content tools: validation, applying reviewed edits, rebuilding the lesson index. |
+| `test/` | `node:test` suites, run in CI. |
 
-## Rules
+## Run it
 
-- Answer files are closed until recall has been attempted.
-- All job-search activity from personal devices only.
-- This repo stays private.
+```sh
+npm test            # unit tests + content consistency check (no dependencies)
+npm run serve       # local app on http://localhost:4040, progress in queue.json
+```
+
+`queue.json` and `progress.html` are local and not committed. `node today.mjs pull` fills them from the deployed app (needs `DRILL_URL` and `DRILL_PASSWORD` in `.env`).
