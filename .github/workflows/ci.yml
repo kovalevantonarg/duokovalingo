@@ -1,5 +1,3 @@
-# Copy to .github/workflows/ci.yml (the assistant can't write into .github):
-#   mkdir -p .github/workflows && cp docs/ci.yml .github/workflows/ci.yml
 name: ci
 on:
   push: { branches: [main] }
