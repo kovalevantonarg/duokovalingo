@@ -1,0 +1,264 @@
+{
+  "n": 26,
+  "tag": "Core-40 #1–8 · parked check",
+  "sec": "parked",
+  "core": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    42
+  ],
+  "ru": {
+    "topic": "JS/TS: проверка запаркованного",
+    "qs": [
+      "setTimeout(0) и Promise.resolve().then() — что раньше и почему? И почему forEach с await не ждёт?",
+      "Классический баг closure с циклом и setTimeout до ES6. И четыре правила this плюс исключение для стрелок.",
+      "Реализуй Pick<T, K> руками. Зачем discriminated union вместо optional-полей?"
+    ],
+    "a": [
+      {
+        "q": "Event loop",
+        "t": "Микрозадачи всегда раньше макрозадач: после текущего синхронного кода движок опустошает очередь микрозадач целиком — промисы, queueMicrotask — и только потом берёт одну макрозадачу вроде setTimeout. Поэтому колбэк then выполнится раньше, даже если у setTimeout задержка ноль. Между микрозадачами и следующей макрозадачей браузер может (не обязан) отрендерить кадр — в браузере это происходит после опустошения микрозадач и перед следующей макрозадачей, поэтому длинная цепочка промисов без единой макрозадачи между ними может держать UI без перерисовки дольше, чем кажется. forEach с await не ждёт, потому что forEach не смотрит на возвращаемое значение колбэка: он по очереди вызывает каждый async-колбэк, тот выполняется до первого await и возвращает промис, который forEach просто выбрасывает. Итерации идут конкурентно (вперемешку), а не параллельно, и никто их не ждёт. for...of работает внутри одной async-функции, и await там реально останавливает цикл."
+      },
+      {
+        "q": "Closure и this",
+        "t": "var в цикле — одна переменная на всю функцию, и к моменту срабатывания таймеров цикл уже закончился, все колбэки видят финальное значение. let создаёт привязку на итерацию, и каждая функция замыкает свою. this: по умолчанию — глобальный объект или undefined в strict; implicit — объект перед точкой; explicit — call, apply, bind; new — свежий объект. Стрелка не имеет своего this и берёт его лексически из окружения, поэтому её нельзя переопределить через call и нельзя использовать как метод, которому нужен this."
+      },
+      {
+        "q": "Типы",
+        "t": "type Pick<T, K extends keyof T> = { [P in K]: T[P] }: mapped type по ключам K, значение — индексный доступ. Discriminated union — Result равен либо { ok: true, data }, либо { ok: false, error }. Проверка ok сужает тип: в ветке true компилятор знает про data, в ветке false — про error, и невозможное состояние «и data, и error» не выражается вообще. С optional-полями каждый потребитель проверяет оба поля вручную и рано или поздно забывает. Из той же серии: Promise.all падает на первом реджекте, allSettled ждёт всех и отдаёт статусы."
+      }
+    ],
+    "kill": "Ответить «then первый» без слова <b>микрозадача</b> — это угадывание. И описать стрелку как «короткий синтаксис» — интервьюер ждёт про this."
+  },
+  "en": {
+    "topic": "JS/TS: parked check",
+    "qs": [
+      "setTimeout(0) versus Promise.resolve().then() — which runs first and why? And why doesn't forEach with await wait?",
+      "The classic closure bug with a loop and setTimeout before ES6. And the four rules of this plus the arrow-function exception.",
+      "Implement Pick<T, K> by hand. Why a discriminated union instead of optional fields?"
+    ],
+    "a": [
+      {
+        "q": "Event loop",
+        "t": "Microtasks always run before macrotasks: after the current synchronous code, the engine drains the whole microtask queue — promises, queueMicrotask — and only then picks one macrotask like setTimeout. So the then callback fires first even with a zero delay. Between the microtasks and the next macrotask, the browser may (not must) paint a frame — that happens after the microtask queue drains and before the next macrotask, so a long promise chain with no macrotask in between can hold the UI without a repaint longer than you'd expect. forEach with await doesn't wait because forEach ignores the callback's return value: it calls each async callback in turn, each runs until its first await and hands back a promise that forEach just drops. So the iterations run concurrently, interleaved, not in parallel, and nothing waits for them. for...of runs inside a single async function, and await there genuinely pauses the loop."
+      },
+      {
+        "q": "Closure and this",
+        "t": "var in a loop is one variable for the whole function, and by the time the timers fire the loop is finished, so every callback sees the final value. let creates a binding per iteration, and each function closes over its own. this: default — the global object, or undefined in strict mode; implicit — the object before the dot; explicit — call, apply, bind; new — a fresh object. An arrow has no this of its own and takes it lexically from the surrounding scope, so you can't override it with call and can't use it as a method that needs this."
+      },
+      {
+        "q": "Types",
+        "t": "type Pick<T, K extends keyof T> = { [P in K]: T[P] } — a mapped type over the keys in K, with an indexed access for the value. A discriminated union: Result is either { ok: true, data } or { ok: false, error }. Checking ok narrows the type — in the true branch the compiler knows about data, in the false branch about error, and the impossible state of both data and error can't be expressed at all. With optional fields every consumer checks both by hand and eventually forgets. Same family: Promise.all rejects on the first rejection, allSettled waits for all and returns statuses."
+      }
+    ],
+    "kill": "Saying then goes first without the word <b>microtask</b> — that's guessing. And describing an arrow function as short syntax — the interviewer is waiting for this."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "setTimeout(0) выполнится раньше Promise.then, потому что ноль — это сразу.",
+        "Стрелочная функция — это просто короткий синтаксис, this у неё такой же."
+      ],
+      "en": [
+        "setTimeout(0) runs before Promise.then because zero means immediately.",
+        "An arrow function is just shorter syntax; its this behaves the same."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "[[Микрозадачи|microtasks]] всегда раньше макрозадач: очередь опустошается целиком.",
+        "forEach с await не ждёт, потому что forEach [[игнорирует|не смотрит на]] возвращаемое значение колбэка.",
+        "Стрелка берёт this [[лексически|из окружения]] и не имеет своего."
+      ],
+      "en": [
+        "[[Microtasks]] always run before macrotasks: the queue is drained entirely.",
+        "forEach with await doesn't wait because forEach [[ignores]] the callback's return value.",
+        "An arrow takes this [[lexically]] and has none of its own."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Event loop: порядок выполнения",
+        "items": [
+          "Весь синхронный код текущего скрипта",
+          "Вся очередь микрозадач — промисы, queueMicrotask",
+          "Рендеринг, если нужен",
+          "Одна макрозадача — setTimeout, I/O",
+          "Снова микрозадачи"
+        ]
+      },
+      "en": {
+        "title": "Event loop: execution order",
+        "items": [
+          "All synchronous code of the current script",
+          "The entire microtask queue — promises, queueMicrotask",
+          "Rendering, if needed",
+          "One macrotask — setTimeout, I/O",
+          "Microtasks again"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "After the current task, the whole microtask queue (including newly queued microtasks) drains before the next task",
+      "e": "Microtasks enqueued by microtasks run before the next task; one task per iteration. (Strictly the host event loop does this, not the JS engine)",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Promise.then runs before setTimeout(0) (lie: setTimeout first is false)",
+      "e": "MDN example: queueMicrotask callback logs before setTimeout(cb, 0) callback",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Rendering may happen after microtasks drain and before the next task",
+      "e": "Processing model: run task → microtask checkpoint → update the rendering (only if rendering opportunity)",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/webappapis.html#event-loop-processing-model"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A long microtask chain can hold off repaint",
+      "e": "Recursively adding microtasks can stall the event loop indefinitely",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "forEach doesn't wait for async callbacks because it ignores the return value",
+      "e": "'forEach() expects a synchronous function — it does not wait for promises'; callback return value is discarded",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "With forEach+await every iteration starts 'in parallel'",
+      "e": "Each async call runs synchronously until its first await, then returns control; continuations are scheduled as microtasks",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "await inside for...of pauses the loop",
+      "e": "'await pauses the execution of its surrounding async function until the promise is settled'",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "var is function-scoped (callbacks see the final value); let creates a new binding per iteration",
+      "e": "var loop with setTimeout logs 3,3,3; with let a new lexical scope per iteration logs 0,1,2",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "this rules: default (globalThis / undefined in strict), implicit (object before dot), explicit call/apply/bind, new",
+      "e": "Non-strict globalThis, strict undefined; method call → object before dot; call/apply/bind; new → new instance",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Arrow has lexical this, call can't override it, unsuitable as a method (lie: 'same this' is false)",
+      "e": "No own this binding; call/apply/bind thisArg ignored; should not be used as methods",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Pick<T, K extends keyof T> = { [P in K]: T[P] }",
+      "e": "Issue quotes lib.d.ts: 'type Pick<T, K extends keyof T> = { [P in K]: T[P]; };'",
+      "u": [
+        "https://github.com/microsoft/TypeScript/issues/41383"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Checking a discriminant narrows the union; optional fields don't give that guarantee",
+      "e": "Handbook: optional radius stays 'possibly undefined' after kind check; discriminated union narrows to Circle",
+      "u": [
+        "https://www.typescriptlang.org/docs/handbook/2/narrowing.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Promise.all rejects on the first rejection; allSettled waits for all and returns statuses",
+      "e": "allSettled fulfills when all settle with {status, value|reason}; Promise.all rejects immediately on any rejection",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Order: sync code → all microtasks → render if needed → one macrotask → microtasks again",
+      "e": "Task → microtask checkpoint → update the rendering → next task",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/webappapis.html#event-loop-processing-model"
+      ]
+    }
+  ]
+}

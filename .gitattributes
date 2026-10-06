@@ -1,0 +1,4 @@
+# Generated from content/tickets/*.json by scripts/build-content.mjs: hide from diffs and GitHub language stats.
+app/tickets.js linguist-generated=true -diff
+app/drills.js linguist-generated=true -diff
+app/sources.js linguist-generated=true -diff

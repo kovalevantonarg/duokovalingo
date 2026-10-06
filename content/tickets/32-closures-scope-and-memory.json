@@ -1,0 +1,269 @@
+{
+  "n": 32,
+  "tag": "Frontend core · JS",
+  "sec": "js",
+  "core": [
+    47
+  ],
+  "ru": {
+    "topic": "Замыкания, область видимости и память",
+    "qs": [
+      "Что именно захватывает замыкание? Объясните, почему setInterval в React-компоненте всё время выводит старый count.",
+      "Память в нашем чат-приложении растёт весь час, пока вкладка открыта. Какие обычные причины?",
+      "Как вы на практике найдёте эту утечку, и где помогают WeakMap и WeakRef?"
+    ],
+    "a": [
+      {
+        "q": "Что захватывается",
+        "t": "Замыкание захватывает привязку переменной, а не снимок её значения. Функция при создании хранит ссылку на лексическое окружение, в котором её создали, и поиск переменной идёт по цепочке областей видимости в момент вызова. Поэтому в цикле for с let у каждой итерации своя i, а с var привязка одна на всех, и все колбэки (функции обратного вызова) видят последнее значение. В React нюанс в том, что каждый рендер (вызов функции компонента) это новый вызов функции с новыми привязками. Колбэк setInterval, созданный в эффекте с пустым массивом зависимостей, замыкает count из первого рендера, и эта привязка никогда не меняется. Поэтому он вечно выводит ноль, хотя компонент перерисовался. Исправления такие: функциональное обновление вроде setCount(c => c + 1), добавить зависимость и переподписаться, или держать актуальное значение в ref. С React 19.2 для этого есть стабильный useEffectEvent: эффект вызывает функцию-событие, которая всегда читает свежие props и state, не перезапуская эффект. Ловушка — заглушить правило exhaustive-deps в линтере (статическом анализаторе) вместо исправления."
+      },
+      {
+        "q": "Источники утечек",
+        "t": "Сборщик мусора освобождает то, что недостижимо от корней: глобальных объектов, текущего стека и живого DOM. Так что утечка в JavaScript почти всегда — это что-то достижимое, о чём я забыл. В долгоживущем SPA (одностраничном приложении) обычные подозреваемые такие. Слушатели на window или document, добавленные в эффекте без очистки. setInterval, который никто не очищает. Подписки на WebSocket, store (хранилище состояния) или источник событий, которые переживают компонент. Дальше идёт detached DOM (узлы, удалённые со страницы). Элемент убран, но на него всё ещё ссылается какой-то массив, кэш или замыкание, и всё поддерево остаётся в памяти. Замыкания делают это коварным. Маленький обработчик может держать живым большой объект, например всю историю чата, потому что ссылается на него сам или на него ссылается соседнее замыкание из той же области. Движки вроде V8 хранят такие переменные в одном объекте контекста на всю область, и маленький обработчик держит его целиком. И последнее — неограниченные кэши. Map по id сообщения, который только растёт, это утечка с красивым названием. В чате с длинными ответами я бы первым делом проверил кэши сообщений и слушатели на каждом сообщении, и дал бы каждому кэшу лимит размера или вытеснение LRU (удаление давно не использованных)."
+      },
+      {
+        "q": "Поиск утечки",
+        "t": "Сначала я её воспроизвожу. Беру одно действие, например открыть и закрыть ветку чата. В Chrome DevTools, на панели Memory, делаю базовый heap snapshot (снимок кучи), повторяю действие десять раз, принудительно запускаю сборку мусора, делаю второй снимок и смотрю режим сравнения. Всё, чьё количество выросло примерно на десять, это кандидат. Фильтр Detached показывает DOM-узлы, удалённые со страницы, но всё ещё достижимые. Главное — панель Retainers (удерживающие ссылки): она показывает точную цепочку ссылок, которая держит объект, вплоть до замыкания или слушателя. Для постепенного роста есть allocation timeline (запись выделений памяти во времени), там видно, какие выделения выживают. WeakMap помогает, когда нужно привязать данные к чужому объекту, например метаданные к DOM-узлу, не продлевая ему жизнь. Запись исчезает, когда ключ собран. WeakRef это крайняя мера для кэшей. Момент сборки не гарантирован, а колбэки (обработчики) FinalizationRegistry могут вообще не вызваться, поэтому корректность на них я не строю. Большинство утечек чинится недостающей функцией очистки, а не слабыми ссылками."
+      }
+    ],
+    "kill": "<b>«Замыкание скопировало значение в момент создания»</b> — нет, оно держит привязку, а устаревшее значение в React берётся из привязки старого рендера. И <b>«в JavaScript есть сборщик мусора, значит утечек не бывает»</b> топит людей: всё, что достижимо, живёт вечно."
+  },
+  "en": {
+    "topic": "Closures, scope and memory",
+    "qs": [
+      "What exactly does a closure capture? Walk me through why a setInterval in a React component keeps logging a stale count.",
+      "Memory in our long-lived chat app keeps climbing over an hour of use. What are the usual culprits?",
+      "How would you actually find that leak, and where do WeakMap and WeakRef help?"
+    ],
+    "a": [
+      {
+        "q": "What's captured",
+        "t": "A closure captures the variable binding, not a snapshot of its value. When a function is created, it keeps a reference to the lexical environment it was created in, and variable lookups walk that scope chain at call time. That's why a for loop with let gives each iteration its own i, while var shares one binding and every callback sees the final value. In React the twist is that each render is a new function call with new bindings. A setInterval callback created in an effect with an empty dependency array closes over count from the first render, and that binding never changes. So it logs zero forever, even though the component re-rendered. The fixes are a functional update like setCount(c => c + 1), adding the dependency and re-subscribing, or keeping the latest value in a ref. Since React 19.2, useEffectEvent is stable for exactly this. The effect calls an event function that always reads the latest props and state without re-running the effect. The trap is silencing the exhaustive-deps lint rule instead of fixing it."
+      },
+      {
+        "q": "Leak culprits",
+        "t": "The garbage collector frees whatever is unreachable from the roots, like globals, the current stack and the live DOM. So a leak in JavaScript is almost always something still reachable that I forgot about. In a long-lived SPA the usual suspects are listeners on window or document added in an effect without cleanup, a setInterval that's never cleared, and subscriptions to a WebSocket, a store or an event emitter that outlive the component. Next come detached DOM nodes. The element is removed from the page, but some array, cache or closure still points to it, so the whole subtree stays in memory. Closures make this sneaky. A small handler can keep a large object alive, like the full chat history, because it references it or because a sibling closure from the same scope does. Engines like V8 keep those variables in one context object per scope, and the small handler holds all of it. Last, unbounded caches. A Map keyed by message id that only ever grows is a leak with a nice name. In a chat app with long answers I'd check message caches and per-message listeners first, and give every cache a size limit or LRU eviction."
+      },
+      {
+        "q": "Finding it",
+        "t": "First I reproduce it. I pick one action, like opening and closing a chat thread. In the Chrome DevTools Memory panel I take a baseline heap snapshot, repeat the action ten times, force garbage collection, take a second snapshot and use the comparison view. Anything whose count grew by roughly ten is a candidate. Filtering by Detached shows DOM nodes that were removed from the page but are still reachable. The retainers panel is the key part, because it shows the exact chain of references keeping the object alive, down to the closure or listener. For gradual growth, the allocation timeline shows which allocations survive over time. WeakMap helps when I want to attach data to an object I don't own, like metadata per DOM node, without extending its life. The entry goes away when the key is collected. WeakRef is a last resort for caches. Collection timing isn't guaranteed and FinalizationRegistry callbacks may never run, so I never build correctness on them. Most leaks are fixed by a missing cleanup function, not by weak references."
+      }
+    ],
+    "kill": "<b>\"The closure copied the value when it was created\"</b> — no, it holds the binding, and in React the stale value comes from an old render's binding. And <b>\"JavaScript has a garbage collector, so it can't leak\"</b> sinks people: anything still reachable is kept forever."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Замыкание хранит копию значения переменной на момент создания функции.",
+        "Если обернуть записи кэша в WeakRef, они гарантированно освободятся сразу, как только их больше никто не использует."
+      ],
+      "en": [
+        "A closure stores a copy of the variable's value at the moment the function is created.",
+        "Wrapping cache entries in WeakRef guarantees they are freed as soon as nothing else uses them."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Замыкание захватывает [[привязку]] переменной, а не снимок её значения.",
+        "Элемент, удалённый со страницы, но всё ещё доступный из JavaScript, это [[detached|отсоединённый]] DOM-узел.",
+        "В heap snapshot панель [[Retainers|удерживающих ссылок]] показывает цепочку ссылок, которая держит объект живым."
+      ],
+      "en": [
+        "A closure captures the variable [[binding]], not a snapshot of its value.",
+        "An element removed from the page but still referenced from JavaScript is a [[detached]] DOM node.",
+        "In a heap snapshot the [[retainers|retainer]] panel shows the chain of references keeping an object alive."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Поиск утечки памяти",
+        "items": [
+          "Выбрать одно повторяемое действие, например открыть и закрыть ветку",
+          "Сделать базовый heap snapshot",
+          "Повторить действие около десяти раз",
+          "Запустить сборку мусора и сделать второй снимок",
+          "Сравнить снимки и найти то, что выросло примерно на 10",
+          "Пройти по цепочке Retainers до слушателя или замыкания"
+        ]
+      },
+      "en": {
+        "title": "Hunting a memory leak",
+        "items": [
+          "Pick one repeatable action, e.g. open and close a thread",
+          "Take a baseline heap snapshot",
+          "Repeat the action about ten times",
+          "Force garbage collection and take a second snapshot",
+          "Compare snapshots and find counts that grew by about 10",
+          "Follow the retainers chain to the listener or closure"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A closure captures bindings (reference to lexical environment), not a value snapshot",
+      "e": "Function bundled with \"references to its surrounding state (the lexical environment)\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Closures"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "for+let gives each iteration its own binding; var shares one",
+      "e": "var closures share one environment; let/const create a new binding per iteration",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Closures"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Interval in an effect with [] deps keeps first-render values forever",
+      "e": "Listener from initial render \"will forever see that value\"",
+      "u": [
+        "https://react.dev/learn/separating-events-from-effects"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Fixes: functional updater setCount(c => c + 1), add dependency, or ref",
+      "e": "Docs' timer example uses setCount(c => c + increment)",
+      "u": [
+        "https://react.dev/learn/separating-events-from-effects"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "useEffectEvent is stable since React 19.2",
+      "e": "React 19.2 (Oct 1, 2025) ships useEffectEvent as a new feature",
+      "u": [
+        "https://react.dev/blog/2025/10/01/react-19-2"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Effect Events read latest props/state without re-running the effect",
+      "e": "Effect Events aren't dependencies; always see latest props/state",
+      "u": [
+        "https://react.dev/blog/2025/10/01/react-19-2"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "GC frees what's unreachable from roots; leaks are forgotten reachable references",
+      "e": "Mark-and-sweep from roots; unreachable objects collected",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Memory_management"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Detached DOM node = removed from page but still referenced by JS",
+      "e": "\"removed from the DOM tree but some JavaScript still references it\"",
+      "u": [
+        "https://developer.chrome.com/docs/devtools/memory-problems"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Engines share one context object per scope, so a sibling closure can retain a big object",
+      "e": "V8: variable used by any closure enters the shared environment for all (blog, last-resort source)",
+      "u": [
+        "https://blog.meteor.com/an-interesting-kind-of-javascript-memory-leak-8b47d2e7f156"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Heap snapshot comparison view, 'Detached' class filter, Retainers panel shows reference chain",
+      "e": "Comparison view; type Detached in Class filter; Retainers shows objects pointing to selection",
+      "u": [
+        "https://developer.chrome.com/docs/devtools/memory-problems/heap-snapshots"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Allocation timeline shows which allocations survive over time",
+      "e": "Allocation timeline blue bars show allocations retained over time",
+      "u": [
+        "https://developer.chrome.com/docs/devtools/memory-problems"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Force GC before second snapshot",
+      "e": "\"Taking a snapshot always starts with garbage collection\" — explicit force is redundant but harmless",
+      "u": [
+        "https://developer.chrome.com/docs/devtools/memory-problems/heap-snapshots"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "WeakMap doesn't extend key lifetime; entry disappears when key is collected",
+      "e": "Once a key is collected, its entry becomes eligible for collection",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "WeakRef collection timing not guaranteed; FinalizationRegistry callbacks may never run",
+      "e": "Cleanup \"may happen much later than expected, or not at all\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakRef"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Steps: baseline → repeat ~10x → GC + snapshot → compare → retainers",
+      "e": "Matches Comparison-view and Retainers workflow in Chrome docs",
+      "u": [
+        "https://developer.chrome.com/docs/devtools/memory-problems/heap-snapshots"
+      ]
+    }
+  ]
+}

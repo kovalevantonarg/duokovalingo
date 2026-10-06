@@ -1,0 +1,191 @@
+{
+  "n": 10,
+  "tag": "Core-40 #18, #27",
+  "sec": "llm",
+  "core": [
+    18,
+    27
+  ],
+  "ru": {
+    "topic": "Statelessness и лестница",
+    "qs": [
+      "Модель что-нибудь помнит между вызовами?",
+      "Из этого следуют три вещи. Какие?",
+      "Контекст кончается. Обходы от самого дешёвого к сложному."
+    ],
+    "a": [
+      {
+        "q": "Память",
+        "t": "Ничего не помнит. Это обычный HTTP-запрос: отправил, получил ответ, соединение закрылось, никакого состояния на той стороне не осталось. «Помнит» на самом деле мой массив сообщений — то есть память живёт в моём коде, а не в модели. Поэтому каждый ход диалога пересылает всю переписку заново, целиком."
+      },
+      {
+        "q": "Следствия",
+        "t": "Во-первых, каждый ход дороже предыдущего: вход запроса растёт линейно с историей, а значит суммарно по разговору оплаченные токены растут квадратично. Во-вторых, контекстное окно неизбежно кончается, это вопрос времени, а не вероятности. И в-третьих, в агентной петле одни и те же данные оплачиваются многократно — в одном прогоне моего агента ушло шестьдесят девять тысяч входных токенов, хотя уникальных среди них было всего двадцать одна тысяча, то есть за одно и то же я заплатил больше трёх раз."
+      },
+      {
+        "q": "Лестница",
+        "t": "Начинаю с самого тупого — sliding window (скользящее окно): держим последние N сообщений, остальное выбрасываем, бесплатно, но молча теряем информацию. Дальше summarization, старое сжимается в накопительное резюме, свежее держится дословно — так работает большинство долгоживущих чатов. Потом RAG: не класть весь материал в контекст, а доставать релевантное под конкретный запрос — правильный выбор, когда корпус больше окна. Четвёртое — hierarchical или map-reduce: режем документ, обрабатываем части отдельно, собираем. Пятое, стоящее особняком, — prompt caching: места не экономит, экономит деньги и латентность на стабильном префиксе, поэтому идёт вместе с остальными. Свои ступени есть и у провайдеров: у Anthropic это context editing (очистка старых tool results в агенте) и серверная compaction (сжатие истории); это быстро меняется, сверяюсь с документацией."
+      }
+    ],
+    "kill": "Назвать только summarization. Верно, но это одна ступень из нескольких — а спрашивают, умеешь ли выбирать <b>самое дешёвое из достаточного</b>."
+  },
+  "en": {
+    "topic": "Statelessness and the ladder",
+    "qs": [
+      "Does the model remember anything between calls?",
+      "Three things follow from that. What are they?",
+      "You're running out of context. Walk the mitigations from cheapest to most complex."
+    ],
+    "a": [
+      {
+        "q": "Memory",
+        "t": "It remembers nothing. It's an ordinary HTTP request: you send it, you get an answer, the connection closes, and no state is left on that side. What actually remembers is my messages array — so the memory lives in my code, not in the model. Which is why every turn of a conversation resends the entire history from scratch."
+      },
+      {
+        "q": "Consequences",
+        "t": "First, every turn costs more than the last: each request's input grows linearly with the history, so the total billed over the conversation grows quadratically. Second, the context window inevitably runs out — it's a question of when, not whether. And third, in an agent loop the same data gets paid for many times over. In one run of my agent I sent sixty-nine thousand input tokens that contained only twenty-one thousand unique ones, so I paid for the same pages more than three times."
+      },
+      {
+        "q": "The ladder",
+        "t": "I start with the dumbest thing that works — a sliding window, keep the last N messages and drop the rest: free, and it loses information silently. Then summarization, where older turns get compressed into a running summary and recent ones stay verbatim; that's what most long-lived chat products actually do. Then RAG: don't put the whole corpus in context, retrieve only what's relevant per query — the right answer once the corpus is bigger than the window. Fourth is hierarchical or map-reduce: split a document, process the parts independently, combine. Fifth, which stands apart, is prompt caching: it saves no space, only money and latency on a stable prefix, so it goes alongside the others. Providers add their own rungs too — Anthropic has context editing, which clears old tool results in agent loops, and server-side compaction. That moves fast, so I'd check the current docs."
+      }
+    ],
+    "kill": "Naming only summarization. It's correct, but it's one rung of several — and the question is really whether you can pick <b>the cheapest thing that suffices</b>."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Модель помнит предыдущие вызовы, если использовать тот же API-ключ.",
+        "Summarization — единственный способ справиться с переполнением контекста."
+      ],
+      "en": [
+        "The model remembers previous calls if you use the same API key.",
+        "Summarization is the only way to deal with context overflow."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Модель не помнит [[ничего|ничего между вызовами]]: помнит мой массив [[messages]].",
+        "Вход каждого запроса растёт [[линейно]] с историей, поэтому суммарная стоимость разговора растёт [[квадратично]].",
+        "Лестница от дешёвого: [[sliding window|скользящее окно]] → summarization → RAG → map-reduce, а кэш — вместе с ними; выбираю самое дешёвое из достаточного."
+      ],
+      "en": [
+        "The model remembers [[nothing]]: what remembers is my [[messages]] array.",
+        "Each request's input grows [[linearly]] with the history, so total cost over the conversation grows [[quadratically]].",
+        "The ladder, cheapest first: [[sliding window]] → summarization → RAG → map-reduce, with caching alongside; pick the cheapest that suffices."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Лестница обходов: от самого дешёвого к сложному",
+        "items": [
+          "Sliding window — держим последние N сообщений",
+          "Summarization — сжимаем старую часть",
+          "RAG — достаём только релевантное",
+          "Hierarchical / map-reduce — режем на части, обрабатываем, собираем",
+          "Prompt caching — деньги и латентность, а не место; вместе с остальными"
+        ]
+      },
+      "en": {
+        "title": "The mitigation ladder, cheapest to most complex",
+        "items": [
+          "Sliding window — keep the last N messages",
+          "Summarization — compress the older part",
+          "RAG — retrieve only what's relevant",
+          "Hierarchical / map-reduce — split, process parts separately, combine",
+          "Prompt caching — saves money and latency, not space; used alongside"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "The model remembers nothing between calls; you resend the whole history each turn",
+      "e": "'The Messages API is stateless, which means that you always send the full conversational history to the API.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/working-with-messages"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "The conversation gets more expensive every turn because input grows quadratically",
+      "e": "Each turn's input = all previous turns + new message ('previous turns are preserved completely') — per-turn input grows linearly.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "The context window inevitably runs out",
+      "e": "Input over the window returns 400 'prompt is too long'; generation hitting it stops with model_context_window_exceeded.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Prompt caching saves no space — only money and latency on a stable prefix",
+      "e": "'Cached prompt prefixes still occupy the context window: prompt caching changes what you pay for those tokens, not whether they count.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Summarization of older turns into a running summary is what long-lived chat products do",
+      "e": "'server-side compaction is the primary strategy for context management' — it summarizes earlier parts of the conversation.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "The ladder has five rungs: sliding window, summarization, RAG, map-reduce, caching",
+      "e": "Docs also list context editing (tool-result clearing, thinking-block clearing) and server-side compaction as first-class strategies.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: the model remembers previous calls if you use the same API key (false)",
+      "e": "Messages API is stateless; full history must be sent every time.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/working-with-messages"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: summarization is the only way to deal with context overflow (false)",
+      "e": "Docs list compaction, context editing (tool-result clearing) and more as strategies.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    }
+  ]
+}

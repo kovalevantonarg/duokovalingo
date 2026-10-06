@@ -1,0 +1,203 @@
+{
+  "n": 44,
+  "tag": "Frontend core · React",
+  "sec": "react",
+  "core": [
+    59
+  ],
+  "ru": {
+    "topic": "Состояние и загрузка данных",
+    "qs": [
+      "Как вы решаете, где живёт кусок состояния: локально, в родителе, глобально, на сервере или в URL?",
+      "В TanStack Query чем staleTime отличается от gcTime, и как безопасно сделать оптимистичное обновление?",
+      "Context, Zustand или Redux Toolkit — какое у вас реальное правило выбора?"
+    ],
+    "a": [
+      {
+        "q": "Где живёт state",
+        "t": "Я начинаю с того, кто владеет данными. Если их использует один компонент, например открыт ли dropdown (выпадающий список), они остаются локальными в useState. Если они нужны двум соседям, я поднимаю их к ближайшему общему родителю и передаю вниз. Глобальный клиентский state — для того, что действительно нужно всему приложению и принадлежит сессии в браузере: тема, неотправленный черновик. Server state (серверное состояние) — отдельная категория: владеет им сервер, а у меня лишь копия в кеше: она устаревает, её читают несколько компонентов, и ей нужны refetch (повторная загрузка), дедупликация одинаковых запросов и инвалидация (пометка кеша устаревшим). Копировать загруженные данные в useState или глобальный стор (хранилище) — классическая ошибка: появляются два источника правды и собственные баги инвалидации. Пятое место, о котором забывают, — URL. Фильтры, сортировка, активная вкладка и пагинация живут в search params (параметрах запроса в адресе). Тогда вид переживает перезагрузку, работает кнопка «назад», и ссылку можно отправить коллеге или приложить к баг-репорту. В чат-продукте я бы по той же причине держал id разговора в URL."
+      },
+      {
+        "q": "staleTime и gcTime",
+        "t": "Оба — таймеры на каждый query key (ключ запроса), и измеряют они разное. staleTime — сколько данные считаются свежими. Пока они свежие, монтирование нового компонента или возврат фокуса в окно не вызывает refetch (повторный запрос). По умолчанию он ноль, то есть данные сразу устаревшие и перезапрашиваются на этих триггерах (событиях-поводах), но пока идёт запрос, старые данные всё равно показываются. gcTime, до v5 он назывался cacheTime, задаёт, сколько неиспользуемый запрос живёт в кеше после того, как отмонтировался последний подписчик, по умолчанию пять минут. Query key — это идентичность записи в кеше, поэтому всё, от чего зависит запрос, например фильтры, кладётся в ключ. Два компонента с одним ключом делят один запрос — это дедупликация. После мутации (изменения данных на сервере) я инвалидирую затронутые ключи, чтобы они перезапросились. Для оптимистичного обновления схема такая: в onMutate отменяю летящие запросы по ключу, чтобы ответ старого refetch не пришёл позже и не затёр мою оптимистичную запись, делаю снимок текущих данных, пишу оптимистичную версию через setQueryData и возвращаю снимок. В onError восстанавливаю снимок, а в onSettled инвалидирую ключ, чтобы последнее слово было за сервером."
+      },
+      {
+        "q": "Context или стор",
+        "t": "Context — это механизм внедрения зависимостей, а не менеджер состояния. Его хватает, когда значение меняется редко: тема, текущий пользователь, локаль, клиент feature flags (флагов функций). Проблема в том, что при смене value у провайдера (компонента-поставщика) перерисовываются все потребители, а селекторов нет, так что часто меняющийся объект в Context перерисовывает полдерева. Моё правило: меняется редко — Context. Если это клиентское состояние, которое меняется часто и из которого многие компоненты читают свои кусочки, например редактор или поле ввода чата с вложениями, я беру Zustand. Там компоненты подписываются через selector (функцию выборки) и перерисовываются, только когда меняется их кусок, и почти без boilerplate (шаблонного кода). Redux Toolkit я беру, когда команда большая и хочет навязанную структуру: явные actions, middleware (промежуточные обработчики), time-travel (пошаговый откат состояний) в devtools и журнал событий, изменивших состояние, что помогает отлаживать сложные сценарии. А серверные данные в любом случае идут в TanStack Query или RTK Query, а не в эти хранилища. Ловушка, за которой я слежу, — сначала выбрать глобальный стор, а потом сложить туда серверные данные."
+      }
+    ],
+    "kill": "<b>«staleTime — это сколько данные хранятся в кеше»</b>: это gcTime, а staleTime решает только, когда запускать refetch. И <b>копирование данных запроса в useState</b> создаёт второй источник правды."
+  },
+  "en": {
+    "topic": "State and data fetching",
+    "qs": [
+      "How do you decide where a piece of state lives: local, lifted, global, server, or the URL?",
+      "In TanStack Query, what's the difference between staleTime and gcTime, and how do you do an optimistic update safely?",
+      "Context, Zustand or Redux Toolkit: what's your actual decision rule?"
+    ],
+    "a": [
+      {
+        "q": "Where state lives",
+        "t": "I start from who owns the data. If only one component uses it, like whether a dropdown is open, it stays local in useState. If two siblings need it, I lift it to the nearest common parent and pass it down. Global client state is for things that are truly app-wide and owned by the browser session, like the theme or an unsent draft. Server state is a different category: the server owns it, and what I hold is a cache that goes stale, is shared by several components, and needs refetching, deduping and invalidation. Copying fetched data into useState or a global store is the classic mistake, because now I have two sources of truth and my own invalidation bugs. The fifth place people forget is the URL. Filters, sort, the active tab and pagination belong in search params. Then the view survives a reload, the back button works, and I can paste the link to a colleague or into a bug report. In a chat product I'd keep the conversation id in the URL for the same reason."
+      },
+      {
+        "q": "staleTime vs gcTime",
+        "t": "Both are timers per query key, and they measure different things. staleTime is how long data counts as fresh. While it's fresh, a new component mounting or the window regaining focus won't trigger a refetch. The default is zero, so data is stale immediately and gets refetched on those triggers, but the stale data is still shown while the refetch runs. gcTime, which was called cacheTime before v5, is how long an unused query stays in the cache after its last observer unmounts, five minutes by default. The query key is the cache identity, so everything the fetch depends on, like filters, goes into the key. Two components with the same key share one request, that's deduping. After a mutation I invalidate the affected keys so they refetch. For an optimistic update the pattern is: in onMutate, cancel in-flight queries for that key so an older refetch can't land later and overwrite my optimistic write, snapshot the current data, write the optimistic version with setQueryData, and return the snapshot. In onError I restore the snapshot, and in onSettled I invalidate the key so the server has the final word."
+      },
+      {
+        "q": "Context vs stores",
+        "t": "Context is a dependency injection mechanism, not a state manager. It's enough when the value changes rarely: theme, current user, locale, a feature-flag client. The problem is that every consumer re-renders when the provider's value changes, and there are no selectors, so a frequently changing object in Context re-renders half the tree. My rule: if it changes rarely, Context. If it's client state that changes often and many components read their own slice of it, like an editor or a chat composer with attachments, I use Zustand. Components subscribe with a selector and only re-render when their slice changes, with almost no boilerplate. I reach for Redux Toolkit when the team is large and wants enforced structure: explicit actions, middleware, time-travel devtools, and a log of every event that changed state, which helps when debugging complex flows. And server data goes to TanStack Query or RTK Query in every case, not into any of these stores. The trap I watch for is picking a global store first and then stuffing server data into it."
+      }
+    ],
+    "kill": "<b>\"staleTime is how long data stays in the cache\"</b> — that's gcTime; staleTime only decides when a refetch is triggered. And <b>copying query data into useState</b> creates a second source of truth."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "При staleTime по умолчанию, равном нулю, TanStack Query прячет закешированные данные и показывает состояние загрузки при каждом монтировании.",
+        "Context перерисовывает только тех потребителей, которые читают изменившуюся часть значения."
+      ],
+      "en": [
+        "With the default staleTime of zero, TanStack Query hides cached data and shows a loading state on every mount.",
+        "Context re-renders only the consumers that read the part of the value that changed."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "[[gcTime]] задаёт, сколько неиспользуемый запрос живёт в кеше, а [[staleTime]] — сколько данные считаются свежими.",
+        "Всё, от чего зависит запрос, например фильтры, кладётся в [[query key|ключ запроса|queryKey]].",
+        "Фильтры, сортировка и активная вкладка живут в [[URL|search params]], тогда вид переживает перезагрузку и им можно поделиться."
+      ],
+      "en": [
+        "[[gcTime]] controls how long an unused query stays in the cache, while [[staleTime]] controls how long data counts as fresh.",
+        "Everything the fetch depends on, like filters, goes into the [[query key|queryKey]].",
+        "Filters, sort and the active tab belong in the [[URL|search params]], so the view survives a reload and can be shared."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Оптимистичное обновление в TanStack Query",
+        "items": [
+          "onMutate: отменить текущие запросы по ключу",
+          "Сделать снимок текущих данных из кеша",
+          "Записать оптимистичные данные через setQueryData",
+          "Вернуть снимок из onMutate",
+          "onError: восстановить снимок",
+          "onSettled: инвалидировать ключ, чтобы перезапросить"
+        ]
+      },
+      "en": {
+        "title": "Optimistic update in TanStack Query",
+        "items": [
+          "onMutate: cancel in-flight queries for the key",
+          "Snapshot the current cached data",
+          "Write the optimistic data with setQueryData",
+          "Return the snapshot from onMutate",
+          "onError: restore the snapshot",
+          "onSettled: invalidate the key to refetch"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "staleTime default 0; fresh data isn't refetched on mount/window focus (also reconnect)",
+      "e": "Stale queries refetch on 'New instances of the query mount, The window is refocused, The network is reconnected.'",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Stale cached data is still shown while refetching",
+      "e": "Second instance gets cached data immediately while a background refetch runs.",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "gcTime (cacheTime before v5) = time an unused query stays in cache; default 5 minutes",
+      "e": "cacheTime renamed gcTime; 'only kicks in as soon as the query becomes unused'; inactive queries GC'd after 5 minutes.",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Everything the fetch depends on goes into the query key",
+      "e": "'If your query function depends on a variable, include it in your query key.'",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/query-keys"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Components with same key share one cache entry/request",
+      "e": "Instances with same key read the same cached data and update together.",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Optimistic update: onMutate cancelQueries, snapshot, setQueryData, return snapshot; onError restore; onSettled invalidate",
+      "e": "Docs example: cancelQueries, getQueryData, setQueryData, return {previousTodo}; onError setQueryData(previous); onSettled invalidateQueries.",
+      "u": [
+        "https://tanstack.com/query/latest/docs/framework/react/guides/optimistic-updates"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Context re-renders all consumers on value change; no selectors",
+      "e": "Re-renders 'all the children that use a particular context' when value differs by Object.is.",
+      "u": [
+        "https://react.dev/reference/react/useContext"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Zustand: selector subscriptions re-render only on slice change, minimal boilerplate, no provider",
+      "e": "'Select your state and the consuming component will re-render when that state changes'; no providers needed.",
+      "u": [
+        "https://zustand.docs.pmnd.rs/getting-started/introduction"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Redux Toolkit: explicit actions, middleware, time-travel devtools, action log; RTK Query for server data",
+      "e": "Redux offers 'a time traveling debugger'; RTK is the recommended approach; RTK Query is its data-fetching API.",
+      "u": [
+        "https://redux.js.org/introduction/getting-started"
+      ]
+    }
+  ]
+}

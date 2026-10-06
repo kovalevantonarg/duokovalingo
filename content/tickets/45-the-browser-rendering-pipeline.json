@@ -1,0 +1,245 @@
+{
+  "n": 45,
+  "tag": "Frontend core · Browser",
+  "sec": "web",
+  "core": [
+    60
+  ],
+  "ru": {
+    "topic": "Конвейер рендеринга браузера",
+    "qs": [
+      "Расскажи, что делает браузер с момента получения байтов HTML до пикселей на экране. Какие изменения дорогие, а какие дешёвые?",
+      "Анимация дёргается, а в профайлере в каждом кадре фиолетовые блоки layout. Что происходит и как это чинить?",
+      "HTML пришёл быстро, но страница две секунды белая. Какие ресурсы могут блокировать рендер и чем отличаются defer, async и type=module?"
+    ],
+    "a": [
+      {
+        "q": "Конвейер",
+        "t": "HTML-парсер превращает байты в токены и по ходу строит DOM (дерево узлов документа), а preload scanner (упреждающий сканер) бежит вперёд и заранее запускает загрузку найденных ресурсов. Параллельно CSS разбирается в CSSOM (дерево правил стилей). Дальше конвейер: style (вычисление стилей), где браузер сопоставляет селекторы и считает итоговые стили каждого элемента. Потом layout (расчёт геометрии): размеры и позиции блоков. Потом paint (отрисовка): запись команд рисования по слоям. И composite (сборка слоёв): слои растеризуются и собираются в кадр, в основном на GPU (графическом процессоре). На практике важно одно: каждый этап кормит следующий, поэтому изменение на раннем этапе оплачивает всё, что после него. Поменял width, и платишь за layout, paint и composite. Поменял цвет, и layout пропускается. Поменял transform или opacity у элемента на своём слое, и часто можно пропустить layout и paint и сразу перейти к composite, мимо главного потока. Самая дешёвая работа та, которой нет. Это и делает content-visibility: auto: секции за экраном не проходят layout и paint, пока не приблизятся к viewport (видимой области). Я ставлю рядом contain-intrinsic-size, чтобы полоса прокрутки не прыгала. Это Baseline (поддержано всеми основными браузерами) с 2024 года."
+      },
+      {
+        "q": "Reflow и thrashing",
+        "t": "Фиолетовое в панели Performance это style и layout (расчёт геометрии), и если оно повторяется много раз внутри одного кадра, почти всегда это layout thrashing (пробуксовка раскладки). Обычно браузер ленивый: когда я пишу в DOM, он просто помечает layout как грязный и пересчитывает один раз перед кадром. Но если сразу после записи я читаю геометрию, например offsetHeight или getBoundingClientRect, ему нужно отдать правильное число прямо сейчас, и он делает синхронный reflow (принудительный пересчёт геометрии). В цикле чтение, запись, чтение, запись это полный layout на каждой итерации. Лечится батчингом (группировкой): сначала все чтения, потом все записи, а записи я планирую через requestAnimationFrame, чтобы они легли прямо перед кадром. Саму анимацию я делаю на transform и opacity вместо top, left или width, потому что их может обработать compositor (поток сборки слоёв) без layout и paint. will-change: transform заранее выносит элемент на свой слой, но каждый слой стоит памяти GPU (видеокарты). Поэтому я ставлю его только тем немногим элементам, которые реально анимируются, а не всему подряд."
+      },
+      {
+        "q": "Блокировка рендера",
+        "t": "По умолчанию CSS в head блокирует рендер: браузер не рисует, пока нет CSSOM (дерева стилей), иначе была бы вспышка нестилизованного контента. Обычный script без атрибутов блокирует парсер: разбор HTML останавливается, скрипт скачивается и выполняется. А если выше висит незагруженный стиль, скрипт ещё и ждёт его, потому что может читать стили. defer качается параллельно и выполняется после окончания парсинга, строго в порядке документа, до DOMContentLoaded. async качается параллельно и выполняется сразу, как пришёл, в любом порядке, и может прервать парсинг. Это нормально для независимых вещей вроде аналитики и опасно для всего, у чего есть зависимости. type=module по умолчанию ведёт себя как defer, а с async выполняется, как только готов весь его граф зависимостей. Так что для белого экрана мой план такой: заинлайнить (встроить прямо в HTML) небольшой критический CSS, держать основной стиль компактным, перевести все скрипты на defer или module и проверить, что в head ничего не тянется с медленного стороннего домена."
+      }
+    ],
+    "kill": "<b>«transform быстрее, потому что он на GPU»</b> — настоящая причина в том, что он пропускает layout и paint и может идти на compositor. А <b>will-change на всём подряд</b> не ускоряет, а съедает память видеокарты."
+  },
+  "en": {
+    "topic": "The browser rendering pipeline",
+    "qs": [
+      "Walk me through what the browser does from receiving HTML bytes to pixels on the screen. Which changes are expensive and which are cheap?",
+      "An animation stutters and the profiler shows purple layout blocks in every frame. What's going on and how do you fix it?",
+      "The HTML arrives fast but the page stays blank for two seconds. What could be blocking render, and how do defer, async and type=module differ?"
+    ],
+    "a": [
+      {
+        "q": "Pipeline",
+        "t": "The HTML parser turns bytes into tokens and builds the DOM incrementally, while a preload scanner runs ahead and starts fetching resources it spots. In parallel, CSS is parsed into the CSSOM. Then the pipeline runs. Style: the browser matches selectors and computes final styles for every element. Layout: it calculates geometry, the size and position of every box. Paint: it records draw commands into layers. Composite: those layers are rasterized and assembled into the frame, largely on the GPU. What matters in practice is that each stage feeds the next, so a change at an early stage pays for everything after it. Change a width and you pay for layout, paint and composite. Change a color and layout is skipped. Change transform or opacity on an element with its own layer and you can often skip layout and paint and go straight to composite, off the main thread. The cheapest work is work you skip, which is what content-visibility: auto does. Off-screen sections skip layout and paint until they get close to the viewport. I pair it with contain-intrinsic-size so the scrollbar doesn't jump, and it's been Baseline since 2024."
+      },
+      {
+        "q": "Reflow and thrashing",
+        "t": "Purple in the Performance panel is style and layout, and if it repeats many times inside one frame, that's almost always layout thrashing. Normally the browser is lazy. When I write to the DOM, it just marks layout as dirty and recalculates once before the next frame. But if I then read geometry, like offsetHeight or getBoundingClientRect, it has to give me a correct number right now, so it runs a synchronous reflow. Put that in a loop, read, write, read, write, and I force a full layout on every iteration. The fix is batching: do all the reads first, then all the writes, and schedule the writes in requestAnimationFrame so they land right before the frame. For the animation itself, I'd animate transform and opacity instead of top, left or width, because the compositor can handle those without layout or paint. will-change: transform promotes the element to its own layer ahead of time, but every layer costs GPU memory. So I put it on the few elements that actually animate, not on everything."
+      },
+      {
+        "q": "Render-blocking",
+        "t": "By default, CSS in the head is render-blocking. The browser won't paint until it has the CSSOM, otherwise you'd get a flash of unstyled content. A classic script tag with no attributes is parser-blocking: parsing stops while the script downloads and runs. And if there's a pending stylesheet above it, the script also waits for that CSS, because it might read styles. defer downloads in parallel and executes after parsing finishes, in document order, before DOMContentLoaded. async downloads in parallel and executes as soon as it arrives, in any order, and it can interrupt parsing. That's fine for independent things like analytics and dangerous for anything with dependencies. type=module is deferred by default, and with async it runs as soon as its dependency graph is ready. So my plan for a blank page is to inline the small critical CSS, keep the main stylesheet lean, move every script to defer or module, and check that nothing in the head is fetched from a slow third-party origin."
+      }
+    ],
+    "kill": "<b>\"transform is faster because it runs on the GPU\"</b> — the real reason is that it skips layout and paint and can run on the compositor. And <b>will-change on everything</b> doesn't speed anything up, it burns GPU memory."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Чтение offsetHeight всегда дешёвое, потому что браузер просто возвращает закешированное значение, даже сразу после записи в DOM.",
+        "Скрипты с async, как и с defer, гарантированно выполняются в порядке документа после окончания парсинга."
+      ],
+      "en": [
+        "Reading offsetHeight is always cheap because the browser just returns a cached value, even right after a DOM write.",
+        "Scripts with async, just like defer, are guaranteed to run in document order after parsing finishes."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Порядок конвейера: style, потом [[layout|reflow]], потом [[paint|отрисовка]], потом composite.",
+        "Чтение offsetHeight сразу после записи в DOM вызывает синхронный [[layout|reflow]].",
+        "Скрипт с [[defer]] качается параллельно и выполняется после парсинга в порядке документа."
+      ],
+      "en": [
+        "The pipeline order is style, then [[layout|reflow]], then [[paint|painting]], then composite.",
+        "Reading offsetHeight right after a DOM write forces a synchronous [[layout|reflow]].",
+        "A script with [[defer]] downloads in parallel and runs after parsing, in document order."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "От байтов HTML до кадра",
+        "items": [
+          "Построить DOM из HTML и CSSOM из CSS",
+          "Style: вычислить итоговые стили каждого элемента",
+          "Layout: посчитать размеры и позиции блоков",
+          "Paint: записать команды рисования по слоям",
+          "Composite: растеризовать и собрать слои в кадр"
+        ]
+      },
+      "en": {
+        "title": "From HTML bytes to a frame",
+        "items": [
+          "Build the DOM from HTML and the CSSOM from CSS",
+          "Style: compute final styles for every element",
+          "Layout: calculate the size and position of boxes",
+          "Paint: record draw commands into layers",
+          "Composite: rasterize and assemble layers into the frame"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Preload scanner runs ahead of the parser and starts fetching discovered resources",
+      "e": "Secondary parser speculatively examines markup to discover resources to download before the main parser finds them.",
+      "u": [
+        "https://web.dev/articles/preload-scanner"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Pipeline: style (selector matching, computed styles) -> layout (geometry) -> paint -> composite",
+      "e": "Pixel pipeline: JavaScript, Style, Layout, Paint, Composite; style = selector matching and final styles.",
+      "u": [
+        "https://web.dev/articles/rendering-performance"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Changing width triggers layout+paint+composite; color change skips layout; transform/opacity can go straight to composite",
+      "e": "Paint-only properties like color skip layout; if neither layout nor paint needed, browser jumps straight to compositing.",
+      "u": [
+        "https://web.dev/articles/rendering-performance"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "content-visibility: auto skips layout/paint of off-screen content until near viewport; pair with contain-intrinsic-size",
+      "e": "Skips contents when not relevant to user; example pairs it with contain-intrinsic-size: auto 500px.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "content-visibility is Baseline since 2024",
+      "e": "Baseline 2024 - Newly available since September 2024.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Purple in the Performance panel is style/layout (rendering)",
+      "e": "Layout blocks appear purple in Chrome DevTools Performance panel.",
+      "u": [
+        "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Reading offsetHeight/getBoundingClientRect after a DOM write forces synchronous layout; read/write loop = layout thrashing; fix by batching reads then writes, rAF",
+      "e": "Browser must first apply the style change and then run layout; batch reads first, then writes.",
+      "u": [
+        "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "transform/opacity handled by compositor without layout/paint; will-change: transform promotes to own layer; each layer costs memory, don't over-promote",
+      "e": "Every layer you create requires memory and management... Do not promote elements unnecessarily.",
+      "u": [
+        "https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "CSS in head is render-blocking to avoid FOUC",
+      "e": "For CSS files, rendering is blocked in order to prevent a flash of unstyled content.",
+      "u": [
+        "https://web.dev/articles/preload-scanner"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Classic script without attributes blocks parsing while fetched and executed; it also waits for a pending stylesheet above it",
+      "e": "Fetched and evaluated immediately, blocking parsing; with a style sheet blocking scripts it waits as pending parsing-blocking script.",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/scripting.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "defer: parallel download, runs after parsing, in document order, before DOMContentLoaded",
+      "e": "Executed after the document has been parsed, but before firing DOMContentLoaded; in document order.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "async: parallel download, executes as soon as available, any order, can interrupt parsing",
+      "e": "Fetched in parallel and evaluated as soon as available (potentially before parsing completes).",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/scripting.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "type=module deferred by default; with async runs as soon as it and its dependency graph are ready",
+      "e": "Module script and all its dependencies fetched in parallel and evaluated as soon as available.",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/scripting.html"
+      ]
+    }
+  ]
+}

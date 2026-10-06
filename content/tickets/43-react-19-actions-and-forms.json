@@ -1,0 +1,300 @@
+{
+  "n": 43,
+  "tag": "Frontend core · React",
+  "sec": "react",
+  "core": [
+    58
+  ],
+  "ru": {
+    "topic": "React 19: Actions и формы",
+    "qs": [
+      "Что такое Action в React 19 и что дают useActionState, useFormStatus и use() по сравнению с обычным onSubmit?",
+      "Как работает useOptimistic и зачем списку сообщений нужна форма с reducer?",
+      "Расскажите, как бы вы сделали отправку сообщения в чате: оптимистичное сообщение пользователя, потоковый ответ, кнопка Stop и откат при ошибке."
+    ],
+    "a": [
+      {
+        "q": "Actions и хуки",
+        "t": "Action (действие) — это функция, синхронная или асинхронная, которая выполняется внутри transition (несрочного обновления): её передают в startTransition или в проп (свойство компонента) вроде action у формы, и тогда React оборачивает её сам. React отслеживает pending-состояние (ожидание), не блокирует ввод и после успешного action формы сбрасывает неконтролируемые поля. useActionState превращает action в reducer (функцию «старое состояние плюс событие даёт новое»): она получает предыдущее состояние и payload (полезную нагрузку), для формы это FormData, и возвращает следующее состояние. Я получаю state, функцию dispatch и isPending. Вызовы встают в очередь и выполняются последовательно, так что один медленный запрос задерживает следующий. useFormStatus читает pending, data и method родительской формы. Ловушка в том, что он работает только в компоненте, отрисованном внутри формы, а не в том, который форму рендерит, поэтому кнопка отправки становится отдельным компонентом. use() читает промис или контекст, его можно вызывать в условии, и он приостанавливает рендер до разрешения промиса, но промис должен быть закеширован или прийти из Server Component. После 19.0 в 19.2 добавили Activity и useEffectEvent, а в 19.3 ViewTransition стал стабильным."
+      },
+      {
+        "q": "useOptimistic",
+        "t": "useOptimistic принимает реальное значение и необязательный reducer (функцию пересчёта состояния) и возвращает оптимистичное значение и сеттер (функцию обновления). Пока action в процессе, React показывает оптимистичное значение. Когда action завершился и реальный state обновился, оптимистичный слой снимается и видно реальное значение. Это же бесплатно даёт откат при ошибке: если action упал и реальный state не изменился, оптимистичный элемент просто исчезает. Без reducer сеттер заменяет значение целиком, для переключателя лайка этого хватает. Для списка сообщений нужен reducer, например (messages, newMessage) => [...messages, {...newMessage, sending: true}], потому что две быстрые отправки должны обе добавиться, а не перезаписать друг друга. Сеттер надо вызывать внутри action или startTransition. Снаружи React выдаёт предупреждение, и оптимистичное состояние мигнёт и сразу откатится. Чего он не делает — не показывает ошибку. Состояние «не отправлено» или toast (всплывающее уведомление) я рисую сам, иначе сообщение молча пропадает."
+      },
+      {
+        "q": "Отправка в чате",
+        "t": "Подтверждённые сообщения я держу в реальном state, а сообщение пользователя пускаю через useOptimistic, так что внутри action оно появляется мгновенно. Потом создаю AbortController и вызываю fetch с его signal. Как только сервер принял запрос, я фиксирую сообщение пользователя в реальном state внутри startTransition и добавляю пустой placeholder (заготовку) ответа ассистента. На этом action заканчивается, а поток я читаю уже вне его. Поэтому фиксация попадает в тот же рендер, в котором исчезает оптимистичная копия, так что ничего не мигает и не задваивается. Но reducer у меня всё равно пропускает id, которые уже есть в реальном state: вдруг базовый список изменится извне, пока action ещё идёт. Ответ не оптимистичный, это настоящие потоковые данные, поэтому я наращиваю заготовку кусок за куском, собирая чанки (фрагменты потока) в пачку на каждый animation frame (кадр отрисовки), а не на каждый токен. Кнопка Stop вызывает abort. На сервере abort тоже должен отменять вызов LLM, иначе я продолжаю платить за токены, которые никто не читает. На клиенте AbortError для меня нормальный исход, частичный текст остаётся. Если запрос упал до первых токенов, сообщение пользователя так и не было зафиксировано, поэтому оптимистичное откатывается само, а я возвращаю черновик в поле ввода с ошибкой и кнопкой повтора. Поток, оборвавшийся на середине, я оставляю с пометкой об ошибке, а не удаляю то, что пользователь уже прочитал."
+      }
+    ],
+    "kill": "<b>«Вызову useFormStatus прямо в компоненте с формой»</b>: он читает только родительскую форму, поэтому должен жить в дочернем компоненте, например в кнопке. И <b>вызов setOptimistic вне action</b> даёт значение, которое мигает и откатывается."
+  },
+  "en": {
+    "topic": "React 19: Actions and forms",
+    "qs": [
+      "What is an Action in React 19, and what do useActionState, useFormStatus and use() give you over a plain onSubmit handler?",
+      "How does useOptimistic work, and why does a message list need the reducer form?",
+      "Walk me through a chat send flow: optimistic user message, streaming reply, a Stop button, and rollback on error."
+    ],
+    "a": [
+      {
+        "q": "Actions and hooks",
+        "t": "An Action is a function, sync or async, that runs inside a transition — passed to startTransition, or to a prop like the form's action, which React wraps for me. React tracks the pending state, keeps input responsive, and resets uncontrolled fields after a successful form action. useActionState turns an action into a reducer: it receives the previous state and the payload, which is FormData for a form, and returns the next state. I get back the state, a dispatch function and isPending. Calls queue and run sequentially, so one slow request delays the next. useFormStatus reads pending, data and method of the parent form. The trap is that it only works in a component rendered inside the form, not in the one that renders it, so the submit button becomes its own component. use() reads a promise or context, can be called conditionally, and suspends until the promise resolves, but the promise must be cached or come from a Server Component. After 19.0, 19.2 added Activity and useEffectEvent, and 19.3 made ViewTransition stable."
+      },
+      {
+        "q": "useOptimistic",
+        "t": "useOptimistic takes the real value and an optional reducer, and returns an optimistic value plus a setter. While an action is pending, React shows the optimistic value. When the action finishes and the real state updates, the optimistic layer is dropped and the real value shows through. That also gives me rollback on failure for free: if the action throws and the real state never changes, the optimistic item just disappears. Without a reducer the setter replaces the whole value, which is fine for a like toggle. For a message list I need the reducer form, like (messages, newMessage) => [...messages, {...newMessage, sending: true}], because two quick sends must each append instead of overwriting each other. The setter has to be called inside an action or startTransition. Outside one, React warns and the optimistic state flashes and reverts immediately. What it doesn't do is error UI. I still render a failed state or a toast myself, otherwise the message silently vanishes."
+      },
+      {
+        "q": "Chat send flow",
+        "t": "I keep confirmed messages in real state and send the user's message through useOptimistic, so inside the action it appears instantly. Then I create an AbortController and call fetch with its signal. Once the server accepts, I commit the user message to real state inside startTransition and append an empty assistant placeholder. The action ends there and I read the stream outside it, so that update lands in the same render where the optimistic copy is dropped, and nothing flickers or doubles. I still have the reducer skip ids already in real state, in case the base list changes from elsewhere while the action is pending. The reply is real streaming data, so I grow the placeholder chunk by chunk, batched per animation frame rather than per token. The Stop button calls abort. On the server the abort has to cancel the upstream LLM call too, or I keep paying for tokens nobody reads. On the client I treat AbortError as a normal outcome and keep the partial text. If the request fails before any tokens arrive, the user message was never committed, so the optimistic one rolls back on its own, and I put the draft back in the input with an error and a retry. A stream that dies halfway I keep with a failed marker rather than deleting what the user already read."
+      }
+    ],
+    "kill": "<b>\"I'll call useFormStatus right in the form component\"</b> — it only reads a parent form, so it has to live in a child like the submit button. And <b>calling setOptimistic outside an action</b> makes the value flash and revert."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Без reducer сеттер useOptimistic добавляет новое значение в конец существующего списка.",
+        "Несколько вызовов dispatch из useActionState выполняются параллельно, и побеждает тот, что завершился последним."
+      ],
+      "en": [
+        "Without a reducer, the useOptimistic setter appends the new value to the existing list.",
+        "Multiple dispatch calls from useActionState run in parallel, and whichever resolves last wins."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "useFormStatus читает статус только [[родительской|внешней]] формы, поэтому его вызывают в дочернем компоненте.",
+        "Без [[reducer|редьюсера]] сеттер useOptimistic [[заменяет|перезаписывает]] значение целиком.",
+        "Кнопка Stop вызывает abort у [[AbortController]], а клиент считает [[AbortError]] нормальным исходом."
+      ],
+      "en": [
+        "useFormStatus only reads the status of a [[parent|enclosing]] form, so it has to be called in a child component.",
+        "Without a [[reducer]], the useOptimistic setter [[replaces|overwrites]] the whole value.",
+        "The Stop button calls abort on an [[AbortController]], and the client treats [[AbortError]] as a normal outcome."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Отправка сообщения в чате",
+        "items": [
+          "Показать сообщение пользователя через useOptimistic внутри action",
+          "Создать AbortController и вызвать fetch с его signal",
+          "Когда сервер принял запрос, зафиксировать сообщение в реальном state",
+          "Добавить пустую заготовку ответа ассистента",
+          "Наращивать её текст по чанкам, пачками на каждый кадр"
+        ]
+      },
+      "en": {
+        "title": "Chat send flow",
+        "items": [
+          "Show the user message via useOptimistic inside the action",
+          "Create an AbortController and call fetch with its signal",
+          "Once the server accepts, commit the user message to real state",
+          "Append an empty assistant placeholder message",
+          "Grow its content chunk by chunk, batched per frame"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Action = function (sync or async) run in a transition via startTransition or an action prop",
+      "e": "'Functions called in startTransition are called Actions'; form action 'runs in a Transition' and may be async.",
+      "u": [
+        "https://react.dev/reference/react/useTransition"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Form action resets uncontrolled fields after success",
+      "e": "'After the action function succeeds, all uncontrolled field elements in the form are reset.'",
+      "u": [
+        "https://react.dev/reference/react-dom/components/form"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "useActionState: reducer (prevState, payload), FormData for forms; returns [state, dispatch, isPending]",
+      "e": "const [state, dispatchAction, isPending] = useActionState(reducerAction, initialState); form payload is FormData.",
+      "u": [
+        "https://react.dev/reference/react/useActionState"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "useActionState dispatch calls queue and run sequentially",
+      "e": "'React queues and executes multiple calls to dispatchAction sequentially.'",
+      "u": [
+        "https://react.dev/reference/react/useActionState"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "useFormStatus reads pending/data/method of parent form only; must be in a child of <form>",
+      "e": "'will only return status information for a parent <form>'; also returns action.",
+      "u": [
+        "https://react.dev/reference/react-dom/hooks/useFormStatus"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "use() reads promise or context, can be conditional, suspends; promise must be cached or from a Server Component",
+      "e": "'can be called within loops and conditional statements'; Client Component promises 'must be cached'.",
+      "u": [
+        "https://react.dev/reference/react/use"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "19.2 added Activity and useEffectEvent",
+      "e": "React 19.2 (Oct 1 2025): Activity, useEffectEvent, cacheSignal, Performance Tracks.",
+      "u": [
+        "https://react.dev/blog/2025/10/01/react-19-2"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "19.3 made ViewTransition stable",
+      "e": "React 19.3 (Sept 9 2026): 'in 19.3 it's stable and ready to use.'",
+      "u": [
+        "https://react.dev/blog/2026/09/09/react-19-3"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "useOptimistic(value, reducer?) returns [optimistic, setter]; shows optimistic value while action pending, then real value",
+      "e": "Optimistic state equals value unless an Action is pending; converges when the Transition completes.",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "On failure with unchanged real state, optimistic value reverts automatically",
+      "e": "'a failure means value hasn't changed, so the UI shows what it showed before the optimistic update.'",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Without reducer the setter replaces the value; reducer form for appending to lists",
+      "e": "setOptimisticName('Taylor') replaces directly; list example uses reducer (currentTodos, newTodo) => [...currentTodos, ...].",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Setter outside an action/startTransition warns and the value flashes then reverts",
+      "e": "Warning 'An optimistic state update occurred outside a Transition or Action'; 'briefly appear and then immediately revert'.",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "useOptimistic does not provide error UI",
+      "e": "Docs catch the error and render it with separate useState.",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Committing the user message to real state mid-action while streaming continues is safe; optimistic one rolls back only on failure",
+      "e": "'If items changes while the Action is pending, React re-runs your reducer' — this is for base-state changes from elsewhere; your own commit inside the Action converges in one render (see the re-check entry).",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "fetch abort rejects with AbortError",
+      "e": "If no reason given, 'the reason is set to AbortError DOMException'; aborts fetch and stream consumption.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "State updates after await inside an action must be wrapped in startTransition",
+      "e": "'You must wrap any state updates after any async requests in another startTransition'.",
+      "u": [
+        "https://react.dev/reference/react/useTransition"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix2",
+      "c": "Committing the user message to real state inside startTransition during the Action doesn't duplicate it: optimistic and real state converge in the same render when the Transition completes. The reducer re-runs only if the base list changes from elsewhere while pending.",
+      "e": "useOptimistic docs: 'optimistic and real state converge in the same render when the Transition completes'.",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix2",
+      "c": "Step 3 is a plain commit to real state; your own commit needs no dedupe.",
+      "e": "Same useOptimistic convergence rule.",
+      "u": [
+        "https://react.dev/reference/react/useOptimistic"
+      ]
+    }
+  ]
+}

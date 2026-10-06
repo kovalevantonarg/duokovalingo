@@ -1,0 +1,204 @@
+{
+  "n": 1,
+  "tag": "Core-40 #17",
+  "sec": "llm",
+  "core": [
+    17
+  ],
+  "ru": {
+    "topic": "Токены",
+    "qs": [
+      "Что такое токен? Дай определение так, как сказал бы интервьюеру.",
+      "Сколько символов и сколько слов примерно в одном токене? Почему это среднее, а не правило?",
+      "Почему русский текст может стоить дороже английского? Механизм, а не факт."
+    ],
+    "a": [
+      {
+        "q": "Определение",
+        "t": "Токен — это subword unit, кусок текста из фиксированного словаря модели, обычно на пятьдесят–двести тысяч записей. Модель не видит ни слов, ни букв: она видит целые числа, каждое из которых — индекс в этом словаре. И важно, что токены есть с обеих сторон — твой промпт токенизируется на входе, и модель порождает токены на выходе."
+      },
+      {
+        "q": "Цифры",
+        "t": "Примерно четыре символа английского, или три четверти слова — это эвристика OpenAI, одна величина в двух единицах. Anthropic для Claude даёт около трёх с половиной символов, а новый токенайзер Claude на том же тексте даёт до трети больше токенов, чем прежний, поэтому я не делю на константу, а считаю. Это среднее, потому что словарь строил BPE: самые частые соседние пары склеивались в одну запись, частые слова стали одним токеном, а редкие режутся. Длину определяет частота, а не смысл."
+      },
+      {
+        "q": "Кириллица",
+        "t": "Словарь строился на корпусе с преобладанием английского, поэтому эффективные склейки достались ему, а кириллица режется мельче. Насколько мельче — зависит от токенайзера: в эпоху GPT-2 разница пятикратная и больше, у cl100k примерно двукратная, а у больших словарей вроде o200k около полутора раз и меньше. Это продуктовое решение, а не курьёз: надбавка бьёт и по цене, и по контекстному окну. Перед бюджетированием русской фичи я меряю реальный текст счётчиком вендора, у Claude это count_tokens."
+      }
+    ],
+    "kill": "<b>«Token is a symbol»</b> — русское «символ» это character, английское symbol значит другое. Говори <b>subword unit</b>. И не путай «4 символа» с «4 слова» — это ошибка в пять раз."
+  },
+  "en": {
+    "topic": "Tokens",
+    "qs": [
+      "What is a token? Define it the way you would to an interviewer.",
+      "Roughly how many characters and how many words per token? Why is that an average, not a rule?",
+      "Why can Russian text cost more than English? Give the mechanism, not the fact."
+    ],
+    "a": [
+      {
+        "q": "Definition",
+        "t": "A token is a subword unit — a chunk of text from the model's fixed vocabulary, usually somewhere between fifty and two hundred thousand entries. The model never sees words or characters. It sees integers, each one an index into that vocabulary. And it matters that tokens exist on both sides: your prompt is tokenised on the way in, and the model produces tokens on the way out."
+      },
+      {
+        "q": "The numbers",
+        "t": "About four characters of English, or three quarters of a word. That's OpenAI's rule of thumb, one fact in two units. Anthropic quotes about three and a half characters for Claude, and Claude's newer tokenizer can use up to a third more tokens than the old one on the same text, so I count instead of estimating. It's an average rather than a rule because the vocabulary was built by byte-pair encoding: the most frequent adjacent pairs got merged into single entries, so common words became one token and rare ones got split. Frequency decides length, not meaning."
+      },
+      {
+        "q": "Non-English",
+        "t": "The vocabulary was built on an English-heavy corpus, so English got the efficient merges and Cyrillic usually gets split finer. How much finer depends on the tokenizer: GPT-2-era ones were five times worse or more, cl100k roughly double, and modern large vocabularies like o200k are around one and a half times or less. It's a product decision, not trivia: the premium hits both cost and context. So before budgeting a Russian feature I measure real text with the vendor's token counter, count_tokens on Claude."
+      }
+    ],
+    "kill": "<b>\"A token is a symbol\"</b> — Russian <i>символ</i> means <i>character</i>; English \"symbol\" doesn't. Say <b>subword unit</b>. And never say \"4 words per token\" — that's a 5x error."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Токен — это один символ текста.",
+        "В одном токене примерно четыре слова."
+      ],
+      "en": [
+        "A token is a single character of text.",
+        "One token is roughly four words."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Токен — это [[subword unit|subword]], кусок текста из фиксированного [[словаря]] модели.",
+        "На токенайзерах OpenAI примерно [[4|четыре]] символа английского, или примерно [[0.75|3/4|три четверти]] слова.",
+        "Насколько больше токенов нужно русскому тексту, зависит от [[токенайзера|токенизатора]]; у больших словарей вроде o200k надбавка около [[полутора|1,5]] раз и меньше."
+      ],
+      "en": [
+        "A token is a [[subword unit|subword]] — a chunk of text from the model's fixed [[vocabulary|vocab]].",
+        "On OpenAI's tokenizers, about [[4|four]] characters of English, or roughly [[0.75|3/4|three quarters]] of a word.",
+        "How many more tokens Russian text needs depends on the [[tokenizer|tokeniser]]; on large vocabularies like o200k the premium is around [[one and a half|1.5]] times or less."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A token is a subword unit from the model's fixed vocabulary; can be word, subword, char or byte",
+      "e": "Tokens 'can correspond to words, subwords, characters, or even bytes'; 'The choice of tokenization method can impact... vocabulary size'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Vocabularies are usually ~50k-200k entries",
+      "e": "GPT-2 explicit_n_vocab 50257; cl100k_base ~100k; o200k_base ENDOFTEXT id 199999 (~200k). Hedged 'usually' is fair; Claude's size is undisclosed.",
+      "u": [
+        "https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Model sees integers (token ids), and both prompt and output are tokens",
+      "e": "tiktoken encode() turns text into a list of integer token ids; Anthropic bills separate input and output tokens (pricing page).",
+      "u": [
+        "https://github.com/openai/tiktoken/blob/main/README.md"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "~4 characters of English per token, ~3/4 of a word",
+      "e": "OpenAI: '1 token is approximately 4 characters... three-quarters of a word'. Anthropic: 'For Claude, a token approximately represents 3.5 English characters'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Newer Claude tokenizer produces more tokens for same text (context for the 4-chars rule)",
+      "e": "Sonnet 5: 'same input text produces approximately 30% more tokens than on Claude Sonnet 4.6'; Opus 4.7+: 'roughly 1x to 1.35x as many tokens' (migration guide).",
+      "u": [
+        "https://platform.claude.com/docs/en/models/sonnet-5/whats-new-sonnet-5"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Vocabulary built by BPE: most frequent adjacent pairs merged, so frequent words are one token, rare ones split",
+      "e": "'the BPE algorithm will search for the most frequent pair of existing tokens... That most frequent pair is the one that will be merged'. Claude's exact algorithm is undisclosed; OpenAI's is BPE (tiktoken).",
+      "u": [
+        "https://huggingface.co/learn/llm-course/chapter6/5"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "English-heavy training corpus gave English the efficient merges; other languages tokenize longer",
+      "e": "'same text translated into different languages can have drastically different tokenization lengths, with differences up to 15 times'; asymmetry favors English.",
+      "u": [
+        "https://arxiv.org/abs/2305.15425"
+      ]
+    },
+    {
+      "w": [
+        2,
+        "d"
+      ],
+      "s": "fix2",
+      "c": "Russian vs English token premium by tokenizer: GPT-2 5x+, cl100k about 2x, o200k about 1.5x or less",
+      "e": "OpenAI's single GPT-4o showcase sentence shows near parity on o200k (39→23 vs 24), but tiktoken runs on five parallel EN/RU texts (incl. UN UDHR translations) gave gpt2 ×4.9–6.8, cl100k ×1.8–2.9, o200k ×1.2–1.6. Measure your own text.",
+      "u": [
+        "https://openai.com/index/hello-gpt-4o/",
+        "https://github.com/openai/tiktoken",
+        "https://www.ohchr.org/en/human-rights/universal-declaration/translations/english"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "'4 words per token' vs ~0.75 words per token is about a 5x error",
+      "e": "OpenAI: 1 token ≈ 3/4 word; 4 / 0.75 ≈ 5.3x, so '5x' is a fair round figure.",
+      "u": [
+        "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: a token is a single character of text (must be false)",
+      "e": "Tokens 'can correspond to words, subwords, characters, or even bytes' - a character is only one possibility, so the definition is false.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: one token is roughly four words (must be false)",
+      "e": "'1 token is approximately three-quarters of a word' - so the lie is false.",
+      "u": [
+        "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+      ]
+    }
+  ]
+}

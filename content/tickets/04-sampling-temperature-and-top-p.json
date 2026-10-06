@@ -1,0 +1,256 @@
+{
+  "n": 4,
+  "tag": "Core-40 #19",
+  "sec": "llm",
+  "core": [
+    19
+  ],
+  "ru": {
+    "topic": "Sampling: temperature и top_p",
+    "qs": [
+      "Что temperature делает с числами и в каком месте пайплайна?",
+      "Тот же промпт, temperature 0, два раза. Одинаковый выход гарантирован?",
+      "Что делает top_p и чем лучше top_k? И что с temperature на новых Claude?"
+    ],
+    "a": [
+      {
+        "q": "Механизм",
+        "t": "Temperature делит логиты перед softmax — вот и весь механизм. Если делить на число меньше единицы, логиты расходятся дальше друг от друга, softmax усиливает разрыв, распределение становится резким. Больше единицы — наоборот, сжимаются, распределение выравнивается, маловероятные токены получают шанс. Ноль реализуется как greedy decoding, всегда берётся самый вероятный. И важно, где это происходит: уже после того, как распределение посчитано. Поэтому температура не добавляет модели знаний — она только меняет, как часто берётся не-топовый токен. Вендоры называют это разнообразие креативностью, но на фактической задаче это в основном ошибки."
+      },
+      {
+        "q": "Детерминизм",
+        "t": "Нет, не гарантирован — правильная формулировка near-deterministic, not guaranteed. Сложение с плавающей точкой неассоциативно, поэтому результат зависит от порядка редукции (суммирования). Но дело не в случайном порядке потоков: один и тот же батч даёт от запуска к запуску одинаковый результат. Главная причина в том, что твой запрос батчится с чужими, а kernel'ы не batch-invariant: другой размер батча меняет порядок редукции, а с ним и численный результат. И там, где два кандидата почти равны, разница в одну десятимиллионную переворачивает выбор — а генерация авторегрессивна, поэтому после одного разошедшегося токена расходится всё. Если нужна настоящая воспроизводимость, я кэширую ответ, а не полагаюсь на сэмплер."
+      },
+      {
+        "q": "top_p и депрекация",
+        "t": "top_p сортирует токены по вероятности, набирает их сверху, пока сумма не достигнет p, а остальное отрезает и перенормирует. Главное его свойство — адаптивность: когда модель уверена, в наборе останется один токен, когда не уверена — сорок. А top_k всегда берёт ровно k, независимо от того, насколько модель уверена, и потому либо тащит мусор, либо режет хвост произвольно. Обычный совет вендоров — крутить temperature или top_p, но не оба, а top_k у Anthropic помечен как параметр только для продвинутых сценариев. И отдельно: на моделях, выпущенных после Opus 4.6 (начиная с Opus 4.7), temperature/top_p/top_k вообще deprecated — non-default значение теперь 400 error, официальная рекомендация Anthropic — steering через prompting, а не через sampling-параметры. Отдельный параметр effort действительно есть, но это не замена temperature. Он живёт в output_config и управляет тем, сколько токенов Claude тратит в целом: глубиной thinking, а также длиной текста и tool calls, даже при выключенном thinking. Случайностью вывода он не управляет, это два разных рычага."
+      }
+    ],
+    "kill": "<b>«temp 0 = детерминизм»</b> и <b>«выше температура = умнее»</b>. Первое неверно из-за батчинга и порядка float-редукции; второе не добавляет знаний, а на фактической задаче лишнее разнообразие даёт ошибки."
+  },
+  "en": {
+    "topic": "Sampling: temperature and top_p",
+    "qs": [
+      "What does temperature do to the numbers, and where in the pipeline does it act?",
+      "Same prompt, temperature 0, twice. Is identical output guaranteed?",
+      "What does top_p do and why is it preferred over top_k? And what happened to temperature on the newest Claude models?"
+    ],
+    "a": [
+      {
+        "q": "Mechanism",
+        "t": "Temperature divides the logits before the softmax — that's the entire mechanism. Divide by something below one and the logits move further apart, softmax exaggerates the gaps, and the distribution gets sharp. Above one they compress, the distribution flattens, and unlikely tokens become plausible. Zero is implemented as greedy decoding, always taking the top token. And where it acts matters: this is after the distribution has already been computed. So temperature adds no knowledge — it only changes how often a non-top token gets picked. Vendors call that extra diversity creative, but on a factual task it mostly adds errors."
+      },
+      {
+        "q": "Determinism",
+        "t": "No. The correct phrasing is near-deterministic, not guaranteed. Floating-point addition isn't associative, so the result depends on the order values get reduced in. But it's not random thread order: the same batch gives the same result run to run. The main cause is that your request is batched with other people's, and the kernels aren't batch-invariant: a different batch size changes the reduction order and so the numerics. Where two candidates are nearly tied, a difference of one part in ten million flips the choice — and since generation is autoregressive, one diverged token means everything after it diverges. If I genuinely need reproducibility I cache the output rather than trusting the sampler."
+      },
+      {
+        "q": "top_p and deprecation",
+        "t": "top_p sorts tokens by probability, takes them from the top until the accumulated mass reaches p, then cuts the rest and renormalises. Its key property is that it adapts: when the model is confident the set collapses to one token, when it's unsure it might keep forty. top_k always takes exactly k regardless of confidence, so it either drags in noise or truncates the tail arbitrarily. The usual vendor advice is to tune temperature or top_p, not both, and Anthropic marks top_k as advanced use only. And separately: on models released after Opus 4.6 (starting with Opus 4.7), temperature/top_p/top_k are deprecated entirely — a non-default value now returns a 400, and Anthropic's actual guidance is to steer via prompting, not sampling params. There is a real effort field, but it's not temperature's replacement. It lives under output_config and controls how many tokens Claude spends overall: thinking depth, but also the length of text and tool calls, even with thinking off. It doesn't touch output randomness, so these are two different knobs."
+      }
+    ],
+    "kill": "<b>\"temp 0 means deterministic\"</b> and <b>\"higher temperature makes the model smarter\"</b>. The first is wrong because of batching and float reduction order; the second adds no knowledge, and on a factual task the extra diversity produces errors."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "temperature = 0 гарантирует одинаковый ответ на одинаковый запрос.",
+        "Высокая temperature добавляет модели знаний."
+      ],
+      "en": [
+        "temperature = 0 guarantees the same answer for the same request.",
+        "Higher temperature gives the model more knowledge."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Temperature [[делит|divides]] логиты перед [[softmax]] — это весь механизм.",
+        "temp 0 реализован как [[greedy|жадное]] декодирование: всегда берётся топ-токен.",
+        "top_p набирает токены сверху, пока суммарная масса не достигнет [[p]], и это адаптивно; top_k всегда берёт ровно [[k]]."
+      ],
+      "en": [
+        "Temperature [[divides]] the logits before the [[softmax]] — that's the entire mechanism.",
+        "temp 0 is implemented as [[greedy]] decoding: always take the top token.",
+        "top_p keeps tokens from the top until the mass reaches [[p]] — adaptive; top_k always takes exactly [[k]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Temperature divides the logits before softmax",
+      "e": "TemperatureLogitsWarper: 'scores_processed = scores / self.temperature'.",
+      "u": [
+        "https://github.com/huggingface/transformers/blob/main/src/transformers/generation/logits_process.py"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "T<1 sharpens and T>1 flattens the distribution",
+      "e": "OpenAI: 'Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused'. Note Anthropic's range is 0-1, OpenAI's 0-2.",
+      "u": [
+        "https://github.com/openai/openai-python/blob/main/src/openai/types/chat/completion_create_params.py"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Temperature 0 is implemented as greedy decoding",
+      "e": "vLLM temperature: 'Zero means greedy sampling.' Thinking Machines also calls temperature 0 'greedy sampling'.",
+      "u": [
+        "https://github.com/vllm-project/vllm/blob/main/vllm/sampling_params.py"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Temperature adds no knowledge and no creativity; only changes how often a non-top token is picked",
+      "e": "Anthropic glossary: 'Higher temperatures lead to more creative and diverse outputs'; API ref: closer to 1.0 'for creative and generative tasks'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "temperature 0 does not guarantee identical output",
+      "e": "'Even with temperature set to 0, the results will not be fully deterministic and identical inputs may produce different outputs across API calls.'",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Cause: non-associative float addition in parallel kernels in scheduling order, plus batching with other requests",
+      "e": "'concurrency + floating point' hypothesis 'doesn't reveal the full picture'; forward pass is run-to-run deterministic; 'the load (and thus batch-size) nondeterministically varies'.",
+      "u": [
+        "https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "A near-tie flipped by a tiny difference diverges the rest of the autoregressive output",
+      "e": "Qwen3-235B at temperature 0: 1000 completions produced 80 unique outputs; identical only with batch-invariant kernels.",
+      "u": [
+        "https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Size of the tie-breaking difference: EN 'one part in ten million' vs RU 'одна десятимиллиардная' (1e-10)",
+      "e": "Illustrative. EN 1e-7 matches the fp32 precision scale; RU 1e-10 is below fp32 resolution and contradicts the EN text.",
+      "u": [
+        "https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "top_p keeps tokens from the top until cumulative mass reaches p, then renormalises; adaptive set size",
+      "e": "Anthropic: 'compute the cumulative distribution... cut it off once it reaches... top_p'; Holtzman: 'dynamic nucleus... truncating the less reliable tail'.",
+      "u": [
+        "https://arxiv.org/abs/1904.09751"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "top_k always takes exactly k tokens regardless of confidence",
+      "e": "top_k: 'Only sample from the top K options for each subsequent token.'",
+      "u": [
+        "https://platform.claude.com/docs/en/api/messages/create"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Tune one of top_p/top_k, never both",
+      "e": "OpenAI: 'We generally recommend altering this or top_p but not both' - vendor guidance is about temperature vs top_p.",
+      "u": [
+        "https://github.com/openai/openai-python/blob/main/src/openai/types/chat/completion_create_params.py"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "On models after Opus 4.6, temperature/top_p/top_k are deprecated and non-default values return 400; steer via prompting",
+      "e": "'Deprecated. Models released after Claude Opus 4.6 do not support setting temperature... all other values will be rejected with a 400 error.' Migration: 'Prompting is the recommended way'. temperature 1.0 / top_p>=0.99 are still accepted; any top_k is…",
+      "u": [
+        "https://platform.claude.com/docs/en/api/messages/create"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "effort lives in output_config and is not a temperature replacement",
+      "e": "Set via output_config.effort; levels low/medium/high/xhigh/max; controls token spend, not sampling randomness.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/effort"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "effort controls adaptive-thinking reasoning depth (only)",
+      "e": "'The effort parameter affects all tokens in the response, including: Text responses..., Tool calls..., Thinking'; 'works whether or not thinking is enabled.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/effort"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: temperature 0 guarantees the same answer (must be false)",
+      "e": "'If you were using temperature = 0 for determinism, note that it never guaranteed identical outputs on prior models.'",
+      "u": [
+        "https://platform.claude.com/docs/en/models/opus-5/migration-guide"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "Lie: higher temperature gives the model more knowledge and creativity (must be false)",
+      "e": "The 'knowledge' half is false, but Anthropic's glossary says 'Higher temperatures lead to more creative and diverse outputs' - the 'creativity' half matches vendor wording.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/glossary"
+      ]
+    }
+  ]
+}

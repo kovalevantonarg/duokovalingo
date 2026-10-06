@@ -1,0 +1,135 @@
+{
+  "n": 25,
+  "tag": "Core-40 #40 · behavioral",
+  "sec": "behav",
+  "core": [
+    40
+  ],
+  "ru": {
+    "topic": "Три STAR-истории",
+    "qs": [
+      "Сложная техническая задача, которую ты решил. STAR, 90 секунд.",
+      "Провал и что ты изменил навсегда. STAR, 90 секунд.",
+      "Правила формы: как удержать любую историю в 90 секундах и чем она обязана заканчиваться?"
+    ],
+    "a": [
+      {
+        "q": "Техническая",
+        "t": "В Dats.Team у нас было большое Next.js-приложение на старом Pages Router, и нужно было отдавать локализованный контент больше чем в пятьдесят стран. Я владел миграцией на App Router и всем слоем интернационализации. Я спланировал инкрементальную миграцию, чтобы продукт продолжал шипиться (выходить в релизы): маршрут за маршрутом, next-intl для переводов, SWR для клиентского кэша, плюс оптимизации сборки, чтобы пятьдесят локалей не взорвали build. Мы мигрировали без заморозки фич, и i18n сейчас обслуживает пятьдесят с лишним стран из одной кодовой базы. Инкрементальная миграция под живым трафиком — тот же навык, которым я сейчас строю AI-системы: шипить маленькими шагами, мерить, двигаться дальше."
+      },
+      {
+        "q": "Провал",
+        "t": "Рабочий черновик, кандидат — перформанс-история на Formind, но с двумя цифрами в скобках, которые нужно сверить по своим записям, прежде чем произносить это вслух на интервью: «Я задеплоил оптимизацию бандла, не измерив её на реальном трафике заранее — после релиза заметил регрессию по загрузке у пользователей на медленных сетях, и прошло [X дней], прежде чем я поймал её через мониторинг. Дело было в том, что я оптимизировал под свою локальную сеть и синтетический бенчмарк, а не под p95 реальных юзеров. Сразу откатил и добавил алерт на [метрика] в проде. Навсегда изменил: с тех пор ни один perf-релиз не уходит без A/B на реальном трафике и без порогового алерта на p95, а не на среднее — именно это поймало бы регрессию до жалоб юзеров, а не после». Три бита обязательны: что пошло не так и почему — «я допустил», не «случилось»; что сделал немедленно; что изменил навсегда — процесс, проверка, метрика. Без третьего это история про везение, а не про провал. Что сделать до собеса: вписать [X дней] и [метрика] реальными цифрами из своих записей — до этого это скелет, а не история."
+      },
+      {
+        "q": "Форма",
+        "t": "Ситуации и задаче — по одному-два предложения, а больше всего времени уходит на действие: что именно сделал я. Ситуация без предыстории компании — интервьюер не знает вашей оргструктуры и не хочет. «Я», а не «мы»: интервьюер оценивает тебя, а «мы» прячет твой вклад. В результате обязана быть цифра или наблюдаемый факт — иначе результат не отличить от намерения. Заканчиваешь предложением-посадкой: что это значит для роли, на которую ты претендуешь. Репетировать вслух, с таймером, пока не станет скучно. Скучно — значит готово."
+      }
+    ],
+    "kill": "История без цифры в результате. И «мы сделали» вместо «я сделал» — интервьюер записывает: вклад неясен."
+  },
+  "en": {
+    "topic": "Three STAR stories",
+    "qs": [
+      "A hard technical problem you solved. STAR, 90 seconds.",
+      "A failure and what you changed permanently. STAR, 90 seconds.",
+      "Rules of form: how do you keep any story to 90 seconds, and what must it end with?"
+    ],
+    "a": [
+      {
+        "q": "Technical",
+        "t": "At Dats.Team we had a large Next.js app on the old Pages Router, and we needed to serve localized content for over fifty countries. I owned the migration to the App Router and the whole internationalization layer. I planned an incremental migration so the product kept shipping — route by route, with next-intl for translations, SWR for client caching, and build-time optimizations so fifty locales didn't explode our build. We migrated without freezing feature work, and the i18n system now serves fifty-plus countries from one codebase. The pattern I used — incremental migration under live traffic — is the same muscle I now use for AI systems: ship small, measure, keep moving."
+      },
+      {
+        "q": "Failure",
+        "t": "Working draft, candidate is the Formind performance work, with two numbers in brackets to verify against my own notes before saying this out loud in an interview: \"I shipped a bundle optimization without measuring it against real traffic first — after release I noticed a load-time regression for users on slow networks, it took [X days] before I caught it through monitoring. The root cause: I'd optimized against my own local network and a synthetic benchmark, not against real users' p95. I rolled it back immediately and added an alert on [metric] in production. What changed permanently: no perf release ships without an A/B against real traffic and a p95 threshold alert, not an average one — that's what would've caught the regression before user complaints, not after.\" Three beats are mandatory: what went wrong and why — I let it happen, not it happened; what I did immediately; what I changed permanently — a process, a check, a metric. Without the third part it's a story about luck, not a failure story. Action item before the interview: fill [X days] and [metric] with the real numbers from my notes — until then this is a skeleton, not a story."
+      },
+      {
+        "q": "Form",
+        "t": "Situation and task get a sentence or two each, and most of the time goes to the action — what I specifically did. Situation without company backstory — the interviewer doesn't know your org chart and doesn't want to. I, not we: they're evaluating you, and we hides your contribution. The result must contain a number or an observable fact — otherwise a result is indistinguishable from an intention. End on a landing sentence: what this means for the role you're interviewing for. Rehearse out loud with a timer until it's boring. Boring means ready."
+      }
+    ],
+    "kill": "A story with no number in the result. And we did instead of I did — the interviewer writes down: contribution unclear."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "В STAR-истории важнее всего подробно описать ситуацию и контекст компании.",
+        "«Мы сделали» звучит скромнее и лучше воспринимается."
+      ],
+      "en": [
+        "In a STAR story the most important part is describing the situation and company context in detail.",
+        "'We did' sounds humbler and lands better."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Ситуации и задаче — по [[1-2|одному-два|1–2]] предложения; больше всего времени — на [[действие|action]].",
+        "В результате обязана быть [[цифра|число]] или наблюдаемый факт.",
+        "История провала: что пошло не так → что сделал → что изменил [[навсегда|permanently]]."
+      ],
+      "en": [
+        "Situation and task get [[1-2|one or two|1–2]] sentences each; most of the time goes to the [[action]].",
+        "The result must contain a [[number]] or an observable fact.",
+        "A failure story: what went wrong → what I did → what I changed [[permanently]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "STAR = Situation, Task, Action, Result",
+      "e": "MIT CAPD: Situation, Task, Action, Result",
+      "u": [
+        "https://capd.mit.edu/resources/the-star-method-for-behavioral-interviews/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Say 'I' not 'we'; the result should be quantified",
+      "e": "Focus on how you contributed rather than 'we'; 'important to highlight quantifiable results'",
+      "u": [
+        "https://capd.mit.edu/resources/the-star-method-for-behavioral-interviews/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Pages → App Router migration can be incremental, route by route, while shipping",
+      "e": "app directory 'designed to work simultaneously with the pages directory to allow for incremental page-by-page migration'",
+      "u": [
+        "https://nextjs.org/docs/app/guides/migrating/app-router-migration"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "next-intl handles translations for the App Router",
+      "e": "Separate setup guides for App Router and Pages Router",
+      "u": [
+        "https://next-intl.dev/docs/getting-started"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "SWR is used for client-side caching",
+      "e": "'React Hooks library for data fetching'; stale-while-revalidate cache strategy (RFC 5861)",
+      "u": [
+        "https://github.com/vercel/swr"
+      ]
+    }
+  ]
+}

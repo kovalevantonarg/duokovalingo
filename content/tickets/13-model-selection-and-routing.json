@@ -1,0 +1,190 @@
+{
+  "n": 13,
+  "tag": "Core-40 #26",
+  "sec": "llm",
+  "core": [
+    26
+  ],
+  "ru": {
+    "topic": "Выбор модели и роутинг",
+    "qs": [
+      "У Claude несколько уровней моделей, от флагмана до Haiku. Как выбираешь и что у тебя по умолчанию?",
+      "Что такое model routing и куда на самом деле уходят деньги?",
+      "Как понижаешь модель на шаге, не сломав качество?"
+    ],
+    "a": [
+      {
+        "q": "Выбор",
+        "t": "По умолчанию у меня Sonnet, средний уровень: лучший баланс качества, цены и задержки, и на нём я пишу всё, пока не доказано обратное. Haiku беру для массовых простых операций: классификация, извлечение полей, дистилляция страниц — там он самый быстрый и дешевле в разы, но не на порядок. Верхние уровни, Opus и выше, — для сложных рассуждений, длинных агентных задач и там, где качество ответа и есть продукт. Линейка меняется, поэтому я думаю уровнями и сверяюсь с прайсом. Ошибка — брать самую умную модель везде: платишь за интеллект, который большинству шагов не нужен."
+      },
+      {
+        "q": "Роутинг",
+        "t": "Роутинг — это разные модели на разных шагах или для разных классов запросов. В моём scout-агенте Haiku сжимает сырые страницы до того, как их увидит Sonnet: двадцать тысяч символов мусора перестают попадать в дорогую модель. Стоимость — вход и выход по своим ценам, выход за токен в разы дороже, плюс запись и чтение кэша. В агентах обычно доминирует вход, поэтому рычаг — не модель, что пишет ответ, а та, что читает объём. Я это увидел на цифрах: до роутинга у меня шестьдесят процентов счёта были записями в кэш (cache writes): одни и те же сырые страницы снова и снова записывались в кэш."
+      },
+      {
+        "q": "Понижение",
+        "t": "Сначала эвал, потом понижение. Собираю маленький golden set для этого шага, прогоняю обе модели, сравниваю по метрике шага — точность извлечения, faithfulness, что там важно — и считаю разницу в цене. Понижаю, только если качество держится в допуске. Оставляю эскалацию: если дешёвая модель не уверена или валидация не прошла, шаг уходит наверх. Понижать по ощущениям нельзя — потом не поймёшь, откуда просела точность."
+      }
+    ],
+    "kill": "<b>«Просто бери самую сильную»</b> — это ответ человека, который не платил за API. Противоположная ошибка — <b>понижать по цене без эвала</b>: качество упало, а ты об этом узнаёшь от пользователей."
+  },
+  "en": {
+    "topic": "Model selection and routing",
+    "qs": [
+      "Claude comes in several tiers, from the flagship down to Haiku. How do you choose, and what's your default?",
+      "What is model routing, and where does the money actually go?",
+      "How do you downgrade a step's model without breaking quality?"
+    ],
+    "a": [
+      {
+        "q": "Choosing",
+        "t": "My default is Sonnet, the mid tier: the best balance of quality, price and latency, and that's what I build on until proven otherwise. Haiku is for high-volume simple operations — classification, field extraction, distilling pages — where it's fastest and cheaper by a small multiple, not an order of magnitude. The top tiers, Opus and above, are for hard reasoning, long agentic tasks, and anywhere the answer's quality is the product. The lineup shifts, so I think in tiers and check current pricing. Using the smartest model everywhere means paying for intelligence most steps don't need."
+      },
+      {
+        "q": "Routing",
+        "t": "Routing means different models for different steps or request classes. In my scout agent, Haiku distills raw pages before Sonnet ever sees them: twenty thousand characters of noise stop reaching the expensive model. Cost is input and output tokens at their own prices, output several times dearer per token, plus cache writes and reads. In agents input volume usually dominates, so the lever is the model that reads the bulk, not the one that writes the answer. I saw this in numbers: before routing, sixty percent of my bill was cache writes: the same raw pages kept getting written into the cache again."
+      },
+      {
+        "q": "Downgrading",
+        "t": "Eval first, downgrade second. I build a small golden set for that step, run both models, compare on the step's metric — extraction accuracy, faithfulness, whatever matters there — and measure the cost delta. I downgrade only if quality holds within tolerance. I keep an escalation path: if the cheap model is unsure or validation fails, the step goes up a tier. You never downgrade on vibes, because later you can't tell where the accuracy went."
+      }
+    ],
+    "kill": "<b>\"Just use the strongest model\"</b> is the answer of someone who has never paid an API bill. The opposite mistake is <b>downgrading on price with no eval</b>: quality drops and you find out from users."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Лучшая стратегия — самая сильная модель на каждом шаге.",
+        "Деньги в агенте всегда уходят в основном на модель, которая пишет финальный ответ."
+      ],
+      "en": [
+        "The best strategy is the strongest model on every step.",
+        "The money in an agent always goes mostly to the model that writes the final answer."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "По умолчанию — [[Sonnet]]; [[Haiku]] — для массовых простых шагов; Opus — где качество и есть продукт.",
+        "Роутинг: дешёвая модель [[ужимает|дистиллирует|сжимает]] страницы до того, как их видит дорогая.",
+        "Понижаешь модель только после [[эвала|eval|evaluation]] на golden set."
+      ],
+      "en": [
+        "Default is [[Sonnet]]; [[Haiku]] for bulk simple steps; Opus where quality is the product.",
+        "Routing: a cheap model [[distills|shrinks|summarises]] pages before the expensive one sees them.",
+        "You downgrade a model only after an [[eval|evaluation]] on a golden set."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Opus / Sonnet / Haiku are the tiers; Sonnet is 'the middle'",
+      "e": "Latest lineup: Fable 5.1, Opus 5.5, Sonnet 5, Haiku 4.5 — Fable sits above Opus.",
+      "u": [
+        "https://platform.claude.com/docs/en/models/overview"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Sonnet offers the best balance of quality, price and latency",
+      "e": "Sonnet 5: 'The best combination of speed and intelligence'. (Anthropic's own default recommendation is now Opus 5.5.)",
+      "u": [
+        "https://platform.claude.com/docs/en/models/overview"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Haiku is an order of magnitude cheaper (and faster) than Sonnet",
+      "e": "Haiku 4.5: $1 in / $5 out per MTok; Sonnet 5: $2 / $10; Opus 5.5: $4 / $20.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Haiku suits classification, extraction, high-volume simple ops / sub-agents",
+      "e": "Haiku 4.5: 'Real-time applications, high-volume intelligent processing… sub-agent tasks'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Opus for hard reasoning and long agentic tasks",
+      "e": "Opus 5.5: 'For long-running agentic coding and knowledge work'; Fable 5.1 for 'demanding reasoning and long-horizon agentic work'.",
+      "u": [
+        "https://platform.claude.com/docs/en/models/overview"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Routing = different models for different steps/request classes (cheap model for easy, capable for hard)",
+      "e": "'Routing easy/common questions to smaller, cost-efficient models like Claude Haiku… hard/unusual questions to more capable models'.",
+      "u": [
+        "https://www.anthropic.com/engineering/building-effective-agents"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Money is input tokens times model price",
+      "e": "Every model prices output at 5x input (e.g. Sonnet 5 $2 in / $10 out); cache writes/reads priced separately.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Downgrade only after an eval on a golden set comparing both models",
+      "e": "'Create benchmark tests specific to your use case - having a good evaluation set is the most important step'; compare across models.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: the best strategy is the strongest model on every step (false)",
+      "e": "Docs: 'Consider increasing efficiency by lowering effort or downgrading models over time'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/choosing-a-model"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: the money in an agent is mostly the model writing the final answer (false)",
+      "e": "Consistent with routing guidance and pricing (bulk input dominates); falsity rests mainly on the ticket's own answer.",
+      "u": [
+        "https://www.anthropic.com/engineering/building-effective-agents"
+      ]
+    }
+  ]
+}

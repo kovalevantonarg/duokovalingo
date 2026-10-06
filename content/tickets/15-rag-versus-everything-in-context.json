@@ -1,0 +1,190 @@
+{
+  "n": 15,
+  "tag": "Core-40 #27",
+  "sec": "rag",
+  "core": [
+    27
+  ],
+  "ru": {
+    "topic": "RAG или всё в контекст",
+    "qs": [
+      "Когда RAG не нужен? Опиши случай, где ты его не стал бы делать.",
+      "Когда нужен: минимум четыре причины, не одна.",
+      "Окна уже по миллиону токенов. RAG умер?"
+    ],
+    "a": [
+      {
+        "q": "Не нужен",
+        "t": "Если корпус помещается в контекст с запасом — скажем, десятки тысяч токенов, — меняется редко и цена за вызов приемлема, я просто кладу его целиком и включаю prompt caching. Никакого индекса, никаких промахов ретривера, никакой инфраструктуры. Половина проектов, которые называют себя RAG, — это хендбук на тридцать страниц, который влезает. Первый вопрос всегда: а сколько это в токенах? Если человек не измерил, он не выбирал архитектуру, он повторял модное слово."
+      },
+      {
+        "q": "Нужен",
+        "t": "Первая — не помещается, самая очевидная. Вторая — цена: платить за двести тысяч токенов на каждый запрос, когда релевантных две тысячи, это в сто раз больше токенов и, даже с prompt caching (кэшированием промпта) по десятой части цены, примерно десятикратный перерасход плюс задержка. Третья — свежесть: документы обновляются, и переиндексировать один изменённый документ проще, чем пересобирать весь промпт. Четвёртая — точность: модель теряет середину длинного контекста, и релевантная выборка отвечает точнее полной свалки. И пятая, про которую забывают, — права доступа: разным пользователям видны разные документы, и честно отфильтровать их можно только до модели; в RAG это делает ретривер."
+      },
+      {
+        "q": "Умер?",
+        "t": "Нет, сдвинулся баланс. Длинный контекст убирает причину «не помещается», но не убирает цену, задержку, свежесть и права доступа. И качество внимания на длинных входах всё ещё проседает, когда нужная игла лежит среди похожих. Реалистичный паттерн сейчас — ретривер сужает до кандидатов, а большое окно позволяет отдавать куски крупнее и резать документы менее агрессивно. Правильный ответ на «RAG или контекст» — эвал на своих данных, а не вера."
+      }
+    ],
+    "kill": "<b>«RAG, потому что так делают»</b>. Первый вопрос интервьюера будет: сколько токенов в вашем корпусе? Если ответа нет — дальше можно не слушать."
+  },
+  "en": {
+    "topic": "RAG versus everything in context",
+    "qs": [
+      "When do you not need RAG? Describe a case where you'd skip it.",
+      "When you do need it: at least four reasons, not just one.",
+      "Context windows are a million tokens now. Is RAG dead?"
+    ],
+    "a": [
+      {
+        "q": "Not needed",
+        "t": "If the corpus fits in context with room to spare — say tens of thousands of tokens — changes rarely, and the cost per call is acceptable, I put the whole thing in and turn on prompt caching. No index, no retriever misses, no infrastructure. Half the projects that call themselves RAG are a thirty-page handbook that fits. The first question is always: how many tokens is it? If someone hasn't measured, they didn't choose an architecture, they repeated a buzzword."
+      },
+      {
+        "q": "Needed",
+        "t": "First reason — it doesn't fit, the obvious one. Second — cost: paying for two hundred thousand tokens per request when two thousand are relevant is a hundred times the tokens, and roughly ten times the cost even with prompt caching at a tenth of the price, plus latency. Third — freshness: documents update, and re-indexing one changed document is easier than rebuilding the whole prompt. Fourth — precision: the model loses the middle of a long context, and a relevant selection answers more accurately than a full dump. And a fifth people forget — access control: different users can see different documents, and the only honest place to filter is before the model; in RAG that's the retriever's job."
+      },
+      {
+        "q": "Dead?",
+        "t": "No, the balance moved. Long context removes the doesn't-fit reason, but not cost, latency, freshness or permissions. And attention quality still degrades on long inputs when the needle sits among look-alikes. The realistic pattern now is retrieval narrowing to candidates, with the big window letting you pass larger chunks and split documents less aggressively. The right answer to RAG versus context is an eval on your own data, not a belief."
+      }
+    ],
+    "kill": "<b>\"RAG because that's what you do.\"</b> The interviewer's next question will be: how many tokens is your corpus? No answer, and the rest doesn't matter."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Если корпус помещается в контекст, RAG в принципе не может повысить точность.",
+        "Окна в миллион токенов делают RAG ненужным."
+      ],
+      "en": [
+        "If the corpus fits in context, RAG can't possibly improve accuracy.",
+        "Million-token windows make RAG unnecessary."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Первый вопрос всегда: сколько корпус в [[токенах|tokens]]?",
+        "Пять причин для RAG: не помещается, [[цена|стоимость|cost]], свежесть, точность, [[права доступа|permissions]].",
+        "Модель теряет [[середину|middle]] длинного контекста — релевантная выборка отвечает точнее полной свалки."
+      ],
+      "en": [
+        "The first question is always: how many [[tokens]] is the corpus?",
+        "Five reasons for RAG: doesn't fit, [[cost]], freshness, precision, [[access control|permissions]].",
+        "The model loses the [[middle]] of a long context — a relevant selection beats a full dump."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Small corpora (tens of thousands of tokens) can go whole into context with prompt caching instead of RAG",
+      "e": "'If your knowledge base is smaller than 200,000 tokens (about 500 pages)... include the entire knowledge base in the prompt.'",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A thirty-page handbook fits in context",
+      "e": "500 pages ≈ 200k tokens → ~30 pages ≈ 12k tokens, far below 200k/1M windows.",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Prompt caching makes whole-corpus prompts cheaper/faster",
+      "e": "With prompt caching: latency reduced by over 2x and costs up to 90%.",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "200k tokens per request vs 2k relevant = hundredfold overspend",
+      "e": "Cache reads cost 0.1x base input price, so a cached 200k prefix costs ~20k-token-equivalent, not 100x.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Model loses the middle of a long context",
+      "e": "'performance is often highest when relevant information occurs at the beginning or end... degrades... in the middle'.",
+      "u": [
+        "https://arxiv.org/abs/2307.03172"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Context windows are a million tokens now",
+      "e": "Opus 5.5, Opus 5, Sonnet 5, Sonnet 4.6 etc. 'have a 1M-token context window'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Attention quality degrades on long inputs, especially with look-alike distractors",
+      "e": "Chroma: even a single distractor reduces accuracy; degradation grows with input length. Anthropic docs also name this 'context rot' (https://platform.claude.com/docs/en/build-with-claude/context-windows).",
+      "u": [
+        "https://www.trychroma.com/research/context-rot"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Long context doesn't remove cost/latency",
+      "e": "Every request still pays input tokens (cache reads 0.1x, writes 1.25x); Anthropic docs: accuracy and recall degrade as token count grows.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: if the corpus fits, RAG can't improve accuracy (must be false)",
+      "e": "Relevant info buried in long context degrades accuracy, so focused retrieval can help — lie is false.",
+      "u": [
+        "https://arxiv.org/abs/2307.03172"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: million-token windows make RAG unnecessary (must be false)",
+      "e": "'As token count grows, accuracy and recall degrade... context rot' — plus cost/permissions remain. Lie is false.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    }
+  ]
+}

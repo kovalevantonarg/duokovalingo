@@ -1,0 +1,91 @@
+{
+  "n": 29,
+  "tag": "New · coverage gap",
+  "sec": "behav",
+  "core": [
+    44
+  ],
+  "ru": {
+    "topic": "Конфликт, обратная связь, слабость",
+    "qs": [
+      "Расскажи о конфликте или несогласии с коллегой/тимлидом. STAR, 90 секунд.",
+      "Расскажи о жёсткой обратной связи, которую тебе давали. Что ты изменил?",
+      "Какая твоя главная слабость — без клише?"
+    ],
+    "a": [
+      {
+        "q": "Конфликт",
+        "t": "Это единственная история в банке, для которой у меня ещё нет закреплённого реального случая — надо заполнить до первого скрина. Структура жёсткая: Situation — конкретный технический или процессный вопрос, где ты и коллега/тимлид разошлись (не личный конфликт, а разница в подходе: выбор библиотеки, архитектурное решение, приоритизация). Task — что было на кону и почему твоя позиция не была очевидной победой по умолчанию. Action — как ты аргументировал: данные, а не эмоции; ты слушал контраргумент по-настоящему, а не ждал своей очереди говорить. Result — чем кончилось: возможно, ты был прав и это доказано метрикой; возможно, тебя переубедили, и это тоже сильный ответ, если ты объяснишь, что именно изменило твоё мнение. Кандидат из реального опыта: разногласие по стеку или архитектуре на текущем месте или на одном из сайд-проектов. [Заполнить: конкретный вопрос, чья была правда, и на чём именно сошлись]."
+      },
+      {
+        "q": "Обратная связь",
+        "t": "Тоже без закреплённого факта — заполнить перед собесом. Структура: что тебе сказали конкретно (не «нужно расти», а дословно или близко к тому); что было первой реакцией внутри (честно, не «сразу согласился» — это подозрительно гладко); что ты реально изменил в поведении, с наблюдаемым результатом, который можно проверить у той же стороны, что дала фидбэк. Плохой ответ — фидбэк без изменения поведения; ещё хуже — фидбэк, который на самом деле комплимент в маскировке («мне сказали, что я слишком дотошный»). [Заполнить: кто дал, что сказал, что изменилось]."
+      },
+      {
+        "q": "Слабость",
+        "t": "Без клише («перфекционист», «слишком много работаю») — это читается как отказ отвечать на вопрос. Настоящая слабость — конкретная и с механизмом компенсации, который ты реально используешь, не «работаю над этим» без деталей. Формула: назвать реальное ограничение → объяснить, откуда оно (не оправдание, а причина) → конкретный механизм, которым ты его обходишь на практике, с примером ситуации, где механизм сработал. [Заполнить: что реально ограничение — например, склонность закапываться в детали до проверки общей гипотезы, или наоборот — двигаться быстро и потом чинить края]."
+      }
+    ],
+    "kill": "Конфликт без реального несогласия («мы разошлись, но потом договорились» без сути разногласия) — интервьюер не может оценить, был ли ты прав или просто уступчив. И слабость-комплимент — интервьюеры слышат это с первого года на собеседованиях, и доверие падает сразу."
+  },
+  "en": {
+    "topic": "Conflict, feedback, weakness",
+    "qs": [
+      "Tell me about a conflict or disagreement with a coworker or tech lead. STAR, 90 seconds.",
+      "Tell me about hard feedback you received. What did you change?",
+      "What's your biggest weakness — no clichés?"
+    ],
+    "a": [
+      {
+        "q": "Conflict",
+        "t": "This is the one story in the bank without a locked real case yet — needs filling before the first screen. Strict structure: Situation — a specific technical or process disagreement with a coworker or tech lead (not a personal conflict, a difference in approach: library choice, architecture decision, prioritization). Task — what was at stake, and why your position wasn't an obvious default win. Action — how you argued: data, not emotion; you actually listened to the counter-argument instead of waiting for your turn to talk. Result — how it resolved: maybe you were right and a metric proved it; maybe you got convinced, which is also a strong answer if you explain what specifically changed your mind. Real candidate: a stack or architecture disagreement at your current job or on a side project. [Fill in: the specific question, who turned out right, and what you actually landed on]."
+      },
+      {
+        "q": "Feedback",
+        "t": "Also no locked fact yet — fill before the interview. Structure: what was actually said (not 'I need to grow', close to verbatim); what your first reaction was internally (honestly — not 'I immediately agreed', that's suspiciously smooth); what you actually changed in behavior, with an observable result the same person who gave the feedback could confirm. A weak answer is feedback with no behavior change; worse is feedback that's secretly a compliment in disguise ('I was told I'm too thorough'). [Fill in: who gave it, what they said, what changed]."
+      },
+      {
+        "q": "Weakness",
+        "t": "No clichés ('perfectionist', 'work too hard') — that reads as refusing to answer the question. A real weakness is specific and comes with a compensating mechanism you actually use, not 'working on it' with no detail. Formula: name the real limitation → explain where it comes from (a reason, not an excuse) → the concrete mechanism you use to work around it, with an example where it worked. [Fill in: the real limitation — e.g. a tendency to dig into details before validating the overall hypothesis, or the opposite, moving fast and fixing edges after]."
+      }
+    ],
+    "kill": "A conflict with no real disagreement in it ('we disagreed but then agreed' with no substance) — the interviewer can't tell if you were right or just agreeable. And a weakness that's secretly a compliment — interviewers have heard that since their first year of interviewing, so you lose credibility instantly."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Лучший ответ на «твоя слабость» — назвать сильную сторону в замаскированном виде.",
+        "История про конфликт сильнее без описания сути разногласия."
+      ],
+      "en": [
+        "The best answer to 'what's your weakness' is a strength in disguise.",
+        "A conflict story is stronger without describing what the actual disagreement was about."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Слабость без [[механизма компенсации|способа с этим справляться]] — это не ответ, а уклонение.",
+        "Фидбэк без [[изменения поведения|конкретного действия]] — это просто история, не рост.",
+        "Конфликт: Situation — Task — Action — [[Result]]."
+      ],
+      "en": [
+        "A weakness with no [[compensating mechanism|way of coping with it]] is a dodge, not an answer.",
+        "Feedback without a [[behavior change|concrete action]] is just a story, not growth.",
+        "Conflict: Situation — Task — Action — [[Result]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "STAR = Situation, Task, Action, Result",
+      "e": "STAR stands for \"Situation, task, action, and result.\"",
+      "u": [
+        "https://www.aboutamazon.com/news/workplace/amazon-interview-guide"
+      ]
+    }
+  ]
+}

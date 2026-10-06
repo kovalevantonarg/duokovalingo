@@ -1,0 +1,237 @@
+{
+  "n": 20,
+  "tag": "Core-40 #35 · system design",
+  "sec": "sysd",
+  "core": [
+    35
+  ],
+  "ru": {
+    "topic": "Дизайн: streaming chat UI",
+    "qs": [
+      "Спроектируй стриминговый чат. Компоненты от браузера до модели, по порядку.",
+      "Состояние на клиенте: что хранишь, как рендеришь частичный ответ, где живёт история.",
+      "UX отказов: retry, cancel, ошибка посреди потока. И что ты логируешь."
+    ],
+    "a": [
+      {
+        "q": "Компоненты",
+        "t": "Браузер никогда не ходит в модель напрямую — ключ утечёт, и контроля нет. Браузер ходит в мой API route. Сервер принимает новое сообщение пользователя и id разговора, сам восстанавливает историю из базы, добавляет system prompt, вызывает провайдера со stream: true и проксирует SSE клиенту. По завершении сохраняет ответ ассистента вместе с usage. Клиент делает fetch с POST, читает ReadableStream, дописывает дельты. Историю клиент не присылает: доверять клиентской истории нельзя ни по цене, ни по безопасности — её подменят."
+      },
+      {
+        "q": "Состояние",
+        "t": "Массив сообщений, у каждого статус: pending, streaming, done, error. Частичный текст дописываю в контент стримящегося сообщения, рендер батчу через requestAnimationFrame, а не на каждый токен. Markdown рендерю инкрементально, с оговоркой: незакрытый блок кода посреди потока ломает разметку, это надо обрабатывать. Сообщение пользователя показываю оптимистично сразу. Автоскролл вниз — только если пользователь сам не проскроллил вверх. Стоимость и токены на сообщение — из usage в конце. Обрезка длинной истории — на сервере: скользящее окно или саммари, клиент об этом не знает."
+      },
+      {
+        "q": "Отказы",
+        "t": "Стоп — через AbortController, и сервер тоже прерывает вызов к провайдеру, чтобы не платить за то, что уже никто не читает. Обрыв — частичный текст остаётся на экране с пометкой, retry шлёт тот же id сообщения пользователя, чтобы сервер не сохранил его второй раз. Ошибки различаю: 429 — backoff и повтор, перегрузка провайдера — повтор, слишком длинный запрос — честно сказать пользователю. Логирую request id, время до первого токена, общее время, stop_reason, usage и модель. Именно по этим полям потом разбираешь «почему тормозит»."
+      }
+    ],
+    "kill": "<b>Ключ API в браузере</b> — дисквалификация. И <b>перерендер всего markdown на каждый токен</b> — чат начнёт лагать на длинных ответах, и это увидят на демо."
+  },
+  "en": {
+    "topic": "Design: streaming chat UI",
+    "qs": [
+      "Design a streaming chat. Components from the browser to the model, in order.",
+      "Client state: what you store, how you render partial output, where history lives.",
+      "Failure UX: retry, cancel, an error mid-stream. And what you log."
+    ],
+    "a": [
+      {
+        "q": "Components",
+        "t": "The browser never talks to the model directly — the key leaks and you have no control. The browser calls my API route. The server takes the new user message and a conversation id, rebuilds the history from the database itself, adds the system prompt, calls the provider with stream: true, and proxies the SSE to the client. On completion it persists the assistant message along with usage. The client does a POST fetch, reads the ReadableStream, appends deltas. The client never sends history: you can't trust client-supplied history for cost or for safety — it'll get tampered with."
+      },
+      {
+        "q": "State",
+        "t": "An array of messages, each with a status: pending, streaming, done, error. Partial text appends to the streaming message's content, and I batch renders on requestAnimationFrame rather than per token. Markdown renders incrementally, with one caveat: an unclosed code fence mid-stream breaks the layout, so that needs handling. The user's message shows optimistically right away. Auto-scroll to the bottom only if the user hasn't scrolled up. Cost and tokens per message come from usage at the end. Trimming a long history happens on the server — sliding window or summary — and the client doesn't know about it."
+      },
+      {
+        "q": "Failures",
+        "t": "Stop goes through an AbortController, and the server also aborts the provider call so nobody pays for output no one is reading. On a drop, the partial text stays on screen with a marker, and retry sends the same user-message id so the server doesn't save it twice. I distinguish errors: 429 means back off and retry, provider overload means retry, request too long means tell the user honestly. I log request id, time to first token, total time, stop_reason, usage and model. Those are the fields you use later to answer why it feels slow."
+      }
+    ],
+    "kill": "<b>API key in the browser</b> — disqualifying. And <b>re-rendering all the markdown on every token</b> — the chat starts to lag on long answers, and it shows during the demo."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Браузер может ходить в API модели напрямую, если ключ спрятать в env-переменную фронтенда.",
+        "Клиент присылает всю историю, серверу так проще."
+      ],
+      "en": [
+        "The browser can call the model API directly if the key is hidden in a frontend env variable.",
+        "The client sends the whole history; it's simpler for the server."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Ключ API живёт только на [[сервере|server|бэкенде]]; браузер ходит в мой [[API route|роут]].",
+        "Историю восстанавливает [[сервер]] по id разговора — клиентской истории нельзя доверять.",
+        "Рендер батчу через [[requestAnimationFrame|rAF]], а не на каждый токен."
+      ],
+      "en": [
+        "The API key lives only on the [[server|backend]]; the browser calls my [[API route|route]].",
+        "The [[server]] rebuilds history from the conversation id — client history can't be trusted.",
+        "I batch renders on [[requestAnimationFrame|rAF]], not per token."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Путь одного сообщения в стриминговом чате",
+        "items": [
+          "Браузер шлёт новое сообщение и id разговора в мой API route",
+          "Сервер восстанавливает историю из базы",
+          "Сервер добавляет system prompt и вызывает провайдера со stream: true",
+          "Сервер проксирует SSE клиенту",
+          "Клиент читает ReadableStream и дописывает дельты",
+          "По завершении сервер сохраняет ответ и usage"
+        ]
+      },
+      "en": {
+        "title": "The path of one message in a streaming chat",
+        "items": [
+          "Browser sends the new message and conversation id to my API route",
+          "Server rebuilds history from the database",
+          "Server adds the system prompt and calls the provider with stream: true",
+          "Server proxies the SSE to the client",
+          "Client reads the ReadableStream and appends deltas",
+          "On completion the server persists the answer and usage"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Frontend env vars are shipped to the browser, so 'hiding' an API key in one does not protect it (lie must be false)",
+      "e": "NEXT_PUBLIC_ values are inlined into any JavaScript sent to the browser at build time",
+      "u": [
+        "https://nextjs.org/docs/app/guides/environment-variables"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Calling the model from the browser exposes the secret API key",
+      "e": "SDK browser use disabled by default 'to avoid exposing your secret API credentials'; opt-in via dangerouslyAllowBrowser",
+      "u": [
+        "https://github.com/anthropics/anthropic-sdk-typescript"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Provider streaming is enabled with stream: true and delivered as SSE",
+      "e": "Streaming enabled by setting \"stream\": true; uses server-sent events (SSE)",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "fetch response body can be read as a ReadableStream",
+      "e": "Response.body is a ReadableStream of the body contents",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Response/body"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "requestAnimationFrame runs a callback before the next repaint, suitable for batching renders",
+      "e": "Callback called before next repaint at display refresh rate; paused in background tabs",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame"
+      ]
+    },
+    {
+      "w": [
+        1,
+        2
+      ],
+      "s": "ok",
+      "c": "Token usage is available at the end of the stream",
+      "e": "input_tokens in message_start; message_delta carries cumulative output token counts",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "AbortController can cancel a fetch and its response stream",
+      "e": "abort() can abort fetch requests, consumption of response bodies, and streams",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortController"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Aborting the provider call stops you paying for unread output",
+      "e": "Secondary source (OpenRouter help): OpenAI and Anthropic support cancellation; you pay only for tokens generated before abort",
+      "u": [
+        "https://openrouter.zendesk.com/hc/en-us/articles/51691588409883-How-do-I-cancel-a-streaming-request-and-which-providers-stop-billing-when-I-do"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "429 = rate limit (back off and retry); provider overload is a distinct retryable error",
+      "e": "429 rate_limit_error; 529 overloaded_error 'API temporarily overloaded'; 500 api_error retry with backoff",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Errors can arrive mid-stream after a 200",
+      "e": "'an error can occur after the API returns a 200 response' — delivered as SSE error event, e.g. overloaded_error",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Request too long is a distinct non-retryable error",
+      "e": "413 request_too_large for oversized bytes; context overflow is a 400 invalid_request_error",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Loggable fields: request id, stop_reason, usage",
+      "e": "Every response has a unique request-id header; stop_reason arrives in message_delta (streaming doc)",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors"
+      ]
+    }
+  ]
+}

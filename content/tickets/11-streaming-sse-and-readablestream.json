@@ -1,0 +1,291 @@
+{
+  "n": 11,
+  "tag": "Core-40 #22",
+  "sec": "llm",
+  "core": [
+    22
+  ],
+  "ru": {
+    "topic": "Streaming: SSE и ReadableStream",
+    "qs": [
+      "Как выглядит SSE-поток на проводе и почему для стриминга ответа LLM берут его, а не WebSocket?",
+      "Ты потребляешь поток в браузере. Пройди по коду: от fetch до появления текста на экране.",
+      "Соединение оборвалось на середине ответа. Что ты видишь в коде и что делает UI?"
+    ],
+    "a": [
+      {
+        "q": "На проводе",
+        "t": "Это обычный HTTP-ответ с content-type text/event-stream, который сервер не закрывает, а пишет в него кусками. Каждое событие — строки вида data: и JSON, разделённые пустой строкой. Односторонний канал от сервера к клиенту, без апгрейда протокола, и раз это обычный HTTP, он проходит через большинство прокси. Но буферизующий прокси или таймаут простоя могут его сломать, поэтому сервер шлёт комментарии-ping (сигнал «я жив») и отключает буферизацию. WebSocket двусторонний, с состоянием сокета, а у меня по сути запрос-ответ, приезжающий по частям. Нюанс: встроенный EventSource умеет только GET без заголовков, поэтому для LLM я делаю fetch с POST и читаю body как ReadableStream — формат тот же, парсер свой."
+      },
+      {
+        "q": "Код",
+        "t": "fetch с POST и телом запроса, потом res.body.getReader() и TextDecoder. В цикле reader.read() отдаёт байты, я декодирую их с флагом stream: true, потому что чанк может разрезать многобайтовый символ пополам, и докладываю в буфер. Буфер режу по пустым строкам, предварительно нормализовав переводы строк CRLF, из каждого события беру строку data: и парсю JSON. У Anthropic это message_start, потом на каждый блок content_block_start, события content_block_delta с text_delta и content_block_stop, затем message_delta со stop_reason и usage, и message_stop. Между ними могут приходить ping (служебные события-пульс). Дельту дописываю в состояние. Дельты коплю и отдаю в state не чаще раза за кадр через requestAnimationFrame, а не вызываю setState на каждый токен."
+      },
+      {
+        "q": "Обрыв",
+        "t": "Никакого специального события обрыва нет. Либо reader.read() отклонится, либо done придёт раньше, чем message_stop. Ещё Anthropic может прислать посреди потока событие error, например overloaded_error, уже после 200. В любом случае остаётся частичный текст, и UI его не выбрасывает: помечает как неполное и даёт retry. Отмену делаю через AbortController, чтобы перестать принимать то, что пользователь уже закрыл. И две вещи, которые люди забывают: stop_reason max_tokens значит обрезано, а не готово, и итоговое число выходных токенов приходит только в message_delta, поэтому полная стоимость неизвестна до конца. Стриминг улучшает время до первого токена, а не общую задержку."
+      }
+    ],
+    "kill": "<b>«SSE это как WebSocket»</b> — нет, это HTTP-ответ, который не закрывают. И <b>decoder без stream: true</b> — чанк режет UTF-8 пополам, и кириллица превращается в мусор ровно на демо."
+  },
+  "en": {
+    "topic": "Streaming: SSE and ReadableStream",
+    "qs": [
+      "What does an SSE stream look like on the wire, and why use it for LLM output instead of WebSocket?",
+      "You're consuming the stream in the browser. Walk me through the code from fetch to text on screen.",
+      "The connection drops mid-answer. What do you see in code and what does the UI do?"
+    ],
+    "a": [
+      {
+        "q": "On the wire",
+        "t": "It's a plain HTTP response with content-type text/event-stream that the server keeps open and writes to in chunks. Each event is a few lines — data: followed by JSON — separated by a blank line. One-way, server to client, no protocol upgrade, and since it's plain HTTP it gets through most proxies. A buffering proxy or an idle timeout can still break it, so servers send periodic comment pings and turn buffering off. WebSocket is bidirectional with socket state to manage, and mine is really request-response arriving in pieces. One catch: the built-in EventSource only does GET with no headers, so for LLM calls I use fetch with POST and read the body as a ReadableStream — same wire format, my own parser."
+      },
+      {
+        "q": "The code",
+        "t": "fetch with POST and the request body, then res.body.getReader() and a TextDecoder. In a loop, reader.read() hands me bytes, I decode with stream: true — because a chunk can cut a multi-byte character in half — and append to a buffer. I split the buffer on blank lines, normalising CRLF endings first, take the data: line of each event, parse the JSON. With Anthropic that's message_start, then for each content block a content_block_start, content_block_delta events carrying text_delta, and content_block_stop, then message_delta with stop_reason and usage, then message_stop. Pings can arrive in between. Each delta gets appended to state, and I batch renders on requestAnimationFrame rather than setting state per token."
+      },
+      {
+        "q": "The drop",
+        "t": "There's no dedicated disconnect event. Either reader.read() rejects, or done arrives before message_stop. Anthropic can also send an error event mid-stream, like overloaded_error, after a 200. Either way I have partial text, and the UI keeps it — marked incomplete, with a retry. Cancel goes through an AbortController so I stop consuming output the user already closed. Two things people forget: stop_reason max_tokens means truncated, not finished, and the final output count only arrives in message_delta, so the full cost is unknown until the end. Streaming improves time to first token, not total latency."
+      }
+    ],
+    "kill": "<b>\"SSE is like WebSocket\"</b> — it isn't, it's an HTTP response that stays open. And <b>decoding without stream: true</b> — a chunk splits UTF-8 mid-character and non-English text turns to garbage, reliably during the demo."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "SSE — это двусторонний канал вроде WebSocket.",
+        "Общая задержка ответа при стриминге меньше, чем без него."
+      ],
+      "en": [
+        "SSE is a bidirectional channel like WebSocket.",
+        "Total response latency is lower with streaming than without."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "SSE — это HTTP-ответ с content-type [[text/event-stream]], который сервер не закрывает.",
+        "TextDecoder с флагом [[stream: true|stream:true|stream]] — иначе чанк режет UTF-8 пополам.",
+        "Стриминг улучшает время до [[первого токена|first token]], а не общую задержку."
+      ],
+      "en": [
+        "SSE is an HTTP response with content-type [[text/event-stream]] that the server keeps open.",
+        "TextDecoder with [[stream: true|stream:true|stream]] — otherwise a chunk splits UTF-8 mid-character.",
+        "Streaming improves time to [[first token]], not total latency."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Парсинг SSE в браузере",
+        "items": [
+          "fetch с POST и телом запроса",
+          "res.body.getReader() и TextDecoder",
+          "reader.read() → декодирую с stream: true → в буфер",
+          "Режу буфер по пустым строкам (сначала нормализую CRLF)",
+          "Беру строку data: и парсю JSON",
+          "Дельту дописываю в состояние, рендер через rAF"
+        ]
+      },
+      "en": {
+        "title": "Parsing SSE in the browser",
+        "items": [
+          "fetch with POST and the request body",
+          "res.body.getReader() and a TextDecoder",
+          "reader.read() → decode with stream: true → append to buffer",
+          "Split the buffer on blank lines (normalise CRLF first)",
+          "Take the data: line and parse the JSON",
+          "Append the delta to state, render on rAF"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "SSE is an HTTP response with content-type text/event-stream that stays open",
+      "e": "'The server-side script that sends events needs to respond using the MIME type text/event-stream.'",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Events are data: lines separated by a blank line",
+      "e": "Events are dispatched on a blank line; multiple data lines are concatenated with newlines.",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "SSE is one-way server→client; WebSocket is bidirectional with a handshake/upgrade",
+      "e": "SSE: 'This is a one-way connection'; WebSocket: 'a two-way interactive communication session'.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "SSE goes through any proxy",
+      "e": "Spec: legacy proxies may drop idle connections; send 'a comment line… every 15 seconds or so'.",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Built-in EventSource only does GET with no custom headers",
+      "e": "Constructor takes url and options {withCredentials} only — no method, headers or body.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/EventSource/EventSource"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Decode with TextDecoder {stream: true} because a chunk can split a multi-byte character",
+      "e": "stream: 'Set to true if processing the data in chunks… defaults to false.'",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/decode"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Split the buffer on double newlines",
+      "e": "Spec: lines end in CRLF, LF or CR; an event ends at a blank line — so '\\n\\n' misses '\\r\\n\\r\\n'.",
+      "u": [
+        "https://html.spec.whatwg.org/multipage/server-sent-events.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Anthropic stream: message_start, content_block_delta (text_delta), message_delta (stop_reason, usage), message_stop",
+      "e": "Flow: message_start → content_block_start → content_block_delta… → content_block_stop → message_delta → message_stop; ping events interspersed.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "On drop, either reader.read() rejects or done arrives before message_stop; no dedicated disconnect event",
+      "e": "Mid-stream errors arrive as an SSE 'event: error' (e.g. overloaded_error) after HTTP 200.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "reader.read() rejects on stream error; done:true means stream closed",
+      "e": "'If the stream becomes errored, the promise will be rejected'; closed → { value: undefined, done: true }.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultReader/read"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Cancel via AbortController",
+      "e": "abort() 'is able to abort fetch requests, the consumption of any response bodies, or streams.'",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "soft",
+      "c": "Aborting means you don't pay for output the user already closed",
+      "e": "Searched Anthropic streaming/pricing docs and web for billing on cancelled streams; no statement found.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "stop_reason max_tokens means truncated, not finished",
+      "e": "max_tokens: 'Response was truncated. Raise max_tokens or continue the response.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "usage only arrives at the end, so cost is unknown until the answer completes",
+      "e": "message_start includes usage (input_tokens); message_delta usage counts 'are cumulative'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "stop_reason is delivered in message_delta",
+      "e": "stop_reason is null in message_start, 'Provided in the message_delta event'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Streaming improves time to first token, not total latency",
+      "e": "Streaming 'can significantly improve the perceived responsiveness of your application'; TTFT is the relevant metric.",
+      "u": [
+        "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-latency"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: SSE is a bidirectional channel like WebSocket (false)",
+      "e": "'This is a one-way connection, so you can't send events from a client to a server.'",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events"
+      ]
+    }
+  ]
+}

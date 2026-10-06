@@ -1,0 +1,212 @@
+{
+  "n": 2,
+  "tag": "Core-40 #18",
+  "sec": "llm",
+  "core": [
+    18
+  ],
+  "ru": {
+    "topic": "Контекстное окно",
+    "qs": [
+      "Что такое context window и что в него входит?",
+      "Сам промпт больше контекстного окна, и ты отправляешь запрос. Что произойдёт и в какой момент?",
+      "Промпт 195k, окно 200k, max_tokens 8000. Результат? Почему?"
+    ],
+    "a": [
+      {
+        "q": "Определение",
+        "t": "Контекстное окно — это максимум токенов, который модель обрабатывает за один запрос, причём вход и сгенерированный выход считаются вместе. За место в нём конкурирует всё сразу: системный промпт, история диалога, найденные документы, определения инструментов и результаты их вызовов. У топовых моделей Claude сейчас порядка миллиона токенов по умолчанию, у младших — двести тысяч; у конкурентов текущие модели в том же диапазоне порядка миллиона. Конкретные цифры я не держу в голове намертво — они двигаются каждые несколько месяцев, и перед собесом я бы их перепроверил на доках вендора, а не цитировал по памяти."
+      },
+      {
+        "q": "Превышение",
+        "t": "Придёт 400 invalid_request_error, prompt is too long, до начала генерации, на любой модели. Это ключевой момент: запрос отклоняется целиком, и ни одного токена не сгенерируется. Никакого мягкого усечения нет — модель не выбрасывает молча старые сообщения. Я это запоминаю как fail fast, not silent, и это хороший дизайн: молчаливое усечение дало бы неправильные ответы без сигнала, а ошибку можно обработать. Другое дело, когда вход помещается, а в окно не влезает ответ: это отдельный случай."
+      },
+      {
+        "q": "max_tokens",
+        "t": "На текущих моделях Claude запрос примут. Промпт помещается, а max_tokens — потолок, а не резерв. Если ответу нужно больше примерно пяти тысяч оставшихся токенов, генерация остановится на границе окна со stop_reason model_context_window_exceeded. Модели Claude до поколения 4.5 отклоняли запрос, где вход плюс max_tokens больше окна, валидационной ошибкой, поэтому многие до сих пор отвечают «отклонят». В проде я считаю входные токены, ограничиваю max_tokens остатком окна с запасом и обрабатываю model_context_window_exceeded как max_tokens: ответ обрезан, а не закончен."
+      }
+    ],
+    "kill": "<b>«Обрежет старое»</b> — нет, слишком длинный промпт упадёт с ошибкой. И <b>stop_reason</b> надо логировать: max_tokens и model_context_window_exceeded оба значат обрезку, молчаливую, на середине слова, без ошибки."
+  },
+  "en": {
+    "topic": "Context window",
+    "qs": [
+      "What is the context window and what competes for space in it?",
+      "Your prompt alone is bigger than the context window and you send it. What happens, and when exactly?",
+      "195k prompt, 200k window, max_tokens 8000. Result? Why?"
+    ],
+    "a": [
+      {
+        "q": "Definition",
+        "t": "The context window is the maximum number of tokens the model can process in one request, and it counts the input and the generated output together. Everything competes for that space: the system prompt, the conversation history, retrieved documents, tool definitions and tool results. Claude's top-tier models now default to around a million tokens, the smaller ones sit around two hundred thousand; competitors' current models are in the same million-token range. I don't keep exact figures memorized — they shift every few months — I'd check the vendor's docs the day of the interview rather than quote a number from memory."
+      },
+      {
+        "q": "Exceeding it",
+        "t": "You get a 400 invalid_request_error, prompt is too long, before generation starts, on every model. That's the part people miss: the request is rejected outright and not a single token is produced. There's no graceful truncation — the model doesn't silently drop the oldest messages. I remember it as fail fast, not silent, and it's the right design: silent truncation would give you wrong answers with no signal, whereas an error you can handle. When the prompt fits but the answer doesn't, that's a separate case."
+      },
+      {
+        "q": "The max_tokens trap",
+        "t": "On current Claude models it's accepted. The prompt fits, and max_tokens is a ceiling, not a reservation. If the answer needs more than the roughly five thousand tokens that are left, generation stops at the window edge with stop_reason model_context_window_exceeded. Models before 4.5 rejected input plus max_tokens over the window with a validation error, which is why people still answer that it gets rejected. In production I count input tokens first, cap max_tokens at what's left minus a margin, and treat model_context_window_exceeded like max_tokens: truncated, not finished."
+      }
+    ],
+    "kill": "<b>\"It truncates the old messages\"</b> — no, an oversized prompt errors out. Also log <b>stop_reason</b>: max_tokens and model_context_window_exceeded both mean clipped, silently, mid-word, with no error."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "При превышении окна модель молча отбрасывает самые старые сообщения.",
+        "На текущих моделях Claude запрос, где промпт помещается, но вход плюс max_tokens больше окна, отклоняется до генерации."
+      ],
+      "en": [
+        "When you exceed the window the model silently drops the oldest messages.",
+        "On current Claude models, a request whose prompt fits but whose input plus max_tokens exceeds the window is rejected before generation."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Если сам вход больше окна, приходит 400 [[до|раньше]] начала генерации, а не усечение.",
+        "На Claude 4.5+, если переполняет только вход плюс max_tokens, запрос принимается, а если генерация дойдёт до границы окна, она остановится со stop_reason [[model_context_window_exceeded]].",
+        "stop_reason равный [[max_tokens]] значит «обрезано», а не «готово»."
+      ],
+      "en": [
+        "If the input alone exceeds the window, you get a 400 [[before]] generation starts, not a truncation.",
+        "On Claude 4.5+, if only input plus max_tokens overflows, the request is accepted, and if generation hits the window it stops with stop_reason [[model_context_window_exceeded]].",
+        "A stop_reason of [[max_tokens]] means truncated, not finished."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Context window counts input and generated output together",
+      "e": "'The output Claude generates for the turn, including its extended thinking, counts too.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "System prompt, history, retrieved docs, tool definitions and tool results all compete for the window",
+      "e": "'Everything in the request counts...: the system prompt, every message... (including tool results, images, and documents), and your tool definitions.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Claude top-tier models ~1M tokens by default, smaller ones ~200k",
+      "e": "Opus 4.6+, Sonnet 4.6/5, Mythos/Fable have 1M; 'Other Claude models, including Claude Sonnet 4.5, have a 200k-token context window' (Haiku 4.5 200k).",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Competitors have a similar spread (1M top / 200k small)",
+      "e": "OpenAI's current GPT-6 Astra, Sol and Luna all list a 1.05M-token context window - no small-window tier.",
+      "u": [
+        "https://developers.openai.com/api/docs/models"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "If the input alone exceeds the window: 400 invalid_request_error, before generation; no silent dropping of old messages",
+      "e": "'If the input alone already exceeds the model's context window, the API returns a 400 invalid_request_error (\"prompt is too long\") on every model.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Any overflow (including reserved output) is rejected upfront; not a single token produced",
+      "e": "'On Claude 4.5 models and newer, if input tokens plus max_tokens exceeds the context window size, the API accepts the request.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "195k prompt + max_tokens 8000 in a 200k window is rejected because max_tokens space is reserved up front",
+      "e": "Claude 4.5+: input+max_tokens over the window is accepted; stops with model_context_window_exceeded. Validation error only on earlier models.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "Hitting max_tokens truncates silently (normal 200 response), stop_reason max_tokens means truncated",
+      "e": "Stop reasons are 'successful responses'; max_tokens = 'Claude stopped because it reached the max_tokens limit'; model_context_window_exceeded: 'Treat the response as truncated.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: exceeding the window silently drops the oldest messages (must be false)",
+      "e": "Input over the window returns 400 on every model; dropping old context only happens with opt-in server-side compaction/context editing.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: max_tokens is a hint, model answers shorter if space is tight (must be false)",
+      "e": "max_tokens: 'This parameter only specifies the absolute maximum number of tokens to generate' - a hard cap; overflow on 4.5+ truncates, the model doesn't plan shorter.",
+      "u": [
+        "https://platform.claude.com/docs/en/api/messages/create"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix2",
+      "c": "On Claude 4.5+, input + max_tokens over the window is accepted; generation stops with stop_reason model_context_window_exceeded only if it actually reaches the window.",
+      "e": "'On Claude 4.5 models and newer, if input tokens plus max_tokens exceeds the context window size, the API accepts the request.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix2",
+      "c": "The lie now covers only the case where the prompt fits but input + max_tokens exceeds the window: that is NOT rejected on Claude 4.5+. Input alone over the window is still a 400 on every model.",
+      "e": "Context windows docs: the overflow of reserved output is accepted on 4.5+; oversized input is a validation error.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    }
+  ]
+}

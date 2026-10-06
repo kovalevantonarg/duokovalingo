@@ -1,0 +1,201 @@
+{
+  "n": 12,
+  "tag": "Core-40 #23",
+  "sec": "llm",
+  "core": [
+    23
+  ],
+  "ru": {
+    "topic": "Structured output",
+    "qs": [
+      "Три способа получить JSON от модели. Что это за способы и когда какой?",
+      "Как надёжнее всего получить JSON по схеме у Anthropic? И что на самом деле дают strict и принудительный вызов инструмента?",
+      "JSON пришёл невалидный или не по схеме. Что делаешь?"
+    ],
+    "a": [
+      {
+        "q": "Три способа",
+        "t": "Первый — попросить в промпте отвечать JSON и распарсить. Дёшево, ненадёжно: модель заворачивает в markdown, добавляет пояснение, пропускает поле. Второй — нативный structured output (структурированный вывод): JSON mode или схема ответа, как response_format у OpenAI, и у Anthropic теперь есть свои structured outputs. JSON mode гарантирует только синтаксически валидный JSON, а схема в strict-режиме — ещё и соответствие схеме. Третий — tool use: описываю инструмент, чей input schema и есть нужная мне форма, и прошу модель его вызвать. Вызов инструмента — это и есть мой структурированный ответ, исполнять ничего не надо. Выбираю по требуемой надёжности и по тому, что даёт провайдер. Для продакшена — второй или третий, первый только для прототипа."
+      },
+      {
+        "q": "Strict-режим",
+        "t": "У Anthropic сейчас самый надёжный путь — structured outputs (структурированный вывод): JSON-схема на сам ответ или strict: true на инструменте. Оба через constrained decoding (генерацию, ограниченную схемой), а не проверку постфактум. Без strict схема инструмента — лишь подсказка, и можно получить «2» вместо 2. Принудительный вызов через tool_choice работает, где поддерживается, но некоторые текущие модели его отклоняют — сверяюсь с документацией. Описания полей — часть API: модель заполняет поля по их тексту. Гарантия — синтаксис и форма, не правдивость: валидный объект может содержать выдуманную дату."
+      },
+      {
+        "q": "Невалидный",
+        "t": "Валидирую всегда, через Zod, даже в strict-режиме: схема провайдера и моя схема — это два разных контракта. При ошибке делаю retry и прикладываю текст ошибки валидации в сообщение: модель обычно чинит с первого раза. Максимум два повтора, потом fallback и алерт. Долю невалидных ответов считаю как метрику эвала, а не как случайность. Невалидированный JSON никогда не идёт в базу. И держу схему маленькой: чем меньше опциональных полей, тем меньше галлюцинированных значений."
+      }
+    ],
+    "kill": "<b>«JSON mode гарантирует правильные данные»</b> — гарантирует валидный JSON, не правду. И парсинг регуляркой из markdown-блока — это способ номер ноль, о нём на интервью лучше не вспоминать."
+  },
+  "en": {
+    "topic": "Structured output",
+    "qs": [
+      "Three ways to get JSON out of a model. What are they and when do you use each?",
+      "What's the most reliable way to get schema-shaped JSON on Anthropic? And what do strict mode and forcing a tool actually buy you?",
+      "The JSON comes back invalid or off-schema. What do you do?"
+    ],
+    "a": [
+      {
+        "q": "Three ways",
+        "t": "First, ask for JSON in the prompt and parse. Cheap, unreliable: the model wraps it in markdown, adds an explanation, drops a field. Second, native structured output: JSON mode or a response schema, like OpenAI's response_format, and Anthropic now has its own structured outputs. JSON mode guarantees only syntactically valid JSON; a schema in strict mode also guarantees conformance to it. Third, tool use: I define a tool whose input schema is exactly the shape I want and have the model call it. The tool call is my structured output — nothing gets executed. I pick by how much reliability I need and what the provider offers. Production is option two or three; option one is prototype-only."
+      },
+      {
+        "q": "Strict mode",
+        "t": "On Anthropic the most reliable path now is structured outputs: a JSON schema on the response itself, or strict: true on a tool. Both use constrained decoding: generation is limited to the schema, not checked afterwards. Without strict, a tool schema is only guidance, so I can get \"2\" instead of 2. Forcing a tool with tool_choice works where supported, but some current models reject it, so I check the docs. Field descriptions are part of the API: the model fills fields from that text. What's guaranteed is syntax and shape, not truth — a valid object can still carry an invented date."
+      },
+      {
+        "q": "Invalid",
+        "t": "I validate every time, with Zod, even in strict mode — the provider's schema and mine are two different contracts. On failure I retry and append the validation error to the message; the model usually fixes it on the first try. Two retries max, then a fallback and an alert. I track the invalid rate as an eval metric, not as bad luck. Unvalidated JSON never touches the database. And I keep the schema small: fewer optional fields means fewer hallucinated values."
+      }
+    ],
+    "kill": "<b>\"JSON mode guarantees correct data\"</b> — it guarantees valid JSON, not true values. And regex-parsing a markdown fence is option zero; don't bring it up in an interview."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "JSON mode гарантирует, что значения в ответе правдивы.",
+        "Если провайдер отдал strict JSON, своя валидация не нужна."
+      ],
+      "en": [
+        "JSON mode guarantees the values in the response are true.",
+        "If the provider returned strict JSON, your own validation is unnecessary."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Без [[strict: true|strict]] схема инструмента — лишь подсказка; с ним генерацию ограничивает [[constrained decoding]].",
+        "[[tool_choice]] с именем принуждает к этому инструменту, но только на моделях, где поддерживается [[принудительный вызов|принудительный вызов инструмента]].",
+        "При ошибке — retry с текстом [[ошибки валидации|ошибки]], максимум [[2|два]] повтора, потом fallback."
+      ],
+      "en": [
+        "Without [[strict: true|strict]], a tool schema is only guidance; with it, generation is limited by [[constrained decoding]].",
+        "[[tool_choice]] with a name forces that tool, but only on models that support [[forced tool use|forcing a tool]].",
+        "On failure, retry with the [[validation error|error]] appended, [[2|two]] retries max, then fallback."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "JSON mode/response_format guarantees syntactically valid JSON; strict mode guarantees schema conformance (OpenAI)",
+      "e": "JSON mode 'ensures valid JSON is produced'; 'only Structured Outputs ensure schema adherence' (json_schema, strict: true).",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Asking for JSON in the prompt is unreliable (markdown wrap, missing fields)",
+      "e": "Without structured outputs: 'Parsing errors from invalid JSON syntax', 'Missing required fields'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "Tool use (forced tool) is the most reliable way to get JSON on Anthropic",
+      "e": "Anthropic structured outputs: JSON outputs (output_config.format) and strict tool use, via constrained decoding; GA on current models.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "The tool schema constrains generation on the provider side rather than checking afterwards",
+      "e": "'Without strict mode, Claude might return incompatible types (\"2\" instead of 2) or omit required fields.'",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "tool_choice with a specific name forces the model to emit that tool",
+      "e": "'Claude Opus 5.5, Claude Fable 5.1, and Claude Mythos 5.1 don't support forced tool use' — tool_choice tool/any returns 400.",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors#forced-tool-use-not-supported"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Field descriptions matter: the model fills fields based on their description text",
+      "e": "Descriptions should explain 'What each parameter means and how it affects the tool's behavior'.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "What's guaranteed is syntax and shape, not truth of values",
+      "e": "Structured outputs guarantee schema compliance but not the semantic correctness of values.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Validate even in strict mode — provider's schema and yours are different contracts",
+      "e": "Limits: refusals and max_tokens may break schema; enum casing not guaranteed; minimum/maxLength etc. not enforced.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: JSON mode guarantees the values are true (false)",
+      "e": "JSON mode only 'ensures valid JSON is produced'.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: with strict JSON your own validation is unnecessary (false)",
+      "e": "Refusal or max_tokens output 'may not match your schema'; value constraints like minimum/maxLength aren't enforced by the grammar.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix2",
+      "c": "Forcing a named tool via tool_choice works only on models that support forced tool use (RU cloze alternate made Russian).",
+      "e": "'Claude Opus 5.5, Claude Fable 5.1, and Claude Mythos 5.1 don't support forced tool use' — tool_choice tool/any returns 400.",
+      "u": [
+        "https://platform.claude.com/docs/en/api/errors"
+      ]
+    }
+  ]
+}

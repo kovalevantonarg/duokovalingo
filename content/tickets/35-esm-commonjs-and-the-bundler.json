@@ -1,0 +1,289 @@
+{
+  "n": 35,
+  "tag": "Frontend core · JS",
+  "sec": "js",
+  "core": [
+    50
+  ],
+  "ru": {
+    "topic": "ESM, CommonJS и бандлер",
+    "qs": [
+      "Почему ESM важен для размера бандла и как сейчас обстоят дела со смешиванием ESM и CommonJS в Node?",
+      "Что на самом деле делает бандлер и чем Vite отличается в dev и в продакшен-сборке?",
+      "После спринта основной бандл вырос вдвое. Как вы найдёте причину и где тут code splitting?"
+    ],
+    "a": [
+      {
+        "q": "ESM против CJS",
+        "t": "Статические импорты и экспорты в ESM стоят на верхнем уровне со строковыми путями, так что граф модулей известен ещё до выполнения кода. Именно это делает возможным tree shaking (удаление неиспользуемого кода): бандлер (сборщик) может доказать, что экспорт никто не импортирует, и выкинуть его. Кроме того, импорты — это живые привязки: если модуль переприсвоит экспортированный let, импортирующий увидит новое значение. require — просто вызов функции в рантайме (во время выполнения): путь можно вычислить, выполняется он синхронно, и я получаю то, что лежит в module.exports в этот момент. Поэтому бандлеры в основном не могут его вычистить. Смешивание раньше болело: require пакета, который есть только в ESM, бросал ERR_REQUIRE_ESM. Сейчас Node поддерживает require(esm) без флага начиная с 22.12 и 20.19, а стабильным его пометили в Node 25.4 в январе 2026 года. Одна оговорка: модуль с top-level await (await на верхнем уровне модуля) через require всё равно не загрузить. У dual-пакетов (которые публикуют обе сборки) своя беда: приложение может загрузить обе копии, синглтоны (объекты в единственном экземпляре) дублируются, а instanceof между копиями ломается. Детали я бы сверил с актуальной документацией Node."
+      },
+      {
+        "q": "Что делает бандлер",
+        "t": "Бандлер (сборщик) стартует с точек входа и разрешает каждый импорт в граф модулей. Он трансформирует файлы (TypeScript, JSX, CSS), потом делает tree shaking (удаление неиспользуемого кода), режет граф на чанки (отдельные файлы сборки), минифицирует и пишет файлы с хешем содержимого в имени, чтобы их можно было кешировать навсегда. Vite разделяет это по режимам. В dev он мой код не бандлит: отдаёт нативный ESM и трансформирует каждый файл по запросу. Поэтому старт dev-сервера не растёт с размером приложения, а HMR (горячая замена модулей) трогает только изменённый модуль. Зависимости один раз пребандлятся (заранее собираются), потому что в node_modules есть CommonJS, который надо сконвертировать, а пакеты вроде lodash-es иначе дали бы сотни запросов. Для продакшена делается полная сборка. Начиная с Vite 8, который вышел в марте 2026 года, и пребандлинг, и продакшен-сборка работают на Rolldown — бандлере на Rust. Он заменил старую схему «esbuild в dev, Rollup в проде», и это закрывает целый класс багов «в dev работает, в проде ломается». Режим с бандлингом в dev тоже есть, но пока экспериментальный."
+      },
+      {
+        "q": "Поиск раздувания",
+        "t": "Сначала я измеряю, а не гадаю. Собираю с source maps (картами исходников), открываю treemap (карту размеров модулей) и сравниваю с последней хорошей сборкой. Для Vite это rollup-plugin-visualizer. В свежем Next на Turbopack (он по умолчанию с 16-й версии) это next experimental-analyze, потому что @next/bundle-analyzer работает только для сборок на webpack. Обычные подозреваемые: тяжёлая библиотека ради одной функции, barrel-файл (index, который реэкспортирует весь пакет), библиотека дат или иконок, импортированная целиком, или две версии одной зависимости. Исправления скучные: импортировать конкретный путь, заменить на лёгкую библиотеку или нативный API вроде Intl, убрать дубли версий. Дальше code splitting (разбиение кода на части). Динамический import() — это точка разреза: бандлер (сборщик) выносит модуль и его собственные зависимости в отдельный чанк (файл сборки), который грузится по требованию. Самый большой выигрыш даёт разбиение по роутам (маршрутам): App Router в Next уже режет по маршрутам, а в SPA (одностраничном приложении) на Vite я лениво грузлю роуты через React.lazy. В чат-интерфейсе я бы лениво грузил markdown и подсветку синтаксиса: это тяжело и не нужно для первой отрисовки. Ловушка — дробить слишком мелко. Крошечные чанки дают водопад запросов, поэтому я делаю prefetch (предзагрузку) при наведении. И добавляю бюджет размера в CI (автоматические проверки), чтобы это не повторилось."
+      }
+    ],
+    "kill": "<b>«Tree shaking выкинет всё неиспользуемое из любого импорта»</b> — он работает только со статическим ESM, а модуль, который бандлер не может признать свободным от побочных эффектов (нет sideEffects: false), остаётся в бандле, как минимум его код с побочными эффектами."
+  },
+  "en": {
+    "topic": "ESM, CommonJS and the bundler",
+    "qs": [
+      "Why does ESM matter for bundle size, and what's the current state of mixing ESM and CommonJS in Node?",
+      "What does a bundler actually do, and how is Vite different in dev versus the production build?",
+      "Your main bundle doubled after a sprint. How do you find out why, and where does code splitting come in?"
+    ],
+    "a": [
+      {
+        "q": "ESM vs CJS",
+        "t": "Static ESM imports and exports sit at the top level with string literal paths, so the module graph is known before any code runs. That's what makes tree shaking possible — the bundler can prove an export is never imported and drop it. Imports are also live bindings: if the exporting module reassigns an exported let, the importer sees the new value. require is just a function call at runtime. The path can be computed, it runs synchronously, and you get whatever module.exports is at that moment, so bundlers mostly can't prune it. Mixing them used to hurt: requiring an ESM-only package threw ERR_REQUIRE_ESM. Node now supports require(esm) without a flag since 22.12 and 20.19, and it was marked stable in Node 25.4 in January 2026. One catch: a module with top-level await still can't be required. Dual packages that ship both builds have their own hazard. The app can load both copies, so singletons get duplicated and instanceof fails across them. I'd check the current Node docs before promising details."
+      },
+      {
+        "q": "Bundler's job",
+        "t": "A bundler starts from entry points and resolves every import into a module graph. It transforms each file (TypeScript, JSX, CSS), then tree-shakes, splits the graph into chunks, minifies, and writes files with content hashes in their names so they can be cached forever. Vite splits this by mode. In dev it doesn't bundle my code: it serves native ESM and transforms each file on request. So dev server startup doesn't grow with app size, and HMR only touches the edited module. Dependencies are pre-bundled once, because node_modules has CommonJS to convert and packages like lodash-es would otherwise fire hundreds of requests. For production it does a full bundle. Since Vite 8, released in March 2026, both pre-bundling and the production build run on Rolldown, a Rust bundler. It replaced the old esbuild-in-dev, Rollup-in-prod split, which closes a whole class of works-in-dev, breaks-in-prod bugs. A bundled dev mode exists too, but it's still experimental."
+      },
+      {
+        "q": "Finding bloat",
+        "t": "First I measure instead of guessing. I build with source maps, open a treemap and diff it against the last good build. For Vite that's rollup-plugin-visualizer. On recent Next with Turbopack, the default since 16, it's next experimental-analyze, because @next/bundle-analyzer only covers webpack builds. The usual suspects are a heavy library imported for one function, a barrel file that pulls in a whole package, a date or icon library imported whole, or two versions of the same dependency. The fixes are boring: import the specific path, swap in a lighter library or a native API like Intl, dedupe versions. Then code splitting. A dynamic import() is a split point: the bundler emits that module and its exclusive dependencies as a separate chunk loaded on demand. Route-level splitting is the biggest win — Next's App Router already splits per route, and in a Vite SPA I lazy-load routes with React.lazy. In a chat UI I'd lazy-load the markdown and syntax-highlighting stack, since it's heavy and not needed for first paint. The trap is over-splitting. Tiny chunks create request waterfalls, so I prefetch on hover. And I add a size budget in CI so it doesn't happen again."
+      }
+    ],
+    "kill": "<b>\"Tree shaking removes whatever I don't use from any import\"</b> — it only works on static ESM, and a module the bundler can't prove side-effect free (no sideEffects: false) stays in the bundle, at least its side-effect code."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "В ESM импортирующий модуль получает копию значения на момент импорта, поэтому последующие изменения экспорта он не видит.",
+        "Актуальные версии Node всегда бросают ERR_REQUIRE_ESM, когда CommonJS-код делает require пакета, который есть только в ESM."
+      ],
+      "en": [
+        "In ESM the importer gets a copy of the value at import time, so later changes to the export aren't visible to it.",
+        "Current Node versions always throw ERR_REQUIRE_ESM when CommonJS code requires an ESM-only package."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Поскольку импорты ESM [[статические]], бандлер может делать [[tree shaking|tree-shaking]].",
+        "Начиная с Vite 8, и пребандлинг зависимостей, и продакшен-сборка работают на [[Rolldown]].",
+        "Динамический [[import()|import]] — это точка разреза, и бандлер выносит модуль в отдельный [[чанк|chunk]]."
+      ],
+      "en": [
+        "Because ESM imports are [[static]], the bundler can do [[tree shaking|tree-shaking]].",
+        "Since Vite 8, dependency pre-bundling and the production build both run on [[Rolldown]].",
+        "A dynamic [[import()|import]] is a split point, and the bundler emits that module as a separate [[chunk]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Static import declarations are top-level with string-literal specifiers, so the graph is known before code runs",
+      "e": "Import declarations are syntactically rigid (string literal specifiers, top-level only) so modules can be statically analyzed before evaluation.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Static ESM structure is what enables tree shaking",
+      "e": "Tree shaking relies on the static structure of ES2015 module syntax (import/export).",
+      "u": [
+        "https://webpack.js.org/guides/tree-shaking/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "ESM imports are live bindings: importer sees reassigned exported let",
+      "e": "Live bindings 'are updated by the module that exported the binding'; example shows myValue 1 → 2. Lie is correctly false.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "require is a synchronous runtime call with a computable path, hard to prune",
+      "e": "Webpack: tree shaking needs ES module syntax; CJS's dynamic nature blocks reliable static analysis.",
+      "u": [
+        "https://webpack.js.org/guides/tree-shaking/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "require(esm) works without a flag since Node 22.12 and 20.19",
+      "e": "History: v23.0.0, v22.12.0, v20.19.0 — no longer behind --experimental-require-module.",
+      "u": [
+        "https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "require(esm) was marked stable 'around the end of 2025' (RU: 'в конце 2025 года')",
+      "e": "v25.4.0 (released January 19, 2026): 'module: mark require(esm) as stable'.",
+      "u": [
+        "https://nodejs.org/en/blog/release/v25.4.0"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A module with top-level await still can't be required",
+      "e": "If the required module graph contains top-level await, ERR_REQUIRE_ASYNC_MODULE is thrown.",
+      "u": [
+        "https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Dual packages: app can load both copies; singletons duplicated, instanceof fails",
+      "e": "instanceof between instances from the two copies returns false; stateful packages get parallel states.",
+      "u": [
+        "https://nodejs.org/learn/modules/publishing-a-package"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Vite dev serves source over native ESM, transforms on request; HMR updates just the edited module",
+      "e": "Source code served on demand over native ESM; HMR updates 'just that module' without full reload.",
+      "u": [
+        "https://vite.dev/guide/why"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Dependencies pre-bundled because of CommonJS conversion and packages like lodash-es firing hundreds of requests",
+      "e": "CJS/UMD must be converted to ESM; lodash-es has over 600 internal modules → 600+ requests. Dev-only.",
+      "u": [
+        "https://vite.dev/guide/dep-pre-bundling"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Vite 8 released March 2026",
+      "e": "Vite 8.0 announced March 12, 2026.",
+      "u": [
+        "https://vite.dev/blog/announcing-vite8"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Since Vite 8, dep pre-bundling and production build both run on Rolldown (Rust), replacing esbuild-in-dev / Rollup-in-prod",
+      "e": "'Vite 8 ships with Rolldown as its single, unified, Rust-based bundler' for pre-bundling and production builds.",
+      "u": [
+        "https://vite.dev/blog/announcing-vite8"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Bundled dev mode exists but is still experimental",
+      "e": "Vite 8.1 (June 23, 2026): 'Experimental support for bundled dev mode is now available' (formerly Full Bundle Mode).",
+      "u": [
+        "https://vite.dev/blog/announcing-vite8-1"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "rollup-plugin-visualizer gives a treemap for Vite",
+      "e": "README shows Vite and Rolldown usage; default template is treemap.",
+      "u": [
+        "https://github.com/btd/rollup-plugin-visualizer"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "@next/bundle-analyzer is the Next.js treemap tool",
+      "e": "@next/bundle-analyzer is 'for Webpack'; Turbopack (default since Next 16) uses `next experimental-analyze` (v16.1+).",
+      "u": [
+        "https://nextjs.org/docs/app/guides/package-bundling"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Dynamic import() is a split point; bundler emits the module as a separate chunk loaded on demand",
+      "e": "Using import() makes webpack separate the module into its own chunk (e.g. lodash → vendors-…bundle.js).",
+      "u": [
+        "https://webpack.js.org/guides/code-splitting/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Next App Router already splits per route",
+      "e": "'By default, Server Components are automatically code split'; lazy loading needed only for Client Components.",
+      "u": [
+        "https://nextjs.org/docs/app/guides/lazy-loading"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "In a Vite SPA, lazy-load routes with React.lazy",
+      "e": "lazy defers loading a component's code until first render, via dynamic import + Suspense.",
+      "u": [
+        "https://react.dev/reference/react/lazy"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "Tree shaking only works on static ESM; modules not provably side-effect free (no sideEffects:false) stay in whole",
+      "e": "sideEffects:false marks files pure so whole modules can be skipped when their exports are unused.",
+      "u": [
+        "https://webpack.js.org/guides/tree-shaking/"
+      ]
+    }
+  ]
+}

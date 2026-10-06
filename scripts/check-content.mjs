@@ -1,25 +1,20 @@
 #!/usr/bin/env node
-// Validates the study content in app/: tickets.js, drills.js, sources.js and lessons/*.json.
+// Validates the study content: content/tickets/*.json (source of truth), the generated bundles, and app/lessons/.
 // Run: node scripts/check-content.mjs   (exit code 1 on any problem; also runs in `npm test`)
 import { readFileSync, readdirSync } from "node:fs";
-import vm from "node:vm";
-
-const APP = new URL("../app/", import.meta.url);
-const read = (p) => readFileSync(new URL(p, APP), "utf8");
-const loadGlobal = (file, name) => { const ctx = { window: {} }; vm.runInNewContext(read(file), ctx); return ctx.window[name]; };
+import { ROOT, readTickets, bundles, fileName } from "./content-lib.mjs";
 
 export function checkContent() {
   const problems = [];
   const bad = (where, msg) => problems.push(`${where}: ${msg}`);
-  const TICKETS = loadGlobal("tickets.js", "TICKETS");
-  const DRILLS = loadGlobal("drills.js", "DRILLS");
-  const SOURCES = loadGlobal("sources.js", "SOURCES");
+  const tickets = readTickets();
   const blanks = (s) => (s.match(/\[\[/g) || []).length;
 
   const seen = new Set();
-  for (const t of TICKETS) {
-    const id = `ticket ${t.n}`;
+  for (const t of tickets) {
+    const id = `ticket ${t.n} (${t._file})`;
     if (seen.has(t.n)) bad(id, "duplicate number"); seen.add(t.n);
+    if (t._file !== fileName(t)) bad(id, `file should be named ${fileName(t)}`);
     for (const lang of ["ru", "en"]) {
       const x = t[lang];
       if (!x?.topic) bad(id, `${lang}.topic missing`);
@@ -28,7 +23,7 @@ export function checkContent() {
       if (!x?.kill) bad(id, `${lang}.kill missing`);
     }
 
-    const d = DRILLS[t.n];
+    const d = t.drills;
     if (!d) { bad(id, "no drills"); continue; }
     for (const lang of ["ru", "en"]) {
       if (d.lies?.[lang]?.length !== 2) bad(id, `drills: expected 2 ${lang} lies`);
@@ -45,17 +40,23 @@ export function checkContent() {
       if (ru.length !== en.length || ru.length < 4 || ru.length > 6) bad(id, "steps: 4–6 items, same count in RU and EN");
       for (const s of [...ru, ...en]) if (s.length > 70) bad(id, `step longer than 70 chars: ${s.slice(0, 40)}…`);
     }
+    for (const s of t.sources || []) if (!s.u?.length || s.u.some((u) => !/^https?:\/\//.test(u))) bad(id, `source without a URL: ${s.c?.slice(0, 40)}`);
+  }
 
-    for (const s of SOURCES[t.n] || []) if (!s.u?.length || s.u.some((u) => !/^https?:\/\//.test(u))) bad(id, `source without a URL: ${s.c?.slice(0, 40)}`);
+  // generated bundles match the source files
+  for (const [p, s] of Object.entries(bundles(tickets))) {
+    let cur = null; try { cur = readFileSync(new URL(p, ROOT), "utf8"); } catch {}
+    if (cur !== s) bad(p, "out of date, run `node scripts/build-content.mjs`");
   }
 
   // lessons: one per ticket, index in sync, decode quotes still present in the answers
-  const index = JSON.parse(read("lessons/index.json"));
-  const files = readdirSync(new URL("lessons/", APP)).filter((f) => /^L\d+\.json$/.test(f));
-  for (const t of TICKETS) if (!files.includes(`L${t.n}.json`)) bad(`ticket ${t.n}`, "no lesson");
+  const LESSONS = new URL("app/lessons/", ROOT);
+  const index = JSON.parse(readFileSync(new URL("index.json", LESSONS), "utf8"));
+  const files = readdirSync(LESSONS).filter((f) => /^L\d+\.json$/.test(f));
+  for (const t of tickets) if (!files.includes(`L${t.n}.json`)) bad(`ticket ${t.n}`, "no lesson");
   for (const f of files) {
-    const L = JSON.parse(read(`lessons/${f}`)); const id = `lesson ${L.n}`;
-    const t = TICKETS.find((x) => x.n === L.n);
+    const L = JSON.parse(readFileSync(new URL(f, LESSONS), "utf8")); const id = `lesson ${L.n}`;
+    const t = tickets.find((x) => x.n === L.n);
     if (!t) { bad(id, "no matching ticket"); continue; }
     if (!index[L.n]) bad(id, "missing from lessons/index.json");
     for (const lang of ["ru", "en"]) {
@@ -67,7 +68,7 @@ export function checkContent() {
     }
     for (const s of L.sources || []) if (!/^https?:\/\//.test(s.url || "")) bad(id, `source without a URL: ${s.claim?.slice(0, 40)}`);
   }
-  return { problems, counts: { tickets: TICKETS.length, lessons: files.length } };
+  return { problems, counts: { tickets: tickets.length, lessons: files.length } };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

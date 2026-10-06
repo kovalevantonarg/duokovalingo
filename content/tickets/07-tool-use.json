@@ -1,0 +1,248 @@
+{
+  "n": 7,
+  "tag": "Core-40 #21, #33",
+  "sec": "agents",
+  "core": [
+    21,
+    33
+  ],
+  "ru": {
+    "topic": "Tool use",
+    "qs": [
+      "Модель попросила инструмент. Кто идёт в интернет и что происходит дальше по шагам?",
+      "Из чего состоит определение tool и что там самое важное?",
+      "Почему content в ответе — массив, а не строка?"
+    ],
+    "a": [
+      {
+        "q": "Петля",
+        "t": "Для моих собственных инструментов модель ничего не вызывает. Она возвращает намерение: имя инструмента и аргументы. Дальше всё делает мой код: идёт в интернет, получает результат и кладёт его в массив сообщений как tool_result с тем же tool_use_id. Потом модель вызывается снова с результатом в контексте, и так по кругу, пока stop_reason не перестанет быть tool_use. Исключение — серверные инструменты Anthropic вроде веб-поиска: их исполняет платформа и отдаёт результат в том же ответе. Для клиентских инструментов руки — мой код, поэтому права пользователя и аргументы я проверяю там, до исполнения."
+      },
+      {
+        "q": "Определение",
+        "t": "Имя, описание и JSON-схема параметров. И самое важное там — описание, потому что это на самом деле промпт, а не документация: это главное, по чему модель решает, звать ли инструмент и как. Имя, описания параметров и примеры тоже влияют, но гораздо слабее. Я пишу его как инструкцию для толкового незнакомца — что инструмент делает, когда его применять и, отдельно, когда применять не надо. Плохое описание чинится не кодом, а текстом."
+      },
+      {
+        "q": "Массив блоков",
+        "t": "Потому что в одном ответе может приехать сразу несколько разных блоков: текст и запрос инструмента вместе, иногда несколько инструментов сразу. Модель одновременно рассуждает вслух и просит данные. Поэтому content — это массив с полем type у каждого блока, и код обязан их фильтровать, а не считать ответ строкой."
+      }
+    ],
+    "kill": "<b>«Модель вызывает функцию»</b> — для твоих инструментов нет: она возвращает блок tool_use с именем и JSON-аргументами, исполняешь ты. Именно поэтому возможна авторизация; на стороне платформы работают только серверные инструменты Anthropic."
+  },
+  "en": {
+    "topic": "Tool use",
+    "qs": [
+      "The model asked for a tool. Who goes to the internet, and what happens next, step by step?",
+      "What's in a tool definition, and which part matters most?",
+      "Why is content an array rather than a string?"
+    ],
+    "a": [
+      {
+        "q": "The loop",
+        "t": "For my own tools the model doesn't call anything. It returns an intent: a tool name and arguments. Everything after that is my code: it goes to the internet, gets the result, and appends it to the messages array as a tool_result with the same tool_use_id. Then the model is called again with that result in context, and round it goes until stop_reason is no longer tool_use. The exception is Anthropic's server tools, like web search: those run on Anthropic's side and return results in the same response. For client tools the hands are my code, which is exactly where I check the user's permissions and the arguments before anything runs."
+      },
+      {
+        "q": "The definition",
+        "t": "A name, a description, and a JSON schema for the parameters. The description is the part that matters, because it's really a prompt rather than documentation — it's the main thing the model uses to decide whether and how to call the tool. The name, parameter descriptions and examples count too, but far less. I write it for a competent stranger: what it does, when to use it, and separately when not to. A bad description is fixed with text, not with code."
+      },
+      {
+        "q": "Array of blocks",
+        "t": "Because a single response can carry several different blocks at once: text and a tool request together, sometimes several tool requests. The model reasons out loud and asks for data in the same message. So content is an array where every block has a type, and your code has to filter on that rather than treating the response as a string."
+      }
+    ],
+    "kill": "<b>\"The model calls the function\"</b> — for your own tools it doesn't: it returns a tool_use block with a name and JSON input, and you execute it. That's exactly why authorization is possible; only Anthropic's server tools run on the platform."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Для инструмента, который я описал сам, модель сама вызывает функцию и получает результат.",
+        "Описание инструмента — это документация для людей; модель смотрит на схему."
+      ],
+      "en": [
+        "For a tool I define myself, the model calls the function itself and receives the result.",
+        "The tool description is documentation for humans; the model looks at the schema."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Для моих инструментов модель возвращает [[намерение|intent]]: имя инструмента и аргументы; исполняет [[мой код|код]].",
+        "Результат кладётся обратно как [[tool_result]] с тем же [[tool_use_id]].",
+        "Цикл идёт, пока stop_reason не перестанет быть [[tool_use]]."
+      ],
+      "en": [
+        "For my own tools, the model returns an [[intent]]: a tool name and arguments; [[my code|the code]] executes it.",
+        "The result goes back as a [[tool_result]] carrying the same [[tool_use_id]].",
+        "The loop runs until stop_reason is no longer [[tool_use]]."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Цикл клиентского tool use, от запроса до ответа",
+        "items": [
+          "Вызываю модель с описанием инструментов",
+          "Модель возвращает tool_use: имя и аргументы",
+          "Мой код исполняет инструмент",
+          "Результат кладу в messages как tool_result с tool_use_id",
+          "Вызываю модель снова с результатом в контексте",
+          "stop_reason больше не tool_use — финальный ответ"
+        ]
+      },
+      "en": {
+        "title": "The client-tool loop, request to answer",
+        "items": [
+          "Call the model with the tool definitions",
+          "The model returns tool_use: name and arguments",
+          "My code executes the tool",
+          "Append the result to messages as a tool_result with the tool_use_id",
+          "Call the model again with the result in context",
+          "stop_reason is no longer tool_use — final answer"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "The model doesn't call/execute anything; it returns tool name + arguments and my code does the rest (incl. going to the internet)",
+      "e": "Client tools 'run in your application'; server tools (web_search, web_fetch, code_execution) 'run on Anthropic's infrastructure'.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "fix",
+      "c": "Kill: the model returns JSON describing an intent; you execute it",
+      "e": "Server tools such as web_search 'run on Anthropic's infrastructure: you see the results directly without handling execution'.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Result goes back into messages as tool_result with the same tool_use_id",
+      "e": "tool_result blocks with tool_use_id; must immediately follow the tool_use; tool_result blocks first in the user content.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Model is called again with the result in context",
+      "e": "'a second request sends the result back in a tool_result block so Claude can reply with the answer.'",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Loop until stop_reason is no longer tool_use",
+      "e": "tool_use = 'Claude is calling a tool'; end_turn = finished naturally. (pause_turn only applies to server-tool loops.)",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Tool definition = name, description, JSON schema for parameters",
+      "e": "Parameters: name, description, input_schema (JSON Schema), optional input_examples; plus strict, cache_control etc.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "The description is the part that matters most",
+      "e": "'Provide extremely detailed descriptions. This is by far the most important factor in tool performance.'",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "The description is the ONLY thing the model uses to decide whether to call the tool",
+      "e": "Docs: description is 'by far the most important factor'; name, schema, parameter descriptions and input_examples also inform Claude.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Write the description as: what it does, when to use it, when not to",
+      "e": "Descriptions should explain 'What the tool does; When it should be used (and when it shouldn't)'.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "One response can hold text plus a tool request, sometimes several tool requests",
+      "e": "'By default, Claude may call multiple tools in a single response'; several tool_use blocks in one assistant turn.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "content is an array of blocks, each with a type",
+      "e": "Response 'content': [{\"type\": \"text\", ...}] — array of typed content blocks.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/working-with-messages"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "Lie: the model calls the function itself and receives the result (false)",
+      "e": "False for client tools, but for server tools (web_search) execution happens on Anthropic's side, not in your code.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: description is docs for humans; the model looks at the schema (false)",
+      "e": "Description is 'by far the most important factor in tool performance' — it is read by the model.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/implement-tool-use"
+      ]
+    }
+  ]
+}

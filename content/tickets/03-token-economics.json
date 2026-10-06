@@ -1,0 +1,223 @@
+{
+  "n": 3,
+  "tag": "Core-40 #24",
+  "sec": "llm",
+  "core": [
+    24
+  ],
+  "ru": {
+    "topic": "Экономика токенов",
+    "qs": [
+      "Почему output дороже input, сейчас у крупных вендоров примерно в 5 раз за токен? Механизм, а не «так в прайсе».",
+      "Косты выросли втрое за месяц. Первые четыре гипотезы по порядку.",
+      "В простом вызове output был 99% счёта, в агенте input стал 84%. Что изменилось и какой вывод?"
+    ],
+    "a": [
+      {
+        "q": "Асимметрия",
+        "t": "Потому что вход и выход считаются принципиально по-разному. Промпт известен целиком, поэтому все его токены обрабатываются за один параллельный проход, и GPU загружен эффективно. А выход рождается по одному токену: сколько токенов, столько проходов. Каждый такой проход упирается в пропускную способность памяти: веса и KV-кэш (сохранённые ключи и значения внимания) перечитываются ради одного токена. Следующий токен нельзя посчитать, пока не выбран предыдущий, а весь промпт известен и считается разом. Поэтому выход дороже, и отсюда же вообще возможен стриминг."
+      },
+      {
+        "q": "Дебаг стоимости",
+        "t": "Это порядок диагностики, а не рейтинг экономии: ищу, что изменилось. Первое — выбор модели: не уехал ли путь на более дорогой тир. Второе — cache hit rate (доля попаданий в кэш): timestamp или данные пользователя в system молча ломают кэш. Третье — многословность: «ответь одним предложением» экономит больше, чем чистка системного промпта. Четвёртое — не растёт ли история без ограничений. Потом batch API. Для нового агента Anthropic ставит prompt caching первым."
+      },
+      {
+        "q": "Разворот",
+        "t": "Изменилась архитектура. В агенте на каждом шаге пересылается весь разговор со всеми скачанными страницами, поэтому суммарный вход за задачу растёт примерно квадратично по числу шагов и быстро обгоняет выход. И вывод отсюда не «input дороже» и не «output дороже», а тот, что профиль расходов определяется архитектурой, а не моделью. Поэтому его меряют, а не угадывают, и перемеряют заново после каждого изменения архитектуры."
+      }
+    ],
+    "kill": "<b>«Оптимизируем промпт»</b> — в простом вызове это театр: срежешь 26 токенов входа и заплатишь больше, если ответ вырос на 19."
+  },
+  "en": {
+    "topic": "Token economics",
+    "qs": [
+      "Why does output cost more than input, around 5x per token at the big vendors today? Mechanism, not \"that's the price list\".",
+      "Costs tripled this month. Name your first four hypotheses, in order.",
+      "In a single call output was 99% of the bill; in the agent input became 84%. What changed, and what's the takeaway?"
+    ],
+    "a": [
+      {
+        "q": "The asymmetry",
+        "t": "Because input and output are computed in fundamentally different ways. The prompt is known in full, so the state for all of its tokens is computed in a single parallel forward pass — one operation for the whole thing, and the GPU is used efficiently. Output is generated one token at a time: as many passes as tokens, and each decode pass is memory-bandwidth-bound, reloading the weights and the KV cache just to produce one token. You can't compute the next token until the previous one is chosen, but the whole prompt is known and computed at once. That's why output is priced higher, and it's also why streaming is possible at all."
+      },
+      {
+        "q": "Debugging cost",
+        "t": "This is a diagnosis order, what changed, not a savings ranking. First, model selection: did some path start routing to a pricier tier. Second, cache hit rate: a timestamp or per-user data in the system prompt silently stops caching from hitting. Third, output verbosity, because asking for a one-sentence answer saves far more than trimming the system prompt. Fourth, whether conversation history grows unbounded. Only then the batch API. For a new agent, Anthropic's guidance puts prompt caching before every other lever."
+      },
+      {
+        "q": "The flip",
+        "t": "The architecture changed. In an agent every step resends the entire conversation including every page you fetched, so total input over the task grows roughly with the square of the step count and quickly overtakes output. And the takeaway isn't that input is expensive or that output is expensive — it's that the cost profile is decided by architecture, not by the model. Which is why you measure it instead of assuming, and re-measure after every architectural change."
+      }
+    ],
+    "kill": "<b>\"We'll optimise the prompt\"</b> — in a single call that's theatre. I cut 26 input tokens and paid more, because the answer grew by 19."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Входные и выходные токены стоят одинаково, разница только в количестве.",
+        "Сокращение системного промпта — главный рычаг экономии в агенте."
+      ],
+      "en": [
+        "Input and output tokens cost the same; only the count differs.",
+        "Trimming the system prompt is the main cost lever in an agent."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Выход сейчас дороже входа примерно в [[5|пять]] раз, потому что каждый выходной токен — отдельный [[проход|forward pass]] через модель.",
+        "Промпт считается одним [[параллельным|parallel]] проходом, выход — по токену за раз.",
+        "В агенте каждый шаг пересылает всю историю, поэтому [[input|вход]] быстро обгоняет output."
+      ],
+      "en": [
+        "Output costs about [[5|five]] times more per token today because every output token is a separate [[forward pass|pass]] through the model.",
+        "The prompt is computed in one [[parallel]] pass; output is generated one token at a time.",
+        "In an agent every step resends the whole history, so [[input]] quickly overtakes output."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Счёт вырос втрое. В каком порядке ищешь причину?",
+        "items": [
+          "Выбор модели — не ушёл ли путь на более дорогой тир",
+          "Cache hit rate — не сломался ли кэшируемый префикс",
+          "Многословность выхода — просить ответ короче",
+          "Растёт ли история разговора без ограничения",
+          "Что можно унести в Batch API"
+        ]
+      },
+      "en": {
+        "title": "The bill tripled. In what order do you diagnose it?",
+        "items": [
+          "Model selection — did some path move to a pricier tier",
+          "Cache hit rate — did something break the cached prefix",
+          "Output verbosity — ask for a shorter answer",
+          "Is conversation history growing unbounded",
+          "What could move to the Batch API"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "Output costs 3-5x more per token than input",
+      "e": "Every listed Claude model is exactly 5x (e.g. Opus 5.5 $4/$20, Sonnet 5 $2/$10, Haiku 4.5 $1/$5); OpenAI GPT-6 tiers are also 5x ($2/$10 Sol).",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Prompt is processed in one parallel pass (prefill); output is generated one token at a time, one forward pass per token",
+      "e": "Prefill: 'matrix-matrix operation that's highly parallelized'; decode: 'generates output tokens autoregressively one at a time... a memory-bound operation.' (NVIDIA tech blog)",
+      "u": [
+        "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "That sequential decode is 'the whole reason' output is pricier",
+      "e": "Decode 'underutilizes the GPU compute ability... memory-bound': cost per token is higher because each step reloads weights/KV cache for one token.",
+      "u": [
+        "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Routing to Opus is the biggest single cost lever",
+      "e": "Opus 5.5 is $4/$20 vs Sonnet 5 $2/$10 (2x); Fable/Mythos 5.x are $10/$50, the priciest tier.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Asking for shorter answers saves more than trimming the system prompt",
+      "e": "'Ask for shorter answers. Output tokens cost five times input tokens'; one-line answer 'used 39% fewer output tokens... cost 14% less per run'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Prompt caching on a long stable prefix is a cost lever (placed 4th)",
+      "e": "'Turn on prompt caching before any other lever, because every turn of an agentic task resends the entire growing conversation'; caching 2.7-5.3x.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Batch API is a further lever (50% off)",
+      "e": "'The Batch API allows asynchronous processing... with a 50% discount on both input and output tokens.'",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "In an agent every step resends the whole history, so input grows quadratically and overtakes output",
+      "e": "'A 40-turn task sends its first turn 40 times, so task cost grows with roughly the square of turn count.' (Cumulative input grows quadratically; per-step input grows linearly.)",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "Cutting 26 input tokens while output grew by 19 raises cost",
+      "e": "At a 5x output price, +19 output ≈ 95 input-token equivalents > 26 saved; the arithmetic holds (Anton's own measurement).",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: input and output tokens cost the same (must be false)",
+      "e": "Every model lists output at 5x input (e.g. Sonnet 5 $2 vs $10 /MTok).",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: trimming the system prompt is the main cost lever in an agent (must be false)",
+      "e": "Caching comes first; input trimming gave a 'Further 5% on triage run'; a status line at the front of the system prompt broke the cache ($4.24 vs $0.59).",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+      ]
+    }
+  ]
+}

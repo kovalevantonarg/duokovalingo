@@ -1,0 +1,245 @@
+{
+  "n": 47,
+  "tag": "Frontend core · Browser",
+  "sec": "web",
+  "core": [
+    62
+  ],
+  "ru": {
+    "topic": "Сеть и кеширование",
+    "qs": [
+      "Как ты настроишь кеш-заголовки для HTML и JS-бандлов в приложении на Next.js или Vite? И чем no-cache отличается от no-store?",
+      "Что на самом деле поменялось между HTTP/1.1, HTTP/2 и HTTP/3, и где тут resource hints вроде preload и preconnect?",
+      "После деплоя часть пользователей несколько дней видит старую версию приложения. Где может жить устаревшая копия?"
+    ],
+    "a": [
+      {
+        "q": "Кеш-заголовки",
+        "t": "no-cache не значит «не кешировать». Он значит, что браузер может сохранить ответ, но обязан перепроверить его у сервера перед каждым использованием. no-store значит не сохранять нигде, это для чувствительных ответов. Перепроверка идёт через валидаторы. Сервер отдаёт ETag (отпечаток версии ответа), браузер хранит ответ и использует его, пока тот свежий по max-age. Когда ответ устарел, или при no-cache каждый раз, браузер шлёт If-None-Match с этим ETag. Если ничего не изменилось, сервер отвечает 304 Not Modified без тела. Это всё равно round trip (сетевой круг туда и обратно), но дешёвый. Для собранного приложения схема делится по типу файлов. У JS, CSS и шрифтов хеш содержимого в имени, поэтому по одному URL контент никогда не меняется. Им max-age=31536000, то есть год, плюс immutable, чтобы браузер не перепроверял даже при перезагрузке. Firefox и Safari его учитывают, Chrome игнорирует, но он и так не перепроверяет подресурсы при обычной перезагрузке. HTML получает no-cache, потому что это точка входа со ссылками на новые хеши. Если HTML закешировать надолго, пользователи так и будут ходить за старыми бандлами."
+      },
+      {
+        "q": "Версии HTTP",
+        "t": "HTTP/1.1 обрабатывает один запрос за раз на соединение, поэтому браузер открывает около шести соединений на origin (источник), и отсюда росли склейка файлов и спрайты. HTTP/2 мультиплексирует (передаёт вперемешку) много потоков в одном TCP-соединении, и мелкие запросы стали дешёвыми. Но head-of-line blocking (блокировка очереди головным пакетом) не исчезла, а переехала с уровня HTTP на уровень TCP: TCP отдаёт байты строго по порядку, и один потерянный пакет стопорит все потоки, пока его не перешлют. HTTP/3 работает поверх QUIC (транспорт поверх UDP), где каждый поток упорядочен независимо, и потеря бьёт только по своему потоку. Ещё QUIC совмещает транспортное и TLS-рукопожатие, что экономит round trip (сетевой круг) на новых соединениях, особенно на мобильных. Resource hints (подсказки браузеру о ресурсах) работают поверх этого. preconnect заранее открывает соединение с важным сторонним доменом. preload тянет то, что браузер нашёл бы поздно. fetchpriority меняет приоритет. modulepreload заранее качает и разбирает модуль. Они вредят при перебаре: десять preload конкурируют с реально критичным ресурсом, лишние preconnect тратят сокеты, а неиспользованный preload это чистая потеря, о которой Chrome предупреждает в консоли."
+      },
+      {
+        "q": "Устаревшее приложение",
+        "t": "Есть три места. Первое: HTTP-кеш браузера, если HTML отдали с длинным max-age вместо no-cache. Второе: CDN (сеть пограничных серверов). Если HTML кешируется на edge (пограничном узле) с длинным s-maxage и мы не делаем purge (сброс кеша) при деплое, каждый посетитель получает старую точку входа. Для HTML на CDN stale-while-revalidate полезен: он мгновенно отдаёт кешированную копию и обновляет её в фоне. Но это значит, что после каждого изменения кто-то гарантированно получит старую версию, так задумано. Третье и самое неприятное: service worker (фоновый скрипт-прокси). Это программируемый прокси между страницей и сетью. Он может заранее закешировать оболочку приложения, отдавать из кеша, работать офлайн. Но если он отдаёт HTML cache-first (сначала из кеша), новая версия приходит только на следующем визите. А новый воркер ждёт, пока закроются все вкладки со старым. Кривой воркер может намертво привязать пользователей к сломанной сборке. Поэтому HTML я отдаю network-first (сначала сеть), версионирую кеши, показываю «доступно обновление» и держу наготове воркер-выключатель. И старые чанки (куски бандла) с хешами держу на CDN какое-то время, иначе пользователи со старым HTML ловят 404 на ленивых роутах."
+      }
+    ],
+    "kill": "<b>«no-cache значит, что браузер не кеширует ответ»</b> — это no-store. no-cache сохраняет ответ и перепроверяет его перед каждым использованием, обычно дешёвым 304."
+  },
+  "en": {
+    "topic": "Networking and caching",
+    "qs": [
+      "How would you set cache headers for the HTML and the JS bundles of a Next.js or Vite app? And what's the difference between no-cache and no-store?",
+      "What actually changed between HTTP/1.1, HTTP/2 and HTTP/3, and where do resource hints like preload and preconnect fit in?",
+      "After a deploy, some users keep seeing the old version of the app for days. Where could the stale copy be living?"
+    ],
+    "a": [
+      {
+        "q": "Cache headers",
+        "t": "no-cache doesn't mean don't cache. It means the browser may store the response but must revalidate it with the server before every use. no-store means never write it anywhere, which is what I'd use for sensitive responses. Revalidation works through validators. The server sends an ETag, and the browser stores the response and reuses it while it's fresh under max-age. Once it's stale, or on every use with no-cache, the browser sends If-None-Match with that ETag. If nothing changed, the server answers 304 Not Modified with no body. That's still a round trip, but a cheap one. For a built app, the pattern splits by file type. JS, CSS and fonts have a content hash in the filename, so a given URL never changes content. Those get max-age=31536000, a year, plus immutable, so the browser doesn't revalidate even on reload. Firefox and Safari honor it. Chrome ignores it, but it already skips revalidating subresources on a normal reload. The HTML gets no-cache, because it's the entry point that references the new hashes. If the HTML is cached for long, users keep loading old bundles."
+      },
+      {
+        "q": "HTTP versions",
+        "t": "HTTP/1.1 handles one request at a time per connection, so browsers open about six connections per origin, which is why we used to concatenate files and build sprites. HTTP/2 multiplexes many streams over one TCP connection, so small requests got cheap. But head-of-line blocking didn't go away, it moved down from HTTP to TCP. TCP delivers bytes strictly in order, so one lost packet stalls every stream on the connection until it's retransmitted. HTTP/3 runs over QUIC, on top of UDP, where each stream is ordered independently, so a lost packet only stalls its own stream. QUIC also combines the transport and TLS handshakes, which saves a round trip on new connections, and that matters most on mobile. Resource hints sit on top of this. preconnect warms up a connection to a critical third-party origin. preload fetches something the browser would discover late. fetchpriority adjusts priority. modulepreload fetches and parses a module ahead of time. They backfire when overused. Ten preloads compete with the one resource that's actually critical, extra preconnects waste sockets, and an unused preload is pure waste, which Chrome warns about in the console."
+      },
+      {
+        "q": "Stale app",
+        "t": "There are three places. First, the browser HTTP cache, if the HTML was served with a long max-age instead of no-cache. Second, the CDN. If HTML is cached at the edge with a long s-maxage and we don't purge on deploy, every visitor gets the old entry point. For HTML on the CDN, stale-while-revalidate is useful, because it serves the cached copy instantly and refreshes it in the background. But it also means someone gets the old version after each change, by design. Third, and the nastiest, a service worker. It's a programmable proxy between the page and the network, so it can precache the app shell, serve from cache and work offline. But if it serves HTML cache-first, the new version only arrives on the next visit. And a new worker waits until every tab using the old one is closed. A buggy worker can pin users to a broken build. So I serve HTML network-first, version the caches, show an update-available prompt, and keep a kill-switch worker ready. I also keep old hashed chunks on the CDN for a while, or users on old HTML hit 404s on lazy-loaded routes."
+      }
+    ],
+    "kill": "<b>\"no-cache means the browser doesn't cache it\"</b> — that's no-store. no-cache stores the response and revalidates it before every use, usually with a cheap 304."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Cache-Control: no-cache запрещает браузеру вообще сохранять ответ.",
+        "HTTP/2 полностью устранил head-of-line blocking: потерянный пакет задерживает только свой поток."
+      ],
+      "en": [
+        "Cache-Control: no-cache tells the browser not to store the response at all.",
+        "HTTP/2 fully eliminated head-of-line blocking: a lost packet only delays its own stream."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Браузер шлёт [[If-None-Match]] с сохранённым [[ETag]], и если ничего не изменилось, сервер отвечает [[304|304 Not Modified]].",
+        "Файлы с хешем в имени получают длинный max-age плюс [[immutable]], а HTML получает [[no-cache]].",
+        "HTTP/3 работает поверх [[QUIC]], поэтому потерянный пакет стопорит только свой поток."
+      ],
+      "en": [
+        "The browser sends [[If-None-Match]] with the stored [[ETag]], and if nothing changed the server replies [[304|304 Not Modified]].",
+        "Hashed assets get a long max-age plus [[immutable]], while the HTML gets [[no-cache]].",
+        "HTTP/3 runs over [[QUIC]], so a lost packet stalls only its own stream."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Перепроверка кеша через ETag",
+        "items": [
+          "Сервер отдаёт ответ с ETag и max-age",
+          "Браузер хранит ответ и использует, пока он свежий",
+          "Ответ устарел: браузер шлёт If-None-Match с ETag",
+          "Сервер сверяет и отвечает 304 без тела",
+          "Браузер снова использует сохранённое тело"
+        ]
+      },
+      "en": {
+        "title": "Cache revalidation with ETag",
+        "items": [
+          "The server sends the response with an ETag and max-age",
+          "The browser stores it and reuses it while fresh",
+          "Once stale, the browser sends If-None-Match with the ETag",
+          "The server compares and answers 304 with no body",
+          "The browser reuses the stored body again"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "no-cache: may be stored but must be revalidated before every use",
+      "e": "Response MUST NOT be used to satisfy any other request without forwarding it for validation.",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc9111.html#name-no-cache-2"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "no-store: never store anywhere",
+      "e": "A cache MUST NOT store any part of either the immediate request or the response.",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc9111.html#name-no-store-2"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Revalidation via ETag / If-None-Match; 304 Not Modified has no body",
+      "e": "A 304 response is terminated by the end of the header section; it cannot contain content.",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc9110.html#name-304-not-modified"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Hashed assets: max-age=31536000 (one year) + immutable; HTML: no-cache",
+      "e": "Static assets: max-age=31536000, immutable; index.html: Cache-Control: no-cache.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "immutable honored by Firefox and Safari, ignored by Chrome",
+      "e": "BCD immutable: Chrome false, Firefox 49 (desktop only), Safari 11.",
+      "u": [
+        "https://github.com/mdn/browser-compat-data/blob/main/http/headers/Cache-Control.json"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Chrome skips revalidating subresources on normal reload",
+      "e": "Chrome now only validates the main resource and continues with a regular page load.",
+      "u": [
+        "https://blog.chromium.org/2017/01/reload-reloaded-faster-and-leaner-page_26.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "HTTP/1.1: one request at a time per connection; browsers open ~6 connections per origin",
+      "e": "More common use of 6 parallel connections; pipelining not activated by default in modern browsers.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Connection_management_in_HTTP_1.x"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "HTTP/2 multiplexes over one TCP connection; TCP-level HOL blocking stalls all streams on packet loss",
+      "e": "A lost or reordered packet causes all active transactions to experience a stall.",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc9114.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "HTTP/3 over QUIC (UDP), streams independent so loss only stalls its stream; QUIC combines transport and TLS handshakes",
+      "e": "QUIC handshake combines negotiation of cryptographic and transport parameters; no ordering between bytes on different streams.",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc9000.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "modulepreload fetches and parses a module ahead of time",
+      "e": "Fetch a module script, parse and compile it, and store it in the document's module map.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/modulepreload"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Overusing preload backfires; Chrome warns in console about unused preloads",
+      "e": "'...was preloaded using link preload but not used within a few seconds...' (blog source; web.dev: too many prioritized = none).",
+      "u": [
+        "https://www.debugbear.com/blog/rel-preload-problems"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "s-maxage controls shared/CDN cache; stale-while-revalidate serves stale copy while revalidating in background",
+      "e": "s-maxage for shared caches only; stale-while-revalidate reuses stale response while revalidating in background.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "New service worker waits until no tabs are controlled by the old one",
+      "e": "Updated service worker delays activating until the existing one is no longer controlling clients.",
+      "u": [
+        "https://web.dev/articles/service-worker-lifecycle"
+      ]
+    }
+  ]
+}

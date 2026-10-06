@@ -1,0 +1,355 @@
+{
+  "n": 34,
+  "tag": "Frontend core · JS",
+  "sec": "js",
+  "core": [
+    49
+  ],
+  "ru": {
+    "topic": "this, прототипы, равенство, копирование",
+    "qs": [
+      "Метод работает при вызове obj.method(), но ломается, если передать его как колбэк. Что определяет this и чем здесь отличаются стрелочные функции?",
+      "Говорят, что class в JavaScript — просто синтаксический сахар. Что происходит под капотом и чем вам обходится стрелочная функция в поле класса?",
+      "Когда вы вообще пишете == вместо === и как безопасно скопировать вложенный объект состояния?"
+    ],
+    "a": [
+      {
+        "q": "Правила this",
+        "t": "this определяется в момент вызова, а не там, где функция написана, и я проверяю правила по порядку. Если это стрелочная функция, правила не применяются — она берёт this лексически, из окружающей области. Иначе, если функцию вызвали через new, this — это только что созданный объект. Если через call, apply или bind, то this — это то, что я передал. Если как obj.method(), то this — это obj. А при обычном вызове работает правило по умолчанию: undefined в strict mode (строгом режиме), а модули и классы всегда строгие, или globalThis в нестрогом коде. Поэтому obj.method, переданный как колбэк (функция, которую вызовет кто-то другой), ломается: его вызывают как обычную функцию, и неявная привязка теряется. У стрелочных функций нет своего arguments, поэтому я беру rest-параметры (...args). И у них нет prototype, так что new на стрелке бросает TypeError. Ловушка, за которой я слежу, — стрелка как метод в литерале объекта: она видит не объект, а внешний this."
+      },
+      {
+        "q": "Class и прототипы",
+        "t": "Объявление class создаёт функцию-конструктор, а методы попадают в ClassName.prototype, так что все экземпляры делят одну копию. Когда я вызываю user.greet(), движок ищет greet на самом экземпляре, не находит и идёт вверх по цепочке прототипов (сначала User.prototype, потом Object.prototype), пока не найдёт метод или не упрётся в null. extends связывает две цепочки: Child.prototype с Parent.prototype для методов экземпляра и сам Child с Parent для статических членов. Но class добавляет и настоящие вещи: тело всегда в строгом режиме, методы неперечисляемые, а вызов класса без new бросает ошибку. Поля класса работают иначе: они присваиваются каждому экземпляру в конструкторе. Значит, handleClick = () => {...} создаёт новую функцию на каждый экземпляр. Взамен я получаю стабильный this для колбэков (функций, которые вызовет кто-то другой). Но это память на каждый объект, метода нет на прототипе, поэтому подкласс не может вызвать super.handleClick(), и в тестах его не замокать (не подменить заглушкой) через прототип. Для пары компонентов это неважно, а для тысяч объектов я оставлю метод на прототипе и сделаю bind там, где его передаю."
+      },
+      {
+        "q": "Равенство и копии",
+        "t": "По умолчанию я пишу ===, потому что == запускает нестрогое сравнение с приведением типов, и результаты трудно держать в голове: пустая строка == 0 даёт true, [] == false тоже true, а null == 0 даёт false. Намеренно я использую == в одном месте: x == null. Это true для null и undefined и на практике больше ни для чего, то есть заменяет двойную проверку. Для NaN не работает ни то, ни другое, там Number.isNaN или Object.is. С копированием так: spread (оператор ...) и Object.assign делают поверхностную копию, только один уровень собственных перечисляемых свойств. Вложенные объекты остаются общими, мутация вложенного массива в копии меняет оригинал, а мемоизированный (закешированный) дочерний компонент, который сравнивает эту вложенную ссылку, не перерисуется. structuredClone делает настоящую глубокую копию и понимает Map, Set, Date и даже циклические ссылки. Но он бросает ошибку на функциях и DOM-узлах, а экземпляры классов возвращает простыми объектами без прототипа. Копирование через JSON.stringify и JSON.parse ещё хуже: Date превращаются в строки, undefined пропадает. А в React я обычно вообще не делаю глубоких копий: копирую только тот путь, который меняю."
+      }
+    ],
+    "kill": "<b>«Стрелочная функция привязывает this к объекту, в котором объявлена»</b> — нет, стрелка в литерале объекта берёт this из внешней области, а в модуле это часто undefined."
+  },
+  "en": {
+    "topic": "this, prototypes, equality, copying",
+    "qs": [
+      "A method works when called as obj.method() but breaks when you pass it as a callback. What decides this, and how do arrow functions change the picture?",
+      "People say class in JavaScript is just sugar. What's actually happening underneath, and what does a class-field arrow function cost you?",
+      "When would you ever use == instead of ===, and how do you copy a nested state object safely?"
+    ],
+    "a": [
+      {
+        "q": "Rules of this",
+        "t": "this is decided at call time, not where the function is written, and I check the rules in order. If it's an arrow function, none of the rules apply — it takes this lexically from the enclosing scope. Otherwise, if it's called with new, this is the freshly created object. If it's called through call, apply or bind, this is whatever I passed. If it's called as obj.method(), this is obj. And a plain call gets the default: undefined in strict mode, which covers modules and classes, or globalThis in sloppy code. That's why passing obj.method as a callback breaks it. The callback is invoked as a plain function, so the implicit binding is gone. Arrows also have no own arguments object, so I use rest parameters. And they have no prototype, so calling new on an arrow throws a TypeError. The trap I watch for is an arrow used as a method in an object literal: it doesn't see the object, it sees the outer this."
+      },
+      {
+        "q": "Class as sugar",
+        "t": "A class declaration creates a constructor function, and the methods go onto ClassName.prototype, so every instance shares one copy. When I call user.greet(), the engine looks for greet on the instance, doesn't find it, and walks up the prototype chain (User.prototype, then Object.prototype) until it finds it or hits null. extends links two chains: Child.prototype to Parent.prototype for instance methods, and Child to Parent itself for static members. Class does add real things on top: the body is always strict, methods are non-enumerable, and calling a class without new throws. Class fields are different. They're assigned on each instance in the constructor, so handleClick = () => {...} allocates a new function per instance. That buys a stable this for callbacks. But it costs memory per object, it's not on the prototype so a subclass can't call super.handleClick(), and you can't spy on it through the prototype in tests. For a handful of components it doesn't matter. For thousands of objects I'd keep a prototype method and bind it where I pass it."
+      },
+      {
+        "q": "Equality and copies",
+        "t": "I default to === because == runs loose equality with type coercion, and the results are hard to hold in your head: an empty string == 0 is true, [] == false is true, but null == 0 is false. The one place I use == on purpose is x == null. It's true for null and undefined and in practice nothing else, so it replaces a two-part check. For NaN neither works, so I use Number.isNaN or Object.is. For copying, spread and Object.assign are shallow: one level of own enumerable properties. Nested objects stay shared, so mutating the copy's nested array mutates the original, and a memoized child that compares that nested reference won't re-render. structuredClone makes a real deep copy and handles Map, Set, Date and even cycles. But it throws on functions and DOM nodes, and class instances come back as plain objects without their prototype. A JSON round trip is worse: Dates become strings and undefined disappears. In React I usually don't deep copy at all. I copy only the path I change."
+      }
+    ],
+    "kill": "<b>\"An arrow function binds this to the object it's defined in\"</b> — no, an arrow in an object literal takes this from the outer scope, which in a module is often undefined."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Стрелочная функция берёт this от того, кто её вызывает, поэтому obj.arrow() привязывает this к obj.",
+        "structuredClone сохраняет прототип экземпляров класса, так что методы на копии продолжают работать."
+      ],
+      "en": [
+        "An arrow function takes this from whoever calls it, so obj.arrow() binds this to obj.",
+        "structuredClone keeps the prototype of class instances, so methods still work on the copy."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Стрелочные функции берут this [[лексически]] из окружающей области и не могут вызываться через [[new]].",
+        "x == null истинно для null и [[undefined]], поэтому это единственное намеренное использование ==.",
+        "Spread делает [[поверхностную]] копию, а [[structuredClone]] делает глубокую, но бросает ошибку на функциях."
+      ],
+      "en": [
+        "Arrow functions take this [[lexically]] from the enclosing scope and can't be called with [[new]].",
+        "x == null is true for null and [[undefined]], which is why it's the one intentional use of ==.",
+        "Spread makes a [[shallow]] copy, while [[structuredClone]] makes a deep one but throws on functions."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Как определяется this",
+        "items": [
+          "Стрелочная функция? this из окружающей области",
+          "Вызов через new? this — новый объект",
+          "call, apply или bind? this — переданное значение",
+          "Вызов obj.method()? this — это obj",
+          "Обычный вызов: undefined в strict mode, иначе globalThis"
+        ]
+      },
+      "en": {
+        "title": "How this is resolved",
+        "items": [
+          "Arrow function? this comes from the enclosing scope",
+          "Called with new? this is the new object",
+          "call, apply or bind? this is the passed value",
+          "Called as obj.method()? this is obj",
+          "Plain call: undefined in strict mode, else globalThis"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "this is determined at call time (runtime binding), not where the function is defined",
+      "e": "MDN: value of this is determined by how a function is called (runtime binding).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Arrow functions take this lexically from the enclosing scope; call/apply/bind can't rebind it",
+      "e": "Arrow functions inherit this from enclosing scope; fn.call({}) === obj still true (binding ignored).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Precedence order: new > call/apply/bind > obj.method() > default binding",
+      "e": "Bound function constructed with new: 'the provided this value is ignored' — so new beats bind, as the order implies.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Plain call: this is undefined in strict mode, globalThis in sloppy mode; classes and modules are always strict",
+      "e": "Standalone call: strict → undefined, non-strict → globalThis; class bodies strict; module top-level this is undefined.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Passing obj.method as a callback loses implicit binding",
+      "e": "MDN callbacks example: [1,2,3].forEach(logThis) logs undefined in strict mode unless a thisArg is passed.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Arrows have no own arguments object; use rest parameters",
+      "e": "Arrow functions have no own arguments; MDN recommends rest parameters instead.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Arrows have no prototype, and new on an arrow throws TypeError",
+      "e": "new Foo() → TypeError: Foo is not a constructor; 'prototype' in Foo → false.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Arrow used as an object-literal method sees the outer this, not the object (kill: in a module often undefined)",
+      "e": "obj.b() with b: () => this logs undefined, Window — not obj. Module top-level this is undefined.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Class methods live on ClassName.prototype and are shared by all instances",
+      "e": "Methods defined in classes are placed on the prototype and shared across all instances.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_classes"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Property lookup walks the prototype chain until found or null",
+      "e": "Chain continues until reaching an object with null as its prototype.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Inheritance_and_the_prototype_chain"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "extends 'just' links one prototype to another",
+      "e": "extends sets the prototype of both ChildClass (to ParentClass) and ChildClass.prototype (to ParentClass.prototype).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/extends"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Class body is always strict; methods are non-enumerable; calling a class without new throws",
+      "e": "Class methods are 'writable, non-enumerable, and configurable'; class body strict; MyClass() → TypeError without new (Using classes).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Method_definitions"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Class fields are set on each instance during construction, so an arrow field allocates a function per instance",
+      "e": "Public instance fields are defined on each instance at construction ([[DefineOwnProperty]], not assignment), not on the prototype.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Public_class_fields"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Arrow field isn't on the prototype, so a subclass can't call super.handleClick()",
+      "e": "super refers to the base class prototype (base instance methods, not fields).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Public_class_fields"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "'' == 0 is true, [] == false is true, null == 0 is false",
+      "e": "MDN examples: \"\" == 0 true; [] == false true; null == 0 false.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "x == null is true for null and undefined and in practice nothing else",
+      "e": "null/undefined only loosely equal each other; sole exception document.all (hedged by 'in practice').",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Equality"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "NaN: neither == nor === works; use Number.isNaN or Object.is",
+      "e": "NaN == NaN false, NaN === NaN false, Object.is(NaN, NaN) true.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Spread and Object.assign copy one level of own enumerable properties (shallow)",
+      "e": "Object spread is a shallow copy of own enumerable properties; similar to Object.assign (which triggers setters).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Memoized child comparing a shared nested reference won't re-render",
+      "e": "memo compares props shallowly with Object.is; same reference → skip.",
+      "u": [
+        "https://react.dev/reference/react/memo"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "structuredClone deep-copies Map, Set, Date and cycles",
+      "e": "Supports Map, Set, Date; handles circular references via a map of visited objects.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "structuredClone throws on functions and DOM nodes; class instances lose their prototype",
+      "e": "Function objects and DOM nodes → DataCloneError; prototype chain is not walked or duplicated.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "JSON round trip turns Dates into strings and drops undefined",
+      "e": "undefined properties are omitted; Date serialized via toJSON to ISO string.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: arrow takes this from its caller, so obj.arrow() binds obj (must be false)",
+      "e": "Correctly false: obj.b() with arrow logs outer this, not obj.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+      ]
+    }
+  ]
+}

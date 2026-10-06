@@ -1,0 +1,102 @@
+{
+  "n": 23,
+  "tag": "Core-40 #38 · behavioral",
+  "sec": "behav",
+  "core": [
+    38
+  ],
+  "ru": {
+    "topic": "Tell me about yourself",
+    "qs": [
+      "Версия на 60–90 секунд. Скажи её целиком.",
+      "Версия на 30 секунд для рекрутера.",
+      "Чего ты никогда не говоришь и чем заканчиваешь?"
+    ],
+    "a": [
+      {
+        "q": "90 секунд",
+        "t": "Я senior frontend-инженер, около десяти лет, строил продуктовые интерфейсы. Сейчас я в Dats.Team, где вёл миграцию на Next.js App Router и интернационализацию больше чем на пятьдесят стран. С апреля 2026 года я публично строю AI-продукты. Собрал полный RAG-пайплайн — chunking, эмбеддинги, retrieval, reranking — с эвал-сьютом, он живёт на сайте. Сейчас строю research-агента на TypeScript и Anthropic SDK: по имени компании собирает структурированное досье со ссылками на источники. Ищу роль product engineer в небольшом AI-стартапе — там, где моя фронтовая глубина и AI-работа нужны с первого дня одновременно."
+      },
+      {
+        "q": "30 секунд",
+        "t": "Senior frontend, десять лет продуктовых интерфейсов. С апреля 2026 года строю AI-продукты публично: RAG с эвалами на сайте, сейчас research-агент на Anthropic SDK. Ищу product engineer в AI-стартапе. Всё. Рекрутер услышал уровень, доказательство и куда тебя ставить — больше ему на этом этапе не нужно."
+      },
+      {
+        "q": "Запреты",
+        "t": "Никогда: «career switcher», «learning AI», «transitioning», «trying to get into». Это язык человека, который просит поверить на слово. Ты senior-инженер, который строит AI-продукты — это факт, у него есть ссылки. И заканчиваешь не хронологией, а запросом: какую роль ищешь и почему именно такую. Тогда интервьюер знает, что с тобой делать. Ответ без посадки — «…ну вот, как-то так» — стирает всё, что было до него."
+      }
+    ],
+    "kill": "Хронология с 2016 года. И любое слово из списка «switcher / learning / transitioning» — после него весь остальной ответ слушают как оправдание."
+  },
+  "en": {
+    "topic": "Tell me about yourself",
+    "qs": [
+      "The 60–90 second version. Say the whole thing.",
+      "The 30-second version, for a recruiter.",
+      "What do you never say, and how do you land it?"
+    ],
+    "a": [
+      {
+        "q": "90 seconds",
+        "t": "I'm a senior frontend engineer with about ten years of experience — I've spent my career shipping product UIs. Right now I'm at Dats.Team, where I led a migration to the Next.js App Router and built internationalization for more than fifty countries. Since April 2026 I've been building AI products in public. I shipped a full RAG pipeline — chunking, embeddings, retrieval, reranking — with an eval suite, and it's live on my site. Now I'm building a research agent in TypeScript on the Anthropic SDK: it takes a company name and produces a structured, fully-cited dossier. I'm looking for a product engineer role at a small AI startup — a place where my frontend depth and my AI engineering work are both useful from day one."
+      },
+      {
+        "q": "30 seconds",
+        "t": "Senior frontend engineer, ten years of shipping product UIs. Since April 2026 I've been building AI products in public — a RAG pipeline with evals that's live on my site, and now a research agent on the Anthropic SDK. I'm looking for a product engineer role at an AI startup. That's it. The recruiter heard the level, the proof, and where to place you — nothing else is needed at this stage."
+      },
+      {
+        "q": "Never",
+        "t": "Never: career switcher, learning AI, transitioning, trying to get into. That's the language of someone asking to be taken on faith. You're a senior engineer who builds AI products — it's a fact, and it has links. And you land on the ask, not on chronology: which role you want and why that one. Then the interviewer knows what to do with you. An answer with no landing — so, yeah, that's me — erases everything before it."
+      }
+    ],
+    "kill": "A chronology starting in 2016. And any word from the switcher / learning / transitioning list — after it, the rest of the answer is heard as an apology."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Хорошее self-intro начинается с первого места работы и идёт по хронологии.",
+        "Слово «transitioning» звучит честно и располагает интервьюера."
+      ],
+      "en": [
+        "A good self-intro starts with your first job and goes chronologically.",
+        "The word 'transitioning' sounds honest and wins the interviewer over."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "По порядку: кто я сейчас, что [[строю|делаю]] в этом году, что [[ищу|хочу]].",
+        "Никогда: career switcher, learning AI, [[transitioning]].",
+        "Заканчиваю не хронологией, а [[запросом|ask|посадкой]]: какую роль ищу и почему."
+      ],
+      "en": [
+        "In order: who I am now, what I've [[built|been building]] this year, what I'm [[looking for|after]].",
+        "Never: career switcher, learning AI, [[transitioning]].",
+        "I end on the [[ask|landing]], not on chronology: which role and why."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Anthropic has a TypeScript SDK",
+      "e": "npm package @anthropic-ai/sdk",
+      "u": [
+        "https://github.com/anthropics/anthropic-sdk-typescript"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Next.js App Router is the successor to the Pages Router",
+      "e": "Official guide for migrating from Pages to the App Router",
+      "u": [
+        "https://nextjs.org/docs/app/guides/migrating/app-router-migration"
+      ]
+    }
+  ]
+}

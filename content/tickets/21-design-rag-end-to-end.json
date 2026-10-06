@@ -1,0 +1,203 @@
+{
+  "n": 21,
+  "tag": "Core-40 #36 · system design",
+  "sec": "sysd",
+  "core": [
+    36
+  ],
+  "ru": {
+    "topic": "Дизайн: RAG end-to-end",
+    "qs": [
+      "Пройди пайплайн от загрузки документа до ответа. Каждая стадия и выбор на ней.",
+      "Хранение и индекс: pgvector или отдельная база? Метаданные, обновления, удаления.",
+      "Обслуживание запросов: бюджет задержки, кэш, цитаты, права доступа, мониторинг."
+    ],
+    "a": [
+      {
+        "q": "Пайплайн",
+        "t": "Загрузка, потом парсинг — PDF и HTML в текст, и это недооценённая стадия: таблицы и вёрстка ломаются чаще всего. Chunking с учётом структуры, двести–пятьсот токенов, с перекрытием. Эмбеддинг одной моделью, батчами. Хранение: текст куска, метаданные и вектор. На запросе: эмбеддю вопрос, достаю top-20, опционально гибрид с BM25, реранкер до пяти, собираю промпт с пронумерованными кусками и инструкцией отвечать только из контекста и ставить ссылки на номера. Генерирую, проверяю цитаты постобработкой, отдаю ответ вместе с источниками."
+      },
+      {
+        "q": "Хранение",
+        "t": "pgvector с индексом HNSW (приближённый поиск соседей) — когда Postgres уже есть и корпус умеренный: одна база, транзакции, и права доступа через обычный join. В документации есть только лимит Postgres в 32 ТБ на непартиционированную таблицу, а порога производительности нет, поэтому меряю на своих данных. Отдельная векторная база — на масштабе или когда нужна продвинутая фильтрация и скорость. Метаданные обязательны: id документа, тенант или пользователь, раздел, версия, время. Обновление документа — перечанкить его и удалить старые куски по id документа; поле версии спасает от устаревших кусков, которые иначе живут вечно. Ингестия должна быть идемпотентной: повторная загрузка не плодит дубли."
+      },
+      {
+        "q": "Обслуживание",
+        "t": "Бюджет примерный: эмбеддинг запроса и поиск по индексу — малая часть общего времени, реранкер сто–триста миллисекунд, генерация одна–три секунды, со стримингом. Кэширую эмбеддинги запросов, а ответы на повторы — семантическим кэшем. Фильтр по тенанту — внутри запроса, через WHERE или namespace, а не в коде после выдачи, где одна забытая проверка сливает чужие данные. С HNSW pgvector применяет WHERE после сканирования индекса, и селективный фильтр может недобрать строк; лечится итеративным сканированием, частичным индексом или партицией на тенанта. Цитаты принудительные: утверждения без куска-источника выбрасываются. Мониторю recall на золотом наборе, faithfulness, перцентили задержки, стоимость ответа и долю «контекст не найден»."
+      }
+    ],
+    "kill": "Забыть парсинг и права доступа. И описать только счастливый путь — интервьюер спросит «как узнаете, что стало хуже?», и без эвала ответа нет."
+  },
+  "en": {
+    "topic": "Design: RAG end-to-end",
+    "qs": [
+      "Walk the pipeline from document upload to answer. Every stage and the choice at it.",
+      "Storage and indexing: pgvector or a dedicated store? Metadata, updates, deletes.",
+      "Serving: latency budget, caching, citations, permissions, monitoring."
+    ],
+    "a": [
+      {
+        "q": "Pipeline",
+        "t": "Upload, then parsing — PDF and HTML to text, and it's the underrated stage: tables and layout break most often. Structure-aware chunking, two to five hundred tokens, with overlap. Embedding with one model, in batches. Storage: chunk text, metadata and the vector. At query time: embed the question, pull the top twenty, optionally hybrid with BM25, rerank down to five, build the prompt with numbered chunks and an instruction to answer only from context and cite by number. Generate, verify the citations in post-processing, return the answer with its sources."
+      },
+      {
+        "q": "Storage",
+        "t": "pgvector with an HNSW index when Postgres already exists and the corpus is moderate: one database, transactions, and permissions through an ordinary join. The only documented ceiling is Postgres's 32 TB per non-partitioned table, not a performance threshold, so I benchmark on my own data. A dedicated vector store at scale, or when you need advanced filtering and speed. Metadata is mandatory: document id, tenant or user, section, version, timestamp. Updating a document means re-chunking it and deleting the old chunks by document id; a version field saves you from stale chunks that otherwise live forever. Ingestion has to be idempotent: uploading twice doesn't create duplicates."
+      },
+      {
+        "q": "Serving",
+        "t": "Rough budget: query embedding and index search are a small part of the total, the reranker a hundred to three hundred milliseconds, generation one to three seconds, streamed. I cache query embeddings, and answers to recurring questions — a semantic cache. The tenant filter lives inside the query, a WHERE clause or a namespace, never in app code after retrieval, where one missed check leaks data. With HNSW, pgvector applies WHERE after the index scan, so a selective filter can return too few rows; iterative scans, partial indexes or per-tenant partitions fix it. Citations are enforced: unsupported claims get dropped. I monitor golden-set recall, faithfulness, latency percentiles, cost per answer and the no-context rate."
+      }
+    ],
+    "kill": "Forgetting parsing and permissions. And describing only the happy path — the interviewer will ask how you'd know it got worse, and without an eval there's no answer."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Отфильтровать тенантов в коде приложения после выборки top-k — достаточно надёжно.",
+        "Обновление документа — просто добавить новые куски; старые не мешают."
+      ],
+      "en": [
+        "Filtering tenants in app code after retrieving the top-k is safe enough.",
+        "Updating a document is just adding new chunks; the old ones don't matter."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Фильтр по тенанту — [[внутри запроса|в самом запросе]], а не в коде после выдачи.",
+        "pgvector с индексом [[HNSW]] — мой дефолт, когда Postgres уже есть.",
+        "Обновление: перечанкить и удалить старые куски по [[id документа|document id|doc id]]; поле [[версии|version]] спасает от устаревших."
+      ],
+      "en": [
+        "The tenant filter goes [[inside the query|in the query]], never in app code after retrieval.",
+        "pgvector with an [[HNSW]] index is my default when Postgres is already there.",
+        "Updates: re-chunk and delete old chunks by [[document id|doc id]]; a [[version]] field prevents stale chunks."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "RAG end-to-end, от загрузки до ответа",
+        "items": [
+          "Загрузка документа, парсинг PDF/HTML в текст",
+          "Chunking с учётом структуры, с перекрытием",
+          "Эмбеддинг батчами; хранение: текст, метаданные, вектор",
+          "Запрос: эмбеддинг вопроса → top-20",
+          "Реранкер → до пяти кусков",
+          "Промпт с пронумерованными кусками → генерация → проверка цитат"
+        ]
+      },
+      "en": {
+        "title": "RAG end-to-end, upload to answer",
+        "items": [
+          "Upload the document, parse PDF/HTML to text",
+          "Structure-aware chunking with overlap",
+          "Embed in batches; store text, metadata, vector",
+          "Query: embed the question → top-20",
+          "Rerank down to 5 chunks",
+          "Prompt with numbered chunks → generate → verify citations"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Chunks of roughly 200–500 tokens",
+      "e": "Chunks 'usually no more than a few hundred tokens'",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Hybrid retrieval: embeddings combined with BM25, then a reranker narrows candidates",
+      "e": "BM25 + embeddings merged via rank fusion; reranker scores candidates (150 retrieved → top 20 kept)",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "pgvector supports an HNSW index",
+      "e": "Supports HNSW (multilayer graph, better speed-recall) and IVFFlat indexes",
+      "u": [
+        "https://github.com/pgvector/pgvector"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "soft",
+      "c": "pgvector is fine until 'a few million vectors'",
+      "e": "README gives no vector-count threshold; only table size limits (32 TB per non-partitioned table). Rule of thumb, not documented",
+      "u": [
+        "https://github.com/pgvector/pgvector"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Tenant filtering must happen before similarity search, otherwise a user retrieves someone else's document",
+      "e": "With approximate indexes 'filtering is applied after the index is scanned'; iterative scans (0.8.0), partial indexes, partitioning fix recall",
+      "u": [
+        "https://github.com/pgvector/pgvector"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Reranker latency about 100–300 ms",
+      "e": "Vendor blog (last resort): Cohere rerank 3.5 ~171 ms on 12 KB payload, ~459 ms on 150 KB",
+      "u": [
+        "https://zeroentropy.dev/articles/lightning-fast-reranking-with-zerank-1/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "soft",
+      "c": "Query embedding and index search take tens of milliseconds each",
+      "e": "No primary benchmark found; hosted embedding APIs add network round-trip. Deployment-dependent estimate",
+      "u": [
+        "https://zeroentropy.dev/articles/lightning-fast-reranking-with-zerank-1/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Faithfulness and context recall are standard RAG eval metrics",
+      "e": "Ragas lists Context Recall, Context Precision, Faithfulness, Response Relevancy",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix2",
+      "c": "The only documented pgvector ceiling is Postgres's 32 TB per non-partitioned table; there's no documented performance threshold, so benchmark on your own data.",
+      "e": "pgvector FAQ 'How many vectors can be stored in a single table?' — 32 TB by default; partitioning scales further.",
+      "u": [
+        "https://github.com/pgvector/pgvector#frequently-asked-questions"
+      ]
+    }
+  ]
+}

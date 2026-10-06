@@ -1,0 +1,300 @@
+{
+  "n": 38,
+  "tag": "Frontend core · TypeScript",
+  "sec": "ts",
+  "core": [
+    53
+  ],
+  "ru": {
+    "topic": "Граница runtime: валидация и стримы",
+    "qs": [
+      "Ответ API, значение из localStorage и аргументы tool call от LLM в итоге имеют тот тип, к которому ты их привёл через as. Что с этим не так и что ты делаешь вместо этого?",
+      "Расскажи, как ты обрабатываешь стриминговый ответ LLM в TypeScript. Как ты типизируешь события?",
+      "Включил бы ты noUncheckedIndexedAccess и exactOptionalPropertyTypes в большой существующей кодовой базе? Что они ловят и чего это стоит?"
+    ],
+    "a": [
+      {
+        "q": "Валидация границ",
+        "t": "Типы стираются при компиляции. В runtime (во время выполнения) ничто не проверяет, что JSON соответствует моему интерфейсу, поэтому response.json() с типом any или мой as User — это обещание, которое никто не исполняет. Всё, что пересекает границу, остаётся unknown, пока не проверено: ответы API, localStorage, переменные окружения и особенно вывод модели. Аргументы tool call (вызова инструмента) — это сгенерированный текст. В них может не быть поля или тип может быть не тот. Strict-режим для инструментов (strict: true) гарантирует структуру JSON, но не все ограничения схемы применяются при генерации: minimum и maximum, например, нет, а обрыв по max_tokens оставляет недописанный JSON. Поэтому я пишу одну zod-схему и вывожу тип через z.infer, и схема становится единственным источником правды. На границе я использую safeParse: он возвращает success с data или error с issues, а не бросает исключение. Для tool call я отправляю эти issues обратно модели, чтобы она исправилась. parse, который бросает, я оставляю для fail-fast (падения сразу), например для конфига окружения при старте. В zod 4 форматы строк вынесены на верхний уровень, как z.email(), а старая форма через метод устарела. Вместо .strict() рекомендуют z.strictObject, хотя .strict() считается legacy (устаревшим API) и по-прежнему работает."
+      },
+      {
+        "q": "Типизированный стрим",
+        "t": "Стрим (поток ответа) Anthropic — это последовательность server-sent events (SSE, событий, которые сервер шлёт по одному открытому HTTP-соединению) с полем type у каждого: message_start, затем для каждого content block (блока контента) content_block_start, несколько content_block_delta и content_block_stop, потом message_delta и message_stop, а между ними могут приходить ping. Я типизирую это как размеченное объединение по type, и delta внутри content_block_delta — отдельное объединение: text_delta несёт text, input_json_delta несёт partial_json для аргументов инструмента. В reducer-е (функции, которая сворачивает события в состояние) я делаю switch по event.type, TypeScript сужает каждую ветку, и delta.text доступен только там, где он есть. В runtime (время выполнения) важны две вещи. Аргументы инструмента приходят кусками JSON, поэтому я накапливаю строку по index блока и делаю JSON.parse и валидацию только когда пришёл content_block_stop этого блока. И документация API прямо говорит, что могут появиться новые типы событий. Поэтому в default я оставляю присваивание в never для проверки полноты при компиляции, но в runtime логирую и игнорирую неизвестные события, а не бросаю ошибку. Иначе безобидное расширение API роняет чат-интерфейс."
+      },
+      {
+        "q": "Флаги строгости",
+        "t": "strict — это база, и с TypeScript 6.0 он включён по умолчанию. В него входят strictNullChecks, noImplicitAny, unknown для переменных в catch и другое. Два флага, которые я бы добавил, в strict не входят. noUncheckedIndexedAccess добавляет undefined к arr[i] и record[key], и это правда, потому что index signature (индексная сигнатура) не обещает, что ключ существует. Он ловит классическое падение на пустом массиве или отсутствующем ключе в словаре. exactOptionalPropertyTypes различает «ключа нет» и «ключ есть со значением undefined», так что timeout?: number больше не принимает явный undefined. Это ловит реальный баг: spread (разворот объекта) overrides с timeout: undefined поверх defaults молча затирает значение по умолчанию. Цена в большой кодовой базе — волна ошибок, многие из которых шум, вроде arr[0] сразу после проверки длины, плюс типы библиотек, не рассчитанные на exactOptionalPropertyTypes. Я бы включал по одному флагу, чинил по директориям и фиксировал baseline (снимок текущих ошибок) в CI (конвейере проверок), чтобы новые не появлялись. Расставлять non-null assertion (оператор !, утверждение «не null») только ради снижения счётчика значит убить весь смысл."
+      }
+    ],
+    "kill": "<b>«TypeScript проверит ответ по моему интерфейсу»</b> — типы стираются, и as User это непроверяемое обещание. То же с <b>доверием к аргументам tool call, раз у инструмента есть схема</b>: их надо валидировать как любой другой вход."
+  },
+  "en": {
+    "topic": "The runtime boundary: validation and streams",
+    "qs": [
+      "An API response, a localStorage value and an LLM's tool-call arguments all end up typed as whatever you cast them to. What's wrong with that, and what do you do instead?",
+      "Walk me through consuming a streaming LLM response in TypeScript. How do you type the events?",
+      "Would you turn on noUncheckedIndexedAccess and exactOptionalPropertyTypes in a large existing codebase? What do they catch, and what does it cost?"
+    ],
+    "a": [
+      {
+        "q": "Validating boundaries",
+        "t": "Types are erased at compile time. Nothing at runtime checks that JSON matches my interface, so response.json() typed as any, or me writing as User, is a promise nobody enforces. Anything crossing a boundary is unknown until validated: API responses, localStorage, env vars, and especially model output. Tool-call arguments are generated text. A field can be missing or have the wrong type. Strict tool use (strict: true) guarantees the JSON structure, but not every schema constraint is enforced during generation: minimum and maximum aren't, for example, and a max_tokens cutoff leaves unfinished JSON. So I write one zod schema and derive the type with z.infer, which makes the schema the single source of truth. At the boundary I use safeParse, which returns success with data, or an error with issues, instead of throwing. For a tool call I send those issues back to the model so it can correct itself. parse, which throws, I keep for fail-fast cases like env config at startup. In zod 4, string formats moved to top level, like z.email(), and the old method form is deprecated. z.strictObject is preferred over .strict(), which is legacy but still works."
+      },
+      {
+        "q": "Typed streams",
+        "t": "Anthropic's stream is a sequence of server-sent events: message_start, then for each content block a content_block_start, some content_block_delta events and a content_block_stop, then message_delta and message_stop, with ping events possibly in between. I type it as a discriminated union on type, and the delta inside content_block_delta is its own union: text_delta carries text, input_json_delta carries partial_json for tool arguments. In my reducer I switch on event.type and TypeScript narrows each branch, so I can only touch delta.text where it exists. Two things matter at runtime. Tool arguments arrive as JSON fragments, so I accumulate the string per block index and only JSON.parse and validate it when that block's content_block_stop arrives. And the API docs say new event types may be added. So my default branch keeps the never assignment for compile-time exhaustiveness, but at runtime it logs and ignores unknown events instead of throwing. Otherwise a harmless API addition takes down the chat UI."
+      },
+      {
+        "q": "Strictness flags",
+        "t": "strict is the baseline, and since TypeScript 6.0 it's on by default. It bundles strictNullChecks, noImplicitAny and unknown catch variables, among others. The two flags I'd add are not part of strict. noUncheckedIndexedAccess makes arr[i] and record[key] include undefined, which is the truth, because an index signature doesn't promise the key exists. It catches the classic crash on an empty array or a missing map entry. exactOptionalPropertyTypes separates 'key absent' from 'key present with undefined', so timeout?: number no longer accepts an explicit undefined. That catches a real bug: spreading overrides with timeout: undefined over defaults silently wipes the default. The cost in a big codebase is a wave of errors, many of them noise, like arr[0] right after a length check, plus library types not written for exactOptionalPropertyTypes. I'd turn on one flag at a time, fix by directory, and baseline the existing errors in CI so no new ones land. Sprinkling non-null assertions just to make the count go down defeats the purpose."
+      }
+    ],
+    "kill": "<b>\"TypeScript checks the response against my interface\"</b> — types are erased, so as User is an unchecked promise. Same with <b>trusting tool-call arguments because the tool has a schema</b>: validate them like any other input."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Если привести результат response.json() к типу User через as, TypeScript проверит форму ответа в runtime.",
+        "noUncheckedIndexedAccess и exactOptionalPropertyTypes оба включаются вместе с strict: true."
+      ],
+      "en": [
+        "Casting the result of response.json() to User with as makes TypeScript check the response shape at runtime.",
+        "noUncheckedIndexedAccess and exactOptionalPropertyTypes are both turned on by strict: true."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Вывод типа через [[z.infer]] делает zod-схему [[единственным источником правды|источником правды]].",
+        "[[safeParse]] возвращает объект результата вместо исключения, а [[parse]] бросает ошибку на невалидных данных.",
+        "Для вызова инструмента строки partial_json накапливают и парсят только по событию [[content_block_stop]]."
+      ],
+      "en": [
+        "Deriving the type with [[z.infer]] makes the zod schema the [[single source of truth|source of truth]].",
+        "[[safeParse]] returns a result object instead of throwing, while [[parse]] throws on invalid input.",
+        "For tool calls, accumulate the partial_json strings and parse them only on [[content_block_stop]]."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Обработка аргументов инструмента из стрима",
+        "items": [
+          "Описать zod-схему инструмента, тип вывести через z.infer",
+          "Накапливать строки partial_json по index блока",
+          "На content_block_stop сделать JSON.parse накопленной строки",
+          "Прогнать результат через safeParse по схеме",
+          "При успехе выполнить инструмент, иначе вернуть issues модели"
+        ]
+      },
+      "en": {
+        "title": "Handling streamed tool-call arguments",
+        "items": [
+          "Define the tool's zod schema, derive the type with z.infer",
+          "Accumulate partial_json strings per content block index",
+          "On content_block_stop, JSON.parse the accumulated string",
+          "Run the parsed value through safeParse against the schema",
+          "On success run the tool, otherwise send the issues back to the model"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Types are erased at compile time; nothing checks JSON matches an interface at runtime",
+      "e": "'Type annotations never change the runtime behavior of your program.' Lie correctly false.",
+      "u": [
+        "https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "response.json() is typed as any",
+      "e": "Local check of typescript@6.0.3 lib.dom.d.ts: Body.json(): Promise<any>; JSON.parse returns any.",
+      "u": [
+        "https://www.npmjs.com/package/typescript"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Strict tool modes guarantee structure, but constraints like min/max/regex aren't enforced during generation",
+      "e": "Strict tool use guarantees schema compliance; minimum, maximum, minLength, pattern not supported (SDKs move them to descriptions).",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A max_tokens cutoff leaves broken/incomplete JSON",
+      "e": "stop_reason max_tokens: output may be incomplete and not match your schema.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "z.infer derives the static type from the schema",
+      "e": "Extract static types from schemas with z.infer<>.",
+      "u": [
+        "https://zod.dev/basics"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "safeParse returns {success:true,data} or {success:false,error} with issues; parse throws",
+      "e": ".parse throws ZodError; .safeParse returns a discriminated result; error.issues.",
+      "u": [
+        "https://zod.dev/basics"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "zod 4 is the current major",
+      "e": "npm latest tag is 4.6.5 (published 2026-09-13).",
+      "u": [
+        "https://www.npmjs.com/package/zod"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "zod 4: string formats moved to top level (z.email()); z.strictObject replaced .strict()",
+      "e": "Method forms deprecated but still work; .strict()/.passthrough() 'still available… will not be removed. They are considered legacy.'",
+      "u": [
+        "https://zod.dev/v4/changelog"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Anthropic stream event order: message_start, per block start/delta/stop, message_delta, message_stop, ping in between",
+      "e": "Flow: message_start; content blocks (start, deltas, stop); one or more message_delta; message_stop; ping events dispersed.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "text_delta carries text; input_json_delta carries partial_json",
+      "e": "delta: {type: text_delta, text} and {type: input_json_delta, partial_json}.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Accumulate partial_json per block index and parse on content_block_stop",
+      "e": "'Accumulate the string deltas and parse the JSON once you receive a content_block_stop event.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "API docs say new event types may be added; handle unknown ones",
+      "e": "'New event types may be added, and your code should handle unknown event types gracefully.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "strict is on by default since TypeScript 6.0",
+      "e": "TS 6.0: 'strict is now true by default'.",
+      "u": [
+        "https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "strict bundles strictNullChecks, noImplicitAny, useUnknownInCatchVariables among others",
+      "e": "strict family includes strictNullChecks, noImplicitAny, useUnknownInCatchVariables, strictFunctionTypes, etc.",
+      "u": [
+        "https://www.typescriptlang.org/tsconfig/#strict"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "noUncheckedIndexedAccess and exactOptionalPropertyTypes are not part of strict (lie says they are)",
+      "e": "Both documented as not included in strict; TS 6.0 didn't change their defaults. Lie correctly false.",
+      "u": [
+        "https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "noUncheckedIndexedAccess adds undefined to arr[i] / record[key]; noisy after length checks",
+      "e": "Adds undefined to index-signature access; tsc 6.0.3: arr[0] after length>0 check still number | undefined.",
+      "u": [
+        "https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "exactOptionalPropertyTypes: timeout?: number no longer accepts explicit undefined",
+      "e": "Optional property cannot be explicitly assigned undefined under the flag.",
+      "u": [
+        "https://www.typescriptlang.org/tsconfig/#exactOptionalPropertyTypes"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Spreading overrides with timeout: undefined over defaults wipes the default",
+      "e": "Object spread copies own enumerable properties; later keys override earlier (undefined included).",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax"
+      ]
+    }
+  ]
+}

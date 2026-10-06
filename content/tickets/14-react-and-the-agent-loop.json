@@ -1,0 +1,258 @@
+{
+  "n": 14,
+  "tag": "Core-40 #32",
+  "sec": "agents",
+  "core": [
+    32
+  ],
+  "ru": {
+    "topic": "ReAct и агентный цикл",
+    "qs": [
+      "Что такое ReAct и какую задачу он решает по сравнению с одним вызовом?",
+      "Минимальная реализация: что внутри тела цикла?",
+      "Где это ломается и что ты добавляешь?"
+    ],
+    "a": [
+      {
+        "q": "Что это",
+        "t": "Reason плюс Act: модель рассуждает, выбирает действие — вызов инструмента, — получает наблюдение, рассуждает снова, пока не будет финального ответа. Он решает то, что одному вызову недоступно: достать информацию, которой у модели нет, проверить гипотезу, сделать многошаговую работу, где следующий шаг зависит от предыдущего. Голый вызов не достанет нового и не исправится после ошибки. Исключение — серверные инструменты вроде web search (поиск в интернете): там цикл крутит сам провайдер внутри одного запроса, но это всё равно цикл. Главное: в статье ReAct — формат промпта, но работает он только с внешним циклом в моём коде, который исполняет действия и возвращает наблюдения."
+      },
+      {
+        "q": "Реализация",
+        "t": "Массив messages, описание инструментов. Вызываю модель. Если stop_reason равен tool_use — беру имя и аргументы, исполняю сам, кладу результат в messages как tool_result и иду на следующую итерацию. Если end_turn — это финальный ответ, выхожу. Другие причины остановки, вроде max_tokens, pause_turn или refusal, обрабатываю явно, а не как ответ. Обязательно: потолок по шагам, бюджет по деньгам, ошибки инструмента возвращаю как строку в tool_result, а не бросаю исключение — модель должна их увидеть и среагировать. Так устроен мой research-агент scout: пять шагов, шесть страниц, и каждый шаг виден в логе."
+      },
+      {
+        "q": "Где ломается",
+        "t": "Зацикливается на падающем инструменте. Уходит от цели, когда контекст растёт и исходная задача тонет посередине. Раздувает стоимость, потому что каждая итерация пересылает всю историю — у меня одни и те же страницы оплачивались три с лишним раза. Что добавляю: жёсткий потолок шагов и бюджет, сжатие выходов инструментов дешёвой моделью до нужных фактов, prompt caching на статичном префиксе, при длинных задачах — явный план и сжатие наблюдений, чекпоинт для человека там, где действие необратимо, и лог причины остановки — это первое, куда смотришь при разборе."
+      }
+    ],
+    "kill": "<b>«ReAct — это think step by step»</b> — нет, это цикл, в котором инструменты исполняет твой код. И <b>«он сам остановится»</b> — не остановится, если инструмент продолжает падать."
+  },
+  "en": {
+    "topic": "ReAct and the agent loop",
+    "qs": [
+      "What is ReAct, and what problem does it solve compared to a single call?",
+      "Minimal implementation: what's inside the loop body?",
+      "Where does it break, and what do you add?"
+    ],
+    "a": [
+      {
+        "q": "What it is",
+        "t": "Reason plus Act: the model reasons, picks an action — a tool call — gets an observation, reasons again, until there's a final answer. It solves what a single call can't: fetching information the model doesn't have, checking a hypothesis, multi-step work where the next step depends on the last result. A plain call can't fetch anything new or self-correct. Server-side tools like web search loop inside one request, but that's still a loop, run by the provider. Key point: the paper framed ReAct as a prompt format, but it only works with an outer loop in my code that executes actions and feeds back observations."
+      },
+      {
+        "q": "Implementation",
+        "t": "A messages array and tool definitions. Call the model. If stop_reason is tool_use, take the name and arguments, execute them myself, append the result to messages as a tool_result, and go around again. If it's end_turn, that's the final answer, exit. Other stop reasons, like max_tokens, pause_turn or refusal, I handle explicitly, not as answers. Non-negotiable: a step cap, a spending budget, and tool errors returned as strings inside the tool_result rather than thrown — the model has to see them to react. That's exactly how my research agent, scout, works: five steps, six pages, and every step in the log."
+      },
+      {
+        "q": "Where it breaks",
+        "t": "It loops on a failing tool. It drifts off-goal as the context grows and the original task sinks into the middle. It balloons in cost because every iteration resends the whole history — I had the same pages paid for three-plus times. What I add: a hard step cap and budget, having a cheap model condense tool outputs to the relevant facts, prompt caching on the static prefix, for long tasks an explicit plan and observation compression, a human checkpoint before anything irreversible, and a logged stop reason — it's the first thing you look at in a post-mortem."
+      }
+    ],
+    "kill": "<b>\"ReAct is think-step-by-step\"</b> — no, it's a loop where your code executes the tools. And <b>\"it'll stop on its own\"</b> — it won't, if the tool keeps failing."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "ReAct — это просто «думай по шагам», инструменты никто не исполняет.",
+        "Каждая итерация цикла отправляет только новое наблюдение, поэтому стоимость постоянна."
+      ],
+      "en": [
+        "ReAct is just 'think step by step' — no tools are executed.",
+        "Each loop iteration sends only the new observation, so the cost stays constant."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "ReAct: [[Reason|рассуждение]] плюс [[Act|действие]] — модель думает, выбирает инструмент, получает наблюдение, думает снова.",
+        "Если stop_reason равен [[tool_use]] — исполняю и кладу [[tool_result]]; если [[end_turn]] — это финальный ответ.",
+        "Обязательны: потолок [[шагов|steps|итераций]] и [[бюджет|budget]] по деньгам."
+      ],
+      "en": [
+        "ReAct: [[Reason]] plus [[Act]] — the model thinks, picks a tool, observes, thinks again.",
+        "If stop_reason is [[tool_use]] I execute and append a [[tool_result]]; if [[end_turn]], that's the final answer.",
+        "Non-negotiable: a [[step cap|iteration cap]] and a spending [[budget]]."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Одна итерация ReAct",
+        "items": [
+          "Модель рассуждает над задачей и историей",
+          "Выбирает действие — вызов инструмента",
+          "Мой код исполняет и получает наблюдение",
+          "Наблюдение кладётся в контекст как tool_result",
+          "Проверка: потолок шагов и бюджет не превышены",
+          "Снова к модели — или финальный ответ"
+        ]
+      },
+      "en": {
+        "title": "One ReAct iteration",
+        "items": [
+          "The model reasons over the task and history",
+          "Picks an action — a tool call",
+          "My code executes it and gets an observation",
+          "The observation goes into context as a tool_result",
+          "Check: step cap and budget not exceeded",
+          "Back to the model — or the final answer"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "ReAct = Reason + Act: interleaved reasoning traces and actions, observations fed back",
+      "e": "LLMs 'generate both reasoning traces and task-specific actions in an interleaved manner'; actions query e.g. a Wikipedia API.",
+      "u": [
+        "https://arxiv.org/abs/2210.03629"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "ReAct isn't a prompting trick, it's a control loop in my code",
+      "e": "Paper introduces ReAct as a prompting method (one or two in-context examples); external environment/API executes actions.",
+      "u": [
+        "https://arxiv.org/abs/2210.03629"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "A single call can't go to the internet",
+      "e": "Web search tool: 'The API runs the searches... This process can repeat multiple times throughout a single request.'",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "stop_reason == tool_use means execute the tool and return a tool_result",
+      "e": "'stop_reason: tool_use' — Claude requested a tool; results go back as tool_result blocks in a user message.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "stop_reason == end_turn means final answer",
+      "e": "end_turn: 'Claude finished its response naturally'. Note: loop should also handle max_tokens, pause_turn, refusal, model_context_window_exceeded.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Tool errors returned as a string in tool_result, not thrown, so the model can react",
+      "e": "Return error text in tool_result with is_error: true; write instructive messages so Claude can recover.",
+      "u": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Every iteration resends the whole history, so cost balloons",
+      "e": "'The Messages API is stateless... you always send the full conversational history.'",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/working-with-messages"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Context drift: original task sinks into the middle of a growing context",
+      "e": "Performance 'significantly degrades when models must access relevant information in the middle' of long contexts.",
+      "u": [
+        "https://arxiv.org/abs/2307.03172"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Prompt caching on the static prefix reduces cost",
+      "e": "Caches prefix tools→system→messages; cache reads 0.1x base input price (standard models).",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Step cap / stopping condition and human checkpoint before irreversible actions",
+      "e": "'common to include stopping conditions (such as a maximum number of iterations)'; 'pause for human feedback at checkpoints'.",
+      "u": [
+        "https://www.anthropic.com/engineering/building-effective-agents"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "ReAct is not just think-step-by-step (CoT); tools are executed",
+      "e": "Paper contrasts reasoning-only (chain-of-thought) with ReAct, whose actions interface with external sources/environments.",
+      "u": [
+        "https://arxiv.org/abs/2210.03629"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: each iteration sends only the new observation so cost is constant (must be false)",
+      "e": "Even with previous_response_id 'all previous input tokens... are billed as input tokens'. Lie is false.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/conversation-state"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "LIE: ReAct is a prompting technique — 'think step by step' (must be false)",
+      "e": "First half is literally true: the paper calls ReAct a prompting approach. Only the 'think step by step' equation is false.",
+      "u": [
+        "https://arxiv.org/abs/2210.03629"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Steps order: reason → action → execute → tool_result → check caps → loop/answer",
+      "e": "Matches 'LLMs using tools based on environmental feedback in a loop' with stopping conditions; matches answer text.",
+      "u": [
+        "https://www.anthropic.com/engineering/building-effective-agents"
+      ]
+    }
+  ]
+}

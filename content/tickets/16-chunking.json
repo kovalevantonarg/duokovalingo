@@ -1,0 +1,179 @@
+{
+  "n": 16,
+  "tag": "Core-40 #28",
+  "sec": "rag",
+  "core": [
+    28
+  ],
+  "ru": {
+    "topic": "Chunking",
+    "qs": [
+      "Fixed size, semantic, sliding window: что это и в чём trade-off каждого?",
+      "Типичные цифры и зачем вообще существует overlap?",
+      "Как понять, что твой chunking неправильный?"
+    ],
+    "a": [
+      {
+        "q": "Три подхода",
+        "t": "Fixed size — режу по N токенов. Просто, предсказуемо, режет мысль пополам. Semantic или структурный — режу по заголовкам, абзацам, блокам кода. Уважает смысл, но куски получаются разного размера, и большой абзац может не влезть. Sliding window — фиксированный размер с перекрытием, чтобы контекст на границе не терялся. На практике я делаю сначала структурный, поверх — потолок по размеру, и overlap как страховку. Один подход в чистом виде почти никогда не лучший."
+      },
+      {
+        "q": "Цифры",
+        "t": "Обычный старт — двести пятьдесят шесть–пятьсот двенадцать токенов и перекрытие десять–двадцать пять процентов, но значения по умолчанию разнятся, поэтому подбираю по recall at k (полноте в top-k). Overlap нужен потому, что факт рядом с границей иначе окажется разрезан на два куска, и эмбеддинг ни одного из кусков не совпадёт с вопросом об этом факте. Куски больше — больше контекста на попадание, но эмбеддинг усредняет смысл и становится мутнее. Меньше — точнее, но фрагментарно, и ответу не хватает окружения. И к каждому куску — метаданные: источник, раздел, позиция, иначе не процитируешь."
+      },
+      {
+        "q": "Диагностика",
+        "t": "Два симптома. Кусок нашёлся релевантный, но ответ неполный — значит, кусок слишком мелкий или разрезан не там. Куски находятся как-то похожие, но не те — значит, слишком крупные, смысл размылся. Проверяю не чтением, а эвалом: на золотом наборе вопросов смотрю, попадает ли нужный пассаж в top-k. Это изолирует chunking и retrieval от генерации. Меняю размер, прогоняю снова, сравниваю. В моём RAG-проекте размер куска был ручкой, которую я крутил по метрике, а не по ощущению."
+      }
+    ],
+    "kill": "Назвать одно магическое число и остановиться. И <b>«chunking это деталь»</b> — это одна из частых причин плохого RAG, потому что от нарезки зависит, что найдёт поиск, интервьюер это знает."
+  },
+  "en": {
+    "topic": "Chunking",
+    "qs": [
+      "Fixed size, semantic, sliding window: what are they and what's the trade-off of each?",
+      "Typical numbers, and why does overlap exist at all?",
+      "How do you know your chunking is wrong?"
+    ],
+    "a": [
+      {
+        "q": "Three approaches",
+        "t": "Fixed size — cut every N tokens. Simple, predictable, splits a thought in half. Semantic or structural — cut on headings, paragraphs, code blocks. Respects meaning, but chunks come out uneven, and a big paragraph may not fit. Sliding window — fixed size with overlap so boundary context isn't lost. In practice I go structural first, a size cap on top, and overlap as insurance. One approach in pure form is almost never the best one."
+      },
+      {
+        "q": "Numbers",
+        "t": "A common start is two fifty-six to five twelve tokens per chunk with ten to twenty-five percent overlap, but vendor defaults vary widely, so I tune against recall at k. Overlap exists because a fact near a boundary would otherwise be split across two chunks, and neither chunk's embedding would match a question about it. Bigger chunks give more context per hit, but the embedding averages the meaning and gets muddier. Smaller is more precise but fragmentary, and the answer lacks surroundings. And every chunk carries metadata — source, section, position — or you can't cite it."
+      },
+      {
+        "q": "Diagnosis",
+        "t": "Two symptoms. The retrieved chunk is relevant but the answer is incomplete — chunk too small, or cut in the wrong place. The retrieved chunks are vaguely similar but not the right ones — too big, meaning diluted. I check with an eval, not by reading: on a golden question set, does the gold passage land in the top-k? That isolates chunking and retrieval from generation. Change the size, run again, compare. In my RAG project chunk size was a knob I turned against a metric, not a feeling."
+      }
+    ],
+    "kill": "Quoting one magic number and stopping. And <b>\"chunking is a detail\"</b> — it's a common cause of bad RAG, because chunking decides what search can find, and the interviewer knows it."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Чем больше кусок, тем точнее эмбеддинг.",
+        "Overlap нужен просто чтобы кусков было больше; контекст на границе не важен."
+      ],
+      "en": [
+        "The bigger the chunk, the more precise the embedding.",
+        "Overlap exists just to produce more chunks; boundary context doesn't matter."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Обычная отправная точка — кусок в [[256-512|256–512]] токенов и перекрытие [[10-25%|10–25%]].",
+        "Overlap нужен, чтобы факт у [[границы|boundary]] не оказался разрезан на два куска.",
+        "Правильность chunking проверяю через [[recall@k|recall at k|recall]] на золотом наборе, а не чтением."
+      ],
+      "en": [
+        "A common starting chunk is [[256-512|256–512]] tokens, with [[10-25%|10–25%]] overlap.",
+        "Overlap exists so a fact near a [[boundary]] isn't split across two chunks.",
+        "I check chunking with [[recall@k|recall at k|recall]] on a golden set, not by reading."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Three approaches: fixed-size, semantic/structural, sliding window with overlap",
+      "e": "Azure 'Common chunking techniques': fixed-size chunks with overlap, variable-size by content structure, semantic chunks.",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Typical chunk 200–500 tokens with ~50 tokens or 10–15% overlap",
+      "e": "Azure: 'starting with a chunk size of 512 tokens... initial overlap of 25%'; fixed-size example mentions 10-15%. OpenAI file search default 800/400 (https://developers.openai.com/api/docs/guides/retrieval).",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Overlap exists so a boundary fact isn't split across chunks",
+      "e": "Overlap 'prevents context loss when information spans chunk boundaries'.",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Bigger chunks: embedding averages meaning, gets muddier; smaller: precise but fragmentary",
+      "e": "Chunking 'improves vector representation when a single document covers multiple topics'.",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Big paragraph may not fit (embedding input limits)",
+      "e": "text-embedding-3 models accept max 8,192 tokens per input.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Evaluate chunking by whether the gold passage lands in top-k (recall@k) on a golden set",
+      "e": "RAGAS ID-based context recall compares retrieved context IDs with reference IDs — no LLM needed.",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_recall/"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "soft",
+      "c": "Chunking is the most common cause of bad RAG",
+      "e": "Searched Barnett et al. 'Seven Failure Points' and vendor docs; no source ranks chunking as the most common cause.",
+      "u": [
+        "https://arxiv.org/abs/2401.05856"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: bigger chunk → more precise embedding (must be false)",
+      "e": "Consistent with ticket and Azure: multi-topic chunks dilute the vector. Lie is false.",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "LIE: overlap exists to increase number of chunks and raise recall (must be false)",
+      "e": "Overlap preserves boundary context, which does raise recall of boundary facts, and it does increase chunk count — lie is partly true.",
+      "u": [
+        "https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents"
+      ]
+    }
+  ]
+}

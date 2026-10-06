@@ -1,0 +1,254 @@
+{
+  "n": 28,
+  "tag": "New · coverage gap",
+  "sec": "llm",
+  "core": [
+    43
+  ],
+  "ru": {
+    "topic": "Fine-tuning vs RAG vs prompt engineering",
+    "qs": [
+      "Три инструмента — prompt engineering, RAG, fine-tuning. По какому принципу выбираешь?",
+      "Посчитай вслух: что дороже — зафайнтюнить модель или построить RAG? На каких осях сравниваешь?",
+      "Реальный продакшн использует один инструмент или комбинацию? Приведи пример пути от прототипа до продакшна."
+    ],
+    "a": [
+      {
+        "q": "Порядок выбора",
+        "t": "Я всегда иду от дешёвого и быстрого к дорогому и медленному: сначала prompt engineering, потом RAG, и только в последнюю очередь fine-tuning. Причина не в моде, а в цикле итерации: промпт я меняю за секунды и вижу результат сразу, RAG требует пересборки индекса, но всё ещё без переобучения весов, а fine-tuning — это датасет, тренировочный прогон, eval на регрессии, и весь цикл повторяется при каждом обновлении базовой модели. Ключевой вопрос для выбора — это knowledge gap или behavior gap. Модель не знает конкретных фактов (внутренняя база знаний, свежие данные, приватные документы) — это RAG. Модель знает факты, но ведёт себя не так, как нужно (тон, формат, стабильность на редких, пограничных случаях (edge cases)) — сначала пробую промпт и structured output, и только если это не держится на объёме — fine-tuning или дистилляция."
+      },
+      {
+        "q": "Стоимость",
+        "t": "Считаю по трём осям: деньги на старте, деньги на поддержку, скорость итерации. RAG — это pipeline (конвейер) поиска: обычно эмбеддинги и vector store, часто плюс BM25 по ключевым словам. Крутить его дёшево, а обновление источника — это re-index, а не re-train: правки видны сразу. Fine-tuning требует курированного датасета, где качество важнее объёма: OpenAI видит улучшения уже на пятидесяти–ста хороших примерах, хотя сложным задачам нужно больше. Дальше тренировочный прогон и то, что забывают, — eval harness, ведь дообученная модель может стать хуже на задачах, которые раньше решала. Главный расход — каждое обновление базовой модели вендором требует решения: переобучать или остаться на старой версии. RAG избавляет от переобучения, но не от всей миграции: новую модель надо прогнать через eval, а снятие embedding-модели заставляет переэмбеддить корпус."
+      },
+      {
+        "q": "Комбинация",
+        "t": "Почти всегда комбинация, не «или-или». Типичный путь: прототип на prompt engineering плюс RAG, проверка на eval-сьюте — если работает и объём растёт, следующий шаг не «добавить fine-tuning», а «можно ли этот же результат получить дешевле» — например, дистиллировать поведение дорогой модели в дешёвую, если паттерн стабилен и его можно закрепить датасетом. Fine-tuning в проде почти никогда не заменяет RAG — он ложится поверх, когда нужно снизить стоимость и задержку на уже проверенном поведении, а не когда нужно новое знание."
+      }
+    ],
+    "kill": "Тянуться к fine-tuning первым, потому что «это настоящий ML» — почти всегда самый дорогой и медленный вариант, и к тому же плохой, ненадёжный способ добавить знания: тут RAG стабильно выигрывает. Fine-tuning в первую очередь инструмент для поведения. Плюс забыть, что дообучение без eval-сьюта — это дообучение вслепую: можно улучшить одну метрику и незаметно сломать три другие."
+  },
+  "en": {
+    "topic": "Fine-tuning vs RAG vs prompt engineering",
+    "qs": [
+      "Three tools — prompt engineering, RAG, fine-tuning. What's your actual decision rule?",
+      "Walk me through cost: which is more expensive, fine-tuning or building RAG? What axes are you comparing on?",
+      "Does real production use one tool or a combination? Walk me through a path from prototype to production."
+    ],
+    "a": [
+      {
+        "q": "Order of choice",
+        "t": "I go from cheap-and-fast to expensive-and-slow every time: prompt engineering first, then RAG, and fine-tuning only as a last resort. It's not fashion, it's the iteration loop — I change a prompt in seconds and see the result immediately, RAG needs re-indexing when sources change, but still no retraining, and fine-tuning means a dataset, a training run, a regression eval, and the whole cycle repeats every time the base model updates. The real decision question is knowledge gap versus behavior gap. The model doesn't know specific facts (an internal knowledge base, fresh data, private documents) — that's RAG. The model knows the facts but behaves wrong (tone, format, consistency at the edges) — I try prompting and structured output first, and only reach for fine-tuning or distillation if that doesn't hold up at volume."
+      },
+      {
+        "q": "Cost",
+        "t": "I compare on three axes: upfront cost, ongoing cost, iteration speed. RAG is a retrieval pipeline, usually embeddings and a vector store, often plus BM25 keyword search. It's cheap to run, and a source update is a re-index, not a re-train, so edits show up immediately. Fine-tuning needs a curated dataset where quality beats volume. OpenAI reports gains from as few as fifty to a hundred good examples, though harder tasks need more. Then the training run and, the part people forget, an eval harness, because a fine-tuned model can get worse at tasks it used to handle fine. The real expense is that every base-model update forces a decision: retrain or stay on the old version. RAG skips the retraining, but not all the churn. A new generation model still needs an eval run, and a deprecated embedding model means re-embedding the corpus."
+      },
+      {
+        "q": "Combination",
+        "t": "Almost always a combination, not either/or. The typical path: prototype with prompt engineering plus RAG, validate against an eval suite — if it works and volume grows, the next step isn't 'add fine-tuning', it's 'can I get the same result cheaper' — for example, distilling the expensive model's behavior into a cheap one once the pattern is stable enough to lock down with a dataset. Fine-tuning in production almost never replaces RAG — it sits on top, to cut cost and latency on behavior you've already validated, not to add new knowledge."
+      }
+    ],
+    "kill": "Reaching for fine-tuning first because 'it feels like real ML' — it's almost always the most expensive, slowest option, and a poor, unreliable way to add knowledge, where RAG consistently beats it. It's mainly a behavior tool. Also forgetting that fine-tuning without an eval suite is fine-tuning blind: you can improve one metric and silently break three others."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Fine-tuning — правильный первый шаг, если модель не знает нужных фактов.",
+        "RAG требует переобучения модели при каждом обновлении источника."
+      ],
+      "en": [
+        "Fine-tuning is the right first move if the model doesn't know the facts you need.",
+        "RAG requires retraining the model every time the source data updates."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Knowledge gap чинится через [[RAG]], behavior gap — сначала через [[prompt engineering|промпт]].",
+        "Обновление источника в RAG — это [[re-index|переиндексация]], а не re-train.",
+        "Fine-tuning без [[eval-сьюта|eval harness]] — это дообучение вслепую."
+      ],
+      "en": [
+        "A knowledge gap gets fixed with [[RAG]], a behavior gap first with [[prompt engineering|prompting]].",
+        "Updating RAG's source is a [[re-index]], not a re-train.",
+        "Fine-tuning without an [[eval harness|eval suite]] is fine-tuning blind."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "От прототипа к продакшну: в каком порядке идёшь?",
+        "items": [
+          "Промпт + structured output — переформулировать, заставить формат",
+          "RAG — добавить факты, которых не хватает",
+          "Eval-сьют — проверить прототип на промпте и RAG",
+          "Fine-tuning / дистилляция — закрепить проверенное поведение в весах"
+        ]
+      },
+      "en": {
+        "title": "From prototype to production: what order do you go in?",
+        "items": [
+          "Prompting + structured output — reword, force the format",
+          "RAG — add the facts that are missing",
+          "Eval suite — validate the prompt + RAG prototype",
+          "Fine-tuning / distillation — lock validated behavior into the weights"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Start with prompt engineering, then RAG, fine-tuning last",
+      "e": "\"Prompt engineering is typically the best place to start.\"",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/optimizing-llm-accuracy"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Missing facts (knowledge gap) → RAG; wrong behavior/format/consistency → prompting, then fine-tuning",
+      "e": "RAG when model lacks context; fine-tuning for \"consistency of behavior\" and formatting",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/optimizing-llm-accuracy"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "fix",
+      "c": "Fine-tuning doesn't fix a knowledge gap, only a behavior gap",
+      "e": "FT gives modest knowledge gains; \"RAG consistently outperforms it\" for existing and new knowledge",
+      "u": [
+        "https://arxiv.org/abs/2312.05934"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "RAG = an embedding pipeline plus a vector store",
+      "e": "Production RAG commonly combines embeddings with BM25 lexical search",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Updating RAG's source is a re-index, not a re-train",
+      "e": "RAG supplies context at inference; no model training involved",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/optimizing-llm-accuracy"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Fine-tuning usually needs thousands of good examples, not hundreds",
+      "e": "\"minimum ... is 10\"; \"We see improvements from fine-tuning on 50–100 examples\"",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/supervised-fine-tuning"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Fine-tuning requires an eval harness; without evals it's blind",
+      "e": "\"Only invest in fine-tuning after setting up evals.\"",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/supervised-fine-tuning"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "A fine-tuned model can get worse at tasks it used to handle (regressions)",
+      "e": "\"Catastrophic forgetting is generally observed in LLMs ranging from 1b to 7b\"",
+      "u": [
+        "https://arxiv.org/abs/2308.08747"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Base-model updates force a decision: retrain or stay on the old version",
+      "e": "Fine-tuned inference continues \"until the base models are deprecated\"; no new fine-tunes on deprecated bases",
+      "u": [
+        "https://developers.openai.com/api/docs/deprecations"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "RAG doesn't have the base-model-update problem at all",
+      "e": "OpenAI shut down first-gen embedding models Jan 4, 2024; replacing embedding model means re-embedding corpus",
+      "u": [
+        "https://developers.openai.com/api/docs/deprecations"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Distillation moves an expensive model's behavior into a cheaper model",
+      "e": "\"Fine-tuning smaller, cost-efficient models using outputs from more capable models\"",
+      "u": [
+        "https://openai.com/index/api-model-distillation/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Production usually combines techniques; fine-tuning stacks with RAG rather than replacing it",
+      "e": "\"likely you may end up with fine-tuning + RAG in your production solution\"",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/optimizing-llm-accuracy"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: fine-tuning is the right first move for missing facts (must be false)",
+      "e": "Guide: start with prompting; RAG for missing knowledge — lie is false as intended",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/optimizing-llm-accuracy"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "Steps: distillation is a separate, cheaper step placed before fine-tuning",
+      "e": "Distillation is defined as fine-tuning a smaller model on a larger model's outputs",
+      "u": [
+        "https://openai.com/index/api-model-distillation/"
+      ]
+    }
+  ]
+}

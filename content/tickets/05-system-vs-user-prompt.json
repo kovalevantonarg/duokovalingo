@@ -1,0 +1,190 @@
+{
+  "n": 5,
+  "tag": "Core-40 #20",
+  "sec": "llm",
+  "core": [
+    20
+  ],
+  "ru": {
+    "topic": "System vs user prompt",
+    "qs": [
+      "Чем system отличается от user? Что куда кладут?",
+      "Почему system тяжелее перебить? Назови механизм.",
+      "И почему это НЕ гарантия безопасности? Где живут настоящие контроли?"
+    ],
+    "a": [
+      {
+        "q": "Различие",
+        "t": "System несёт то, что верно для каждого хода: роль, правила, ограничения, формат вывода. У Anthropic это отдельный top-level параметр, а не первое сообщение в массиве. User несёт то, что верно только для этого хода — сам запрос. И у этого разделения есть прямое денежное следствие: system надо держать статичным, потому что если подставлять туда данные пользователя, префикс меняется каждый запрос, prompt caching не попадает никогда, и ты платишь полную цену вечно, а с включённым кэшем даже больше: каждый запрос заново пишет кэш."
+      },
+      {
+        "q": "Механизм",
+        "t": "Модели обучают с так называемой instruction hierarchy — примерно system выше developer, тот выше user, а ниже всех результаты инструментов и найденный контент. В ходе instruction tuning и RLHF модель учится при конфликте предпочитать более высокий уровень. Поэтому на «ignore your instructions» из пользовательского сообщения она склонна остаться при системном промпте."
+      },
+      {
+        "q": "Почему не граница",
+        "t": "Потому что это натренированная склонность, а не механизм разграничения прав. Нет кода, который запретил бы модели послушаться достаточно убедительной инструкции — это мягкий приор, а не барьер. Поэтому системный промпт я называю defense-in-depth, но не defense. Настоящие контроли живут снаружи модели: авторизация на уровне каждого инструмента, где модель просит, а решает мой код; минимальные права; валидация выхода схемой, потому что ответ модели это недоверенный ввод; подтверждение человеком на всём разрушительном. И отдельно стоит помнить, что системный промпт не секретный — его регулярно вытаскивают, поэтому ключей и конфиденциальной логики там быть не должно."
+      }
+    ],
+    "kill": "<b>«Положили правило в system prompt, значит безопасно»</b> — этой фразой ты сообщаешь, что агентов в проде не держал."
+  },
+  "en": {
+    "topic": "System vs user prompt",
+    "qs": [
+      "How does the system prompt differ from the user prompt? What goes where?",
+      "Why is the system prompt harder to override? Name the mechanism.",
+      "And why is that NOT a security guarantee? Where do the real controls live?"
+    ],
+    "a": [
+      {
+        "q": "The difference",
+        "t": "System carries what's true on every turn: role, rules, constraints, output format. With Anthropic it's a separate top-level parameter rather than the first message in the array. User carries what's true for this turn only — the actual request. And that split has a direct money consequence: you keep system static, because if you interpolate per-user data into it the prefix changes on every request, prompt caching never hits, and you pay full price forever, or even more with caching on, since every request rewrites the cache."
+      },
+      {
+        "q": "The mechanism",
+        "t": "Models are trained with what's called an instruction hierarchy — roughly, system outranks developer, which outranks user, which outranks tool results and retrieved content. During instruction tuning and RLHF the model learns to prefer the higher level when the levels conflict. So when a user message says ignore your instructions, the model is trained to stay with the system prompt."
+      },
+      {
+        "q": "Why it's not a boundary",
+        "t": "Because it's a trained tendency, not an enforced permission system. There's no code path that stops the model obeying a sufficiently persuasive instruction — it's a soft prior, not a barrier. So I'd call the system prompt defense-in-depth, but not a defense. The real controls sit outside the model: authorization at the level of each tool, where the model asks and my code decides; least privilege; schema validation of output, because what the model returns is untrusted input; and human confirmation on anything destructive. And separately, the system prompt isn't secret — people extract them routinely — so no keys and no confidential logic go in there."
+      }
+    ],
+    "kill": "<b>\"We put the rule in the system prompt, so it's safe\"</b> — that sentence tells the interviewer you've never run an agent in production."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Системный промпт — это жёсткая граница: модель физически не может его нарушить.",
+        "Данные пользователя лучше интерполировать в system, чтобы модель их точно учла."
+      ],
+      "en": [
+        "The system prompt is a hard boundary: the model physically cannot violate it.",
+        "Per-user data belongs in the system prompt so the model definitely takes it into account."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "System держат [[статичным|static|неизменным]], иначе [[prompt caching|кэш|кэширование]] никогда не сработает.",
+        "Модель обучена [[иерархии инструкций|instruction hierarchy]]: system выше user, user выше результатов инструментов.",
+        "Системный промпт — это [[тенденция|склонность|prior]] из обучения, а не система прав."
+      ],
+      "en": [
+        "Keep system [[static|stable]], or [[prompt caching|caching|the cache]] never hits.",
+        "Models are trained on an [[instruction hierarchy|hierarchy]]: system outranks user, user outranks tool results.",
+        "The system prompt is a trained [[tendency|prior]], not a permission system."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "With Anthropic, system is a separate top-level parameter, not a message in the array",
+      "e": "System prompt passed as top-level `system=` alongside `messages=[...]`; API ref lists `system` as its own parameter.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/system-prompts"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "System holds persistent role/rules/format; user turn holds the per-turn request",
+      "e": "Role and general behaviour go in system; specific task instructions and data go in the user message.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/system-prompts"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Interpolating per-user data into system changes the prefix every request, so the cache never hits",
+      "e": "Cache hits 'require 100% identical prompt segments'; changing system invalidates system+messages caches. Cost guide: per-request status line in system cost $4.24 vs $0.59; 'Keep per-request text in the newest user turn'. (A tools-only breakpoint could still…",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Instruction hierarchy: system > developer > user > tool results/retrieved content",
+      "e": "Model Spec: Root > System > Developer > User > Guideline; tool outputs, quoted text 'No Authority'. IH paper: System > User > ... > 'Text from tools'. Claude: operators > users; conversational inputs are 'information rather than commands'.",
+      "u": [
+        "https://model-spec.openai.com/2026-08-18.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Hierarchy is learned in instruction tuning and RLHF",
+      "e": "'fine-tune GPT-3.5 Turbo using supervised finetuning and reinforcement learning from human feedback' to 'selectively ignore lower-privileged instructions'.",
+      "u": [
+        "https://arxiv.org/abs/2404.13208"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "It's a trained tendency, not an enforced boundary; no fool-proof prevention",
+      "e": "'it is unclear if there are fool-proof methods of prevention for prompt injection'; Anthropic: prompt injection 'is far from a solved problem'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Real controls outside the model: per-tool authorization, least privilege, output schema validation, human confirmation",
+      "e": "Mitigations: 'Define and validate expected output formats', 'Enforce privilege control and least privilege access', 'Require human approval for high-risk actions'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm01-prompt-injection/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "System prompts aren't secret; no keys or confidential logic in them",
+      "e": "'the system prompt should not be considered a secret, nor should it be used as a security control'; credentials 'should not be contained within the system prompt'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm072025-system-prompt-leakage/"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: system prompt is a hard boundary the model can't violate (must be false)",
+      "e": "System prompt shouldn't 'be used as a security control'.",
+      "u": [
+        "https://genai.owasp.org/llmrisk/llm072025-system-prompt-leakage/"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: per-user data belongs in the system prompt (must be false)",
+      "e": "Per-request text at the front of system broke the cache; 'keep per-request text in the newest user turn'. Anthropic also says third-party content goes in tool_result, 'never in system prompts'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/models/optimizing-for-cost-and-intelligence"
+      ]
+    }
+  ]
+}

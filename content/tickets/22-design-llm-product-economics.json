@@ -1,0 +1,185 @@
+{
+  "n": 22,
+  "tag": "Core-40 #37 · system design",
+  "sec": "sysd",
+  "core": [
+    37
+  ],
+  "ru": {
+    "topic": "Дизайн: экономика LLM-продукта",
+    "qs": [
+      "Счёт вырос в три раза за месяц. Как находишь, где?",
+      "Лестница рычагов, по соотношению эффекта и усилий.",
+      "Что кэширование не чинит? Пример из своего кода."
+    ],
+    "a": [
+      {
+        "q": "Поиск",
+        "t": "Сначала измеряю, потом трогаю. Инструментирую каждый вызов: модель, input, output и cache-токены, фича, пользователь. Группирую по фиче и модели — почти всегда доминирует один шаг. Смотрю структуру: output в несколько раз дороже input за токен, по текущим прайсам Claude и OpenAI примерно в пять раз, но в агентах обычно доминирует input из-за пересылки истории. Ищу типовые причины: цикл без потолка, растущая история, многословные ответы, дорогая модель на массовом шаге. Пока нет разбивки по шагам, любое «давайте оптимизируем» — это гадание."
+      },
+      {
+        "q": "Лестница",
+        "t": "Роутинг моделей — самый большой рычаг: у Claude Opus дороже Haiku за токен примерно в четыре раза, а самый дорогой уровень — примерно в десять раз дороже Haiku; у OpenAI разрыв между флагманом и самой маленькой моделью — на порядок и больше. Цены двигаются, поэтому сверяюсь с текущим прайсом, но массовым шагам флагман редко нужен. Prompt caching на статичном префиксе: запись дороже, чтение — около десятой части цены. Короче выходы: max_tokens, сжатый формат, структура вместо прозы. Сжатие входов: дешёвая модель пересказывает страницы до того, как их прочитает дорогая. Обрезка истории — окно или саммари. Batch API — половина цены, если результат не нужен сразу. Семантический кэш для повторных вопросов. Prompt compression — в последнюю очередь, это уже мелкая доводка. Порядок — по соотношению усилия к эффекту."
+      },
+      {
+        "q": "Не чинит",
+        "t": "Кэширование чинит пересылку, а не объём. Если в модель летит двадцать тысяч символов сырого HTML, кэш делает дешёвой вторую отправку, но первая и каждая новая страница стоят полную цену. У меня так и вышло: включение кэша снизило счёт в полтора раза, и при этом cache writes стали шестьюдесятью процентами счёта. Следующий шаг был не кэш, а роутинг: дешёвая модель ужимает страницы до того, как их видит дорогая. И ещё: кэшу нужен стабильный префикс — timestamp в начале system prompt ломает его полностью, и это видно только по цифрам."
+      }
+    ],
+    "kill": "<b>«Возьмите модель подешевле»</b> как весь ответ, без измерений. И утверждать, что <b>кэш решает всё</b> — интервьюер спросит про первую отправку."
+  },
+  "en": {
+    "topic": "Design: LLM product economics",
+    "qs": [
+      "The bill tripled this month. How do you find where?",
+      "The ladder of levers, in order of impact per effort.",
+      "What can't caching fix? An example from your own code."
+    ],
+    "a": [
+      {
+        "q": "Finding it",
+        "t": "Measure first, touch second. I instrument every call: model, input, output and cache tokens, feature, user. Group by feature and model — one step almost always dominates. Look at the structure: output costs several times more per token than input, about five times on current Claude and OpenAI price lists, but in agents input usually dominates because of history resends. Then the usual suspects: a loop with no cap, a growing history, verbose outputs, an expensive model on a bulk step. Without a per-step breakdown, any talk of optimising is guessing."
+      },
+      {
+        "q": "The ladder",
+        "t": "Model routing is the biggest lever: on Claude, Opus costs about four times Haiku per token and the top tier about ten times Haiku; at OpenAI the gap between the flagship and the smallest model is an order of magnitude or more. Prices move, so I check the current list, but bulk steps rarely need a flagship. Prompt caching on the static prefix: writes cost more, reads are about a tenth of the price. Shorter outputs: max_tokens, a terse format, structure instead of prose. Input distillation: a cheap model summarises pages before the expensive one reads them. History trimming — window or summary. The batch API — half price when the result isn't needed immediately. A semantic cache for repeated questions. Prompt compression last; that's marginal tuning. The order is effort against impact."
+      },
+      {
+        "q": "Can't fix",
+        "t": "Caching fixes resending, not volume. If twenty thousand characters of raw HTML go into the model, the cache makes the second send cheap, but the first send and every new page still cost full price. That's exactly what happened to me: turning on caching made the bill about one and a half times smaller, and cache writes became sixty percent of the bill. The next step wasn't more caching, it was routing — a cheap model shrinks the pages before the expensive one sees them. One more: caching needs a stable prefix. A timestamp at the top of the system prompt breaks it entirely, and you only see it in the numbers."
+      }
+    ],
+    "kill": "<b>\"Use a cheaper model\"</b> as the whole answer, with no measurement. And claiming <b>caching solves everything</b> — the interviewer will ask about the first send."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Prompt caching решает проблему больших входов целиком.",
+        "Первый шаг оптимизации — сжать системный промпт."
+      ],
+      "en": [
+        "Prompt caching solves the large-input problem completely.",
+        "The first optimisation step is to compress the system prompt."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Сначала [[измеряю|инструментирую|measure]], потом трогаю: модель, токены, фича, пользователь на каждый вызов.",
+        "Самый большой рычаг — [[роутинг|routing]] моделей: массовым шагам флагман редко нужен.",
+        "Кэш чинит [[пересылку|resending]], а не объём; timestamp в начале system prompt [[ломает|убивает]] кэш."
+      ],
+      "en": [
+        "[[Measure|Instrument]] first, touch second: model, tokens, feature, user on every call.",
+        "The biggest lever is model [[routing]]: bulk steps rarely need the flagship.",
+        "Caching fixes [[resending]], not volume; a timestamp at the top of the system prompt [[breaks|kills]] the cache."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Лестница экономии, по соотношению эффекта и усилий",
+        "items": [
+          "Роутинг моделей",
+          "Prompt caching на статичном префиксе",
+          "Короче выходы: max_tokens, сжатый формат",
+          "Меньше входов: дистилляция дешёвой моделью, обрезка истории",
+          "Batch API и семантический кэш",
+          "Prompt compression"
+        ]
+      },
+      "en": {
+        "title": "The savings ladder, by impact per effort",
+        "items": [
+          "Model routing",
+          "Prompt caching on the static prefix",
+          "Shorter outputs: max_tokens, terse format",
+          "Smaller inputs: cheap-model distillation, history trimming",
+          "Batch API and a semantic cache",
+          "Prompt compression"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Output tokens cost 3–5x input per token",
+      "e": "Output ≈ 5x input: Claude Opus 5.5 $4/$20, Sonnet 5 $2/$10, Haiku 4.5 $1/$5; OpenAI GPT-6 Sol $2/$10, Luna $0.10/$0.50 (API docs).",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing",
+        "https://developers.openai.com/api/docs/pricing"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Model routing saves up to 10x on bulk steps",
+      "e": "Claude: Opus 5.5 $4 vs Haiku 4.5 $1 input = 4x; Fable 5.1 $10 = 10x. OpenAI flagship vs smallest: 25x–100x depending on which OpenAI pricing page.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing",
+        "https://developers.openai.com/api/docs/pricing"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Prompt cache writes cost more; reads about a tenth of the price",
+      "e": "5-min write 1.25x, 1-hour write 2x base input; cache read 0.1x (Opus 5.5: 0.05x)",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Batch API is half price",
+      "e": "Batch API: 50% discount on both input and output tokens; OpenAI pricing also shows Batch -50%",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Caching needs an identical prefix; a timestamp at the top of the system prompt breaks it",
+      "e": "'Cache hits require 100% identical prompt segments'; system changes invalidate system and messages caches",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Cache makes resends cheap but the first send pays full (actually more) price",
+      "e": "'Cache write tokens are charged when content is first stored' at 1.25x/2x base input",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix2",
+      "c": "Claude: Opus about 4x Haiku per input token, top tier about 10x. OpenAI: flagship vs smallest is an order of magnitude or more. The text avoids an exact OpenAI ratio because OpenAI's two pricing pages disagree.",
+      "e": "Claude pricing: Opus 5.5 $4, Fable 5.1 $10, Haiku 4.5 $1 per MTok input. OpenAI API docs: GPT-6 Astra $10 vs Luna $0.10 (100x); openai.com/api/pricing still shows GPT-5.6 Sol $5 vs Luna $0.20 (25x). Checked 2026-09-22.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing",
+        "https://developers.openai.com/api/docs/pricing",
+        "https://openai.com/api/pricing"
+      ]
+    }
+  ]
+}

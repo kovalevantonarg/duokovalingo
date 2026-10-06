@@ -1,0 +1,291 @@
+{
+  "n": 39,
+  "tag": "Frontend core · React",
+  "sec": "react",
+  "core": [
+    54
+  ],
+  "ru": {
+    "topic": "Модель рендера",
+    "qs": [
+      "Что на самом деле заставляет компонент перерендериться и что происходит между рендером и обновлением DOM?",
+      "В списке key — это индекс. Пользователь удаляет первую строку, и текст в поле ввода оказывается у другого элемента. Что произошло и как это связано с правилами хуков?",
+      "Я трижды вызываю setCount(count + 1) в обработчике клика, а счётчик растёт на один. Почему и как это исправить?"
+    ],
+    "a": [
+      {
+        "q": "Триггеры и фазы",
+        "t": "Компонент рендерится (React заново вызывает его функцию), когда его собственный state (состояние) меняется на новое значение, когда рендерится родитель или когда меняется context, который он читает. Props (входные параметры) отдельным триггером по сути не являются: они меняются только потому, что отрендерился родитель. Если записать в state то же значение по Object.is, React выходит без рендера, а мутация ref вообще ничего не запускает. В этом и смысл ref: значение живёт между рендерами, но ничего не перерисовывает. Дальше две фазы. В render phase (фаза вычисления) React вызывает мою функцию, получает новое дерево элементов и делает reconciliation (сверку) с предыдущим. Эта фаза должна быть чистой, потому что React может вызвать её дважды или выбросить результат. В commit phase (фаза применения) React вносит минимальные изменения в DOM и привязывает refs, затем запускает layout effects до того, как браузер отрисует кадр, а обычные эффекты обычно после. Но если обновление вызвано взаимодействием вроде клика, React может выполнить и их до отрисовки. Так что повторный рендер не значит, что DOM трогали. Ловушка, за которой я слежу, — считать каждый рендер дорогим. Обычно рендер дешёвый, а цена в том, что он вычисляет, или в каскадах повторных рендеров."
+      },
+      {
+        "q": "Key и хуки",
+        "t": "React сопоставляет новое дерево со старым по позиции и типу, а внутри списка по key. Key — это идентичность элемента, и state привязан к идентичности, а не к данным. Если key это индекс и я удаляю нулевую строку, бывшая первая строка получает key ноль. React видит, что key ноль на месте и тип тот же, поэтому оставляет этот экземпляр со всем его state, например текст в неконтролируемом поле ввода или раскрытый блок, и просто передаёт новые props. Данные сдвинулись, а state остался на прежней позиции. Вставка в начало или перестановка ломаются так же. Решение — стабильный id из данных. Только не Math.random: тогда каждая строка ремаунтится (создаётся заново) на каждом рендере. Индекс годится только для статичного списка без state в строках. Хуки (функции вида useState) работают на той же идее. React хранит state хуков списком на компонент и узнаёт каждый хук по порядку вызова. В этом весь смысл правил хуков. Если вызвать хук внутри условия, на следующем рендере порядок вызовов сдвинется, и каждый хук после него прочитал бы ячейку соседа. Поэтому React обычно бросает ошибку: «Rendered more hooks than during the previous render» или «Rendered fewer hooks than expected»."
+      },
+      {
+        "q": "Очередь и batching",
+        "t": "setState не меняет переменную. Он ставит обновление в очередь и планирует рендер. count — константа, захваченная замыканием этого рендера, поэтому если там ноль, все три вызова считают ноль плюс один, и я получаю один. Решение — функциональная форма, setCount(c => c + 1). React применяет функции обновления по порядку к ожидающему значению, и я получаю три. Кроме того, с React 18 и createRoot batching (объединение нескольких обновлений в один рендер) работает автоматически везде: в Promise, setTimeout и нативных обработчиках событий, а не только в обработчиках React. Несколько вызовов set-функций подряд дают один рендер. Когда мне правда нужно синхронно обновить DOM, например прокрутить к только что добавленному сообщению и прочитать его позицию, я оборачиваю это обновление в flushSync из react-dom. Это escape hatch (аварийный выход): он форсирует синхронный рендер и бьёт по производительности, так что я использую его редко. В чате с потоковым ответом модели это важно постоянно. Я добавляю куски ответа функциональными обновлениями, потому что callback (функция обратного вызова) стрима замкнул state из старого рендера."
+      }
+    ],
+    "kill": "<b>«setState сразу меняет state»</b> — он ставит обновление в очередь, и переменная сразу после вызова по-прежнему хранит старое значение этого рендера."
+  },
+  "en": {
+    "topic": "The render model",
+    "qs": [
+      "What actually makes a component re-render, and what happens between the render and the DOM changing?",
+      "A list uses the index as key. The user deletes the first row and the text in an input shows up under the wrong item. What happened, and how does it relate to the rules of hooks?",
+      "I call setCount(count + 1) three times in a click handler and the counter only goes up by one. Why, and how do you fix it?"
+    ],
+    "a": [
+      {
+        "q": "Triggers and phases",
+        "t": "A component renders when its own state is set to a new value, when its parent renders, or when a context it reads changes. Props aren't really a separate trigger, because props only change when the parent renders. If I set state to a value that's equal by Object.is, React skips the re-render, and mutating a ref does nothing at all. That's the point of refs: values that live across renders but shouldn't repaint anything. Then come two phases. In the render phase React calls my function, gets a new element tree and reconciles it against the previous one. That phase must be pure, because React may call it twice or throw the result away. In the commit phase React applies the minimal DOM changes and attaches refs, then runs layout effects before the browser paints, and regular effects usually after. If the update came from an interaction like a click, React may run those before paint too. So a re-render doesn't mean the DOM was touched. The trap I watch for is treating every render as expensive. Usually renders are cheap, and the cost is in what they compute or in cascades of re-renders."
+      },
+      {
+        "q": "Keys and hooks",
+        "t": "React matches the new tree to the old one by position and type, and inside a list by key. The key is the element's identity, and state belongs to the identity, not to the data. With index as key, when I delete row zero, the old row one now gets key zero. React sees key zero still there with the same type, so it keeps that instance with its state, like an uncontrolled input's text or an expanded toggle, and only passes new props. The data shifts up, but the state stays at its old position. Inserting at the top or reordering breaks the same way. The fix is a stable id from the data. Never Math.random, which remounts every row on every render. Index is fine only for a static list with no state in the rows. Hooks work on the same idea. React stores hook state in a list per component and identifies each hook by its call order. That's the whole reason behind the rules of hooks. If I call a hook inside a condition, the call order shifts next render and later hooks would read their neighbour's slot, so React usually throws, either 'Rendered more hooks than during the previous render' or 'Rendered fewer hooks than expected'."
+      },
+      {
+        "q": "Queue and batching",
+        "t": "setState doesn't change the variable. It queues an update and schedules a render. count is a constant captured by this render's closure, so if it's zero, all three calls compute zero plus one and I get one. The fix is the functional form, setCount(c => c + 1). React applies the updaters in order against the pending value, so I get three. Updates are also batched. Since React 18 with createRoot, batching is automatic everywhere: inside promises, setTimeout and native event handlers too, not just React's own handlers. Several setters in a row produce one render. When I really need the DOM updated synchronously, say to scroll to a message I just appended and read its position, I wrap that update in flushSync from react-dom. It's an escape hatch. It forces a synchronous render and hurts performance, so I use it rarely. In a streaming chat UI this matters constantly. I append chunks with functional updates, because the stream callback closed over state from an older render."
+      }
+    ],
+    "kill": "<b>\"setState updates the state immediately\"</b> — it queues an update, so reading the variable right after still gives this render's old value."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Мутация ref.current перерендеривает компонент так же, как вызов setState.",
+        "Индекс в качестве key безопасен, если содержимое элементов списка уникально."
+      ],
+      "en": [
+        "Mutating ref.current re-renders the component, just like calling setState does.",
+        "Using the index as key is safe as long as the items' contents are unique."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Фаза [[render|рендера]] должна быть чистой; изменения в DOM применяются в фазе [[commit|коммита]].",
+        "React узнаёт каждый хук по [[порядку вызова|порядку вызовов]], поэтому хуки нельзя вызывать внутри условий.",
+        "Начиная с React [[18]] (при createRoot) обновления внутри Promise и setTimeout автоматически объединяются в один рендер."
+      ],
+      "en": [
+        "The [[render]] phase must be pure; DOM changes are applied in the [[commit]] phase.",
+        "React identifies each hook by its [[call order|order of calls]], which is why hooks can't be called inside conditions.",
+        "Since React [[18]] with createRoot, updates inside promises and setTimeout are batched automatically."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "От триггера до экрана",
+        "items": [
+          "Триггер: новый state, рендер родителя или смена context",
+          "Render phase: React вызывает компонент и получает новое дерево",
+          "Reconciliation: новое дерево сверяется с предыдущим",
+          "Commit: минимальные изменения в DOM, привязка refs",
+          "Layout effects выполняются до отрисовки кадра браузером",
+          "Браузер рисует кадр; обычные эффекты обычно идут после"
+        ]
+      },
+      "en": {
+        "title": "From trigger to screen",
+        "items": [
+          "Trigger: new state, parent render or context change",
+          "Render phase: React calls the component and gets a new tree",
+          "Reconciliation: the new tree is diffed against the previous one",
+          "Commit: minimal DOM changes applied, refs attached",
+          "Layout effects run before the browser paints",
+          "Browser paints; regular effects usually run after paint"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Component renders when its state changes, its parent renders, or a context it reads changes",
+      "e": "Triggers: initial render and state updates of component or ancestor; useContext: consumers re-render on provider value change (even through memo).",
+      "u": [
+        "https://react.dev/learn/render-and-commit"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Setting state to the same value by Object.is bails out",
+      "e": "Identical by Object.is → React skips re-rendering component and children (may still call component once).",
+      "u": [
+        "https://react.dev/reference/react/useState"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Mutating a ref doesn't re-render (lie says it does)",
+      "e": "Changing a ref won't cause your component to re-render. Lie correctly false.",
+      "u": [
+        "https://react.dev/reference/react/useRef"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Render phase calls the component, must be pure; React may call it twice",
+      "e": "Rendering must be pure; Strict Mode calls component functions twice in development.",
+      "u": [
+        "https://react.dev/learn/keeping-components-pure"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Commit applies minimal DOM changes; re-render doesn't mean DOM touched",
+      "e": "React only changes DOM nodes if there's a difference; skips DOM updates when output is the same.",
+      "u": [
+        "https://react.dev/learn/render-and-commit"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Commit attaches refs, then layout effects run before paint",
+      "e": "useLayoutEffect fires after DOM commit and ref attachment, before the browser repaints.",
+      "u": [
+        "https://react.dev/reference/react/useLayoutEffect"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Regular effects run after the browser paints",
+      "e": "'If your Effect is caused by an interaction (like a click), React may run your Effect before the browser paints.'",
+      "u": [
+        "https://react.dev/reference/react/useEffect"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "React matches trees by position and type, and by key in lists; state belongs to identity",
+      "e": "State tied to position in the tree; same type at same position preserves state; different key resets.",
+      "u": [
+        "https://react.dev/learn/preserving-and-resetting-state"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Index as key breaks on delete/insert/reorder (lie: safe if contents unique)",
+      "e": "Index keys break when items are inserted, deleted or reordered; unique contents don't help. Lie correctly false.",
+      "u": [
+        "https://react.dev/learn/rendering-lists"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Math.random keys remount every row on every render",
+      "e": "key={Math.random()}: keys never match, components and DOM recreated every time, user input lost.",
+      "u": [
+        "https://react.dev/learn/rendering-lists"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "React stores hook state per component and identifies hooks by call order",
+      "e": "'Hooks rely on a stable call order'; React holds an array of state pairs per component with an index.",
+      "u": [
+        "https://react.dev/learn/state-a-components-memory"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Hook in a condition → every later hook reads its neighbour's state next render",
+      "e": "When the hook count changes, React throws 'Rendered more hooks than during the previous render' (or #300 'fewer hooks').",
+      "u": [
+        "https://react.dev/errors/310"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "setState queues an update; count is this render's constant; three setCount(count+1) give 1",
+      "e": "setNumber(number + 1) three times → 1; state fixed per render.",
+      "u": [
+        "https://react.dev/learn/queueing-a-series-of-state-updates"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Functional updaters applied in order give 3",
+      "e": "n => n + 1 three times → 0→1→2→3.",
+      "u": [
+        "https://react.dev/learn/queueing-a-series-of-state-updates"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Since React 18 with createRoot, batching is automatic in promises, setTimeout, native handlers",
+      "e": "React 18 with createRoot: all updates batched, including promises, setTimeout, native event handlers.",
+      "u": [
+        "https://react.dev/blog/2022/03/29/react-v18"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "flushSync from react-dom forces synchronous DOM update; hurts performance, rare escape hatch",
+      "e": "'Using flushSync is uncommon and can significantly hurt the performance of your app.' DOM updated by next line.",
+      "u": [
+        "https://react.dev/reference/react-dom/flushSync"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix2",
+      "c": "A changed hook count throws 'Rendered more hooks than during the previous render' or error #300 'Rendered fewer hooks than expected'. EN now names both, like RU.",
+      "e": "react.dev/errors/300: 'Rendered fewer hooks than expected. This may be caused by an accidental early return statement.'",
+      "u": [
+        "https://react.dev/errors/300"
+      ]
+    }
+  ]
+}

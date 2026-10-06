@@ -1,0 +1,289 @@
+{
+  "n": 33,
+  "tag": "Frontend core · JS",
+  "sec": "js",
+  "core": [
+    48
+  ],
+  "ru": {
+    "topic": "Асинхронность, ошибки и отмена",
+    "qs": [
+      "Promise.all, allSettled, race, any: когда что использовать и что происходит, если один из промисов падает?",
+      "Пользователь жмёт Stop, пока приходит потоковый ответ LLM. Как вы отменяете это по-настоящему, от начала до конца?",
+      "Вы отправляете сто запросов в API с лимитом частоты. Как сделать, чтобы всё не развалилось?"
+    ],
+    "a": [
+      {
+        "q": "Комбинаторы",
+        "t": "Promise.all отдаёт все результаты в том порядке, в каком промисы были переданы и отклоняется, как только отклонился первый промис (Promise). Беру его, когда нужно всё, и одна ошибка делает результат бесполезным. allSettled никогда не отклоняется. Он ждёт все промисы и отдаёт для каждого статус и значение или причину. Это то, что нужно для частичных результатов, например когда я параллельно опрашиваю несколько источников для поиска. race завершается тем, что завершилось первым, успехом или ошибкой, поэтому это классический приём для таймаута (ограничения по времени). any отдаёт первый успех и отклоняется, с AggregateError, только если упали все. Это удобно для запросов к дублирующим зеркалам. Что упускают: ни один из них ничего не отменяет. Когда all отклонился или race выбрал победителя, остальные операции продолжают работать, занимают сеть и могут ещё упасть позже. race с таймаутом просто перестаёт ждать, а запрос всё ещё в полёте. Если я хочу остановить проигравших, я передаю им AbortSignal и сам вызываю abort."
+      },
+      {
+        "q": "Кнопка Stop",
+        "t": "На каждую генерацию я создаю AbortController и передаю его signal в fetch или в вызов SDK. Anthropic TypeScript SDK принимает signal в опциях запроса, а у его стрима (потокового ответа) есть метод abort. Кнопка Stop вызывает abort. Тогда fetch отклоняется с AbortError, а если я уже читаю тело ответа, ожидающее чтение тоже отклоняется, и цикл чтения выходит. Отмену я считаю нормальным исходом, а не поводом показать ошибку, и оставляю частичный текст, который пользователь уже видел. Про что забывают — сервер. Отмена в браузере закрывает соединение, но мой обработчик маршрута всё ещё получает поток от модели и платит за токены, если он не слушает сигнал отмены запроса и не отменяет свой вызов к модели. Я бы проверил, что фреймворк (Next.js или другой) действительно поднимает этот сигнал при разрыве. Для таймаутов (ограничений по времени) беру AbortSignal.timeout: он отменяет с TimeoutError, и его можно отличить от остановки пользователем. AbortSignal.any объединяет оба сигнала в один. Оба в Baseline (поддержке всеми основными браузерами) с 2024 года. В React я ещё отменяю в функции очистки эффекта, так что переключение чата тоже отменяет стрим."
+      },
+      {
+        "q": "Лимиты и повторы",
+        "t": "Во-первых, я не отправляю сто сразу. Promise.all над сотней fetch запускает их все немедленно, ведь запрос стартует в момент вызова fetch: промис (Promise) — это не отложенная задача, а квитанция на уже начатую работу. Я ставлю ограничитель параллельности: пул (набор) из, скажем, пяти воркеров (обработчиков), которые берут задачи из общей очереди, или библиотеку вроде p-limit. Во-вторых, повторы с экспоненциальной задержкой и jitter (случайным разбросом). Задержка удваивается с каждой попыткой, с потолком, и я добавляю к ней случайность, чтобы сто клиентов, упавших одновременно, не повторяли синхронно. В-третьих, повторяю только то, что может пройти при повторе. Это сетевые ошибки, 408, 429 и 5xx, особенно 502, 503 и 504, а SDK Anthropic по умолчанию повторяет ещё и 409 Conflict. На 429 учитываю Retry-After, если сервер его прислал. Остальные 4xx, вроде 400, 401 или 422, значат, что неправ мой запрос, и повтор только сжигает квоту. Я ограничиваю число попыток и общее время, а неидемпотентные вызовы (те, что нельзя безопасно повторить) повторяю только с ключом идемпотентности. И наконец, у каждого промиса должен быть обработчик. Необработанное отклонение это ошибка в консоли и событие unhandledrejection в браузере, а в Node начиная с 15-й версии по умолчанию падает весь процесс."
+      }
+    ],
+    "kill": "<b>«Promise.race отменяет более медленные запросы»</b> — он только перестаёт их ждать, они продолжают работать. Для отмены нужен AbortSignal, который надо передать в операцию и самому вызвать abort."
+  },
+  "en": {
+    "topic": "Async, failure and cancellation",
+    "qs": [
+      "Promise.all, allSettled, race, any: when do you use each, and what happens when one of the promises fails?",
+      "The user hits Stop while an LLM response is streaming. How do you actually cancel it, end to end?",
+      "You fire a hundred requests at a rate-limited API. How do you keep that from falling over?"
+    ],
+    "a": [
+      {
+        "q": "Combinators",
+        "t": "Promise.all resolves with all results in input order, and rejects as soon as the first one rejects. I use it when I need everything and one failure makes the result useless. allSettled never rejects. It waits for all of them and gives me a status plus a value or reason for each, which is what I want for partial results, like fanning out to several retrieval sources. race settles with whichever settles first, success or failure, so it's the classic timeout pattern. any resolves with the first success and only rejects, with an AggregateError, if every promise fails. That's good for redundant mirrors. The part people miss is that none of these cancel anything. When all rejects or race picks a winner, the other operations keep running, keep using the network and may still fail later. A race against a timeout just stops me waiting, while the request is still in flight. If I want the losers stopped, I pass them an AbortSignal and call abort myself."
+      },
+      {
+        "q": "Stop button",
+        "t": "I create an AbortController per generation and pass its signal to fetch or to the SDK call. The Anthropic TypeScript SDK accepts a signal in request options, and its stream has an abort method. Stop calls abort. Fetch then rejects with an AbortError, and if I'm already reading the body, the pending read rejects too, so my read loop exits. I treat cancellation as a normal outcome, not an error toast, and keep the partial text the user already saw. The part people forget is the server. Aborting in the browser closes the connection, but my route handler is still streaming from the model and paying for tokens unless it listens to the request's abort signal and cancels its upstream call. I'd verify my framework actually fires that signal on disconnect. For timeouts I use AbortSignal.timeout, which aborts with a TimeoutError, so I can tell it apart from a user stop. AbortSignal.any combines both into one signal. Both have been Baseline since 2024. In React I also abort in the effect cleanup, so switching chats cancels the stream too."
+      },
+      {
+        "q": "Limits and retries",
+        "t": "First, I don't fire a hundred at once. Promise.all over a hundred fetches starts all of them immediately, because the request starts when fetch is called and a promise isn't a lazy task. I use a concurrency limiter, a pool of say five workers pulling from a shared queue, or a library like p-limit. Second, retries with exponential backoff and jitter. The delay doubles each attempt up to a cap, and I randomize it so a hundred clients that failed together don't retry in lockstep. Third, I only retry what can succeed on retry. That's network errors, 408, 429 and 5xx, especially 502, 503 and 504, and Anthropic's SDK retries 409 Conflict by default too. On 429 I honor Retry-After if the server sends it. Other 4xx like 400, 401 or 422 mean my request is wrong, so retrying just burns quota. I cap attempts and total time, and I only retry non-idempotent calls when there's an idempotency key. Finally, every promise needs a handler. An unhandled rejection is a console error and an unhandledrejection event in the browser, and in Node since version 15 it crashes the process by default."
+      }
+    ],
+    "kill": "<b>\"Promise.race cancels the slower requests\"</b> — it only stops you waiting, they keep running. Cancelling takes an AbortSignal you pass in and abort yourself."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Когда Promise.all отклоняется, остальные промисы автоматически отменяются.",
+        "400 Bad Request стоит повторять с экспоненциальной задержкой, потому что сервер может восстановиться."
+      ],
+      "en": [
+        "When Promise.all rejects, the remaining promises are cancelled automatically.",
+        "A 400 Bad Request is worth retrying with exponential backoff because the server may recover."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Promise.[[any]] отдаёт первый успех и отклоняется с [[AggregateError]], только если упали все.",
+        "Чтобы отменить fetch, я передаю ему signal от [[AbortController]] и вызываю abort.",
+        "Повторы делаю с экспоненциальной [[задержкой|паузой]] и [[jitter|случайным разбросом]] — для 408, 429, 5xx и сетевых ошибок."
+      ],
+      "en": [
+        "Promise.[[any]] resolves with the first success and rejects with an [[AggregateError]] only if all fail.",
+        "To cancel a fetch, I pass it the signal from an [[AbortController]] and call abort.",
+        "Retries use exponential [[backoff|back-off]] with [[jitter|randomization]], for 408, 429, 5xx and network errors."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Promise.all resolves in input order; rejects on first rejection",
+      "e": "\"in the order of the promises passed, regardless of completion order\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "allSettled never rejects; gives status + value/reason per promise",
+      "e": "Fulfills when all settle, with objects describing each outcome",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "race settles with first settled promise, success or failure",
+      "e": "\"settles with the eventual state of the first promise that settles\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "any resolves with first success; rejects with AggregateError only if all fail",
+      "e": "Rejects when all reject, \"with an AggregateError\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Combinators don't cancel the other operations; cancel via AbortSignal",
+      "e": "Aborting requires AbortController.abort() on the signal passed to the operation",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortController"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Anthropic TS SDK accepts signal in request options; its stream has abort()",
+      "e": "RequestOptions has signal?: AbortSignal; MessageStream.abort() calls this.controller.abort()",
+      "u": [
+        "https://github.com/anthropics/anthropic-sdk-typescript/blob/main/src/lib/MessageStream.ts"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "On abort, fetch rejects with AbortError; pending body read rejects too",
+      "e": "Fetch rejects with AbortError; body consumption/streams rejected",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortController"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Server handler must listen to the request's abort signal to cancel upstream",
+      "e": "Request.signal returns the request's AbortSignal (disconnect firing is framework-specific — hedged in text)",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Request/signal"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "AbortSignal.timeout aborts with TimeoutError",
+      "e": "\"The signal aborts with a TimeoutError DOMException on timeout.\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout_static"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "AbortSignal.any and AbortSignal.timeout are both Baseline since 2024",
+      "e": "any: Baseline March 2024; timeout: Baseline April 2024",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "fetch starts the request when called; Promise.all over 100 fetches starts all at once",
+      "e": "fetch() \"starts the process of fetching a resource\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "p-limit limits concurrency",
+      "e": "\"Run multiple promise-returning & async functions with limited concurrency\"",
+      "u": [
+        "https://github.com/sindresorhus/p-limit"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Exponential backoff doubling up to a cap, plus jitter to avoid lockstep retries",
+      "e": "sleep = min(cap, base × 2^attempt); jitter breaks up retry clusters",
+      "u": [
+        "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Retry only network errors, 429 and 5xx; other 4xx are not retryable",
+      "e": "Anthropic SDK retries \"Connection errors, 408 Request Timeout, 409 Conflict, 429 Rate Limit, and >=500\"",
+      "u": [
+        "https://platform.claude.com/docs/en/api/sdks/typescript"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "On 429 honor Retry-After if sent",
+      "e": "429 \"MAY include a Retry-After header indicating how long to wait\"",
+      "u": [
+        "https://www.rfc-editor.org/rfc/rfc6585#section-4"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Retry non-idempotent calls only with an idempotency key",
+      "e": "Idempotency-Key makes POST/PATCH fault-tolerant (IETF draft, expired, not an RFC)",
+      "u": [
+        "https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Unhandled rejection → console error + unhandledrejection event in browsers",
+      "e": "Bubbling \"will eventually result in an error message being output to the console\"",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Window/unhandledrejection_event"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Node ≥15 crashes on unhandled rejection by default",
+      "e": "\"As of Node.js 15, the default mode for unhandledRejection is changed to throw\"",
+      "u": [
+        "https://nodejs.org/en/blog/release/v15.0.0"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: 400 is worth retrying with backoff (must be false)",
+      "e": "Retry only transient errors; non-transient should fail fast — lie false as intended",
+      "u": [
+        "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/retry-backoff.html"
+      ]
+    }
+  ]
+}

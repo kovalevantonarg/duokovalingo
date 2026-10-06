@@ -12,12 +12,14 @@ Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 | `lib/srs.js` | Spaced-repetition rules (intervals, what's due). The only copy: imported by the API, by `today.mjs` and by `index.html` (as an ES module). |
 | `api/_grade.js` | "Check my answer": prompt, JSON schema, parser. Shared with `today.mjs`. |
 | `api/[route].js` | Auth, storage (Supabase RPC), routes. |
-| `tickets.js`, `drills.js`, `sources.js`, `lessons/` | Study content. Validated by `npm test` at the repo root. |
+| `tickets.js`, `drills.js`, `sources.js` | **Generated** bundles the pages load. The source is `content/tickets/NN-slug.json` at the repo root (one file per ticket: answers, drills, sources); rebuild with `node scripts/build-content.mjs`. |
+| `lessons/` | One lesson JSON per ticket, loaded on demand by `learn.html`. |
 
 ## Dev loop (repo root)
 
 - `npm test` — unit tests for `lib/srs.js` and `api/_grade.js`, plus a consistency check of all content (3 questions/answers per language, cloze blanks match RU/EN, every lesson's decode quotes still exist in its answer, sources have URLs).
-- `node scripts/apply-fixes.mjs fixes.json` — apply reviewed text edits to tickets/drills (refuses if any `old` text isn't found).
+- Edit a ticket: change `content/tickets/NN-slug.json`, then `node scripts/build-content.mjs`. `npm test` fails if you forget.
+- `node scripts/apply-fixes.mjs fixes.json` — apply a batch of reviewed text edits to the ticket files and rebuild (refuses if any `old` text isn't found).
 - `node scripts/build-lesson-index.mjs` — rebuild `lessons/index.json` after editing a lesson.
 - `npm run serve` — local server on :4040 against `queue.json`.
 

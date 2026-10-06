@@ -1,0 +1,243 @@
+{
+  "n": 19,
+  "tag": "Core-40 #31",
+  "sec": "rag",
+  "core": [
+    31
+  ],
+  "ru": {
+    "topic": "RAG: где ломается и как мерить",
+    "qs": [
+      "Четыре места, где RAG ломается. По стадиям.",
+      "Метрики: faithfulness, relevance, recall. Определи и скажи, как мерить каждую.",
+      "Как ты построил эвал для своего RAG? Что именно в наборе?"
+    ],
+    "a": [
+      {
+        "q": "Четыре места",
+        "t": "Ингестия: плохой парсинг PDF или неверный chunking, и знание вообще не попало в индекс как надо. Retrieval miss: нужный пассаж не в top-k, потому что запрос сформулирован иначе или эмбеддинг не отличает нужный пассаж от похожих. Ранжирование: пассаж есть, но закопан на пятнадцатом месте и в контекст не попал. Генерация: модель игнорирует контекст, отвечает из головы или добавляет то, чего в контексте нет. Главный принцип — диагностировать по стадиям, а не смотреть на итоговый ответ: иначе непонятно, что чинить."
+      },
+      {
+        "q": "Метрики",
+        "t": "Recall at k, при одном нужном пассаже это то же, что hit rate: попал ли нужный пассаж в top-k. Нужен размеченный набор, зато считается детерминированно и мгновенно. Context relevance, или precision: простой precision at k — доля вытащенных кусков по делу, а context precision в RAGAS учитывает ранжирование: релевантные должны стоять выше. Faithfulness, или groundedness: каждое утверждение в ответе подтверждается вытащенным контекстом — мерю LLM-судьёй со строгой рубрикой или проверкой цитат. Answer relevance: ответ отвечает на вопрос, а не на соседний. Ключевое — разделять метрики retrieval и метрики генерации: первые дешёвые и точные, вторые дорогие и шумные."
+      },
+      {
+        "q": "Мой эвал",
+        "t": "Золотой набор: вопросы, к каждому — ожидаемый исходный пассаж и факты, которые должны быть в ответе. Прогоняю пайплайн, recall at k считаю автоматически. Для faithfulness — LLM-судья с рубрикой, и выборочно проверяю судью руками, потому что судья тоже ошибается. Гоняю на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением. Набор небольшой, и это нормально: тридцать–пятьдесят хороших вопросов лучше, чем ноль. Именно поэтому я могу показать цифрами, что пайплайн работает, а не просто утверждать это."
+      }
+    ],
+    "kill": "<b>«Работает, я потыкал пару вопросов»</b>. И мерить только end-to-end: ответ плохой, а какая из четырёх стадий виновата — неизвестно."
+  },
+  "en": {
+    "topic": "RAG: where it breaks and how to measure",
+    "qs": [
+      "Four places RAG breaks. By stage.",
+      "Metrics: faithfulness, relevance, recall. Define each and say how you measure it.",
+      "How did you build the eval for your RAG? What exactly is in the set?"
+    ],
+    "a": [
+      {
+        "q": "Four places",
+        "t": "Ingestion: bad PDF parsing or wrong chunking, so the knowledge never made it into the index properly. Retrieval miss: the right passage isn't in the top-k, because the query is phrased differently or the embedding can't tell it apart from similar passages. Ranking: the passage is there but buried at position fifteen and never reaches the context. Generation: the model ignores the context, answers from memory, or adds things the context doesn't say. The principle is to diagnose by stage, not by looking at the final answer — otherwise you don't know what to fix."
+      },
+      {
+        "q": "Metrics",
+        "t": "Recall at k, which equals hit rate when there's one gold passage: did the gold passage make it into the top-k. Needs a labelled set, but it's deterministic and instant. Context relevance, or precision: plain precision at k is the fraction of retrieved chunks that are on-topic, while RAGAS's context precision is ranking-aware and rewards relevant chunks sitting higher. Faithfulness, or groundedness: every claim in the answer is supported by retrieved context — measured with an LLM judge on a strict rubric, or citation checks. Answer relevance: it answers the question asked, not a neighbouring one. The key is separating retrieval metrics from generation metrics — the first are cheap and exact, the second expensive and noisy."
+      },
+      {
+        "q": "My eval",
+        "t": "A golden set: questions, and for each one the expected source passage and the facts the answer must contain. I run the pipeline and compute recall at k automatically. For faithfulness, an LLM judge with a rubric, and I spot-check the judge by hand because judges are wrong too. It runs on every commit, so a chunk-size change shows up as a number rather than an impression. The set is small, and that's fine: thirty to fifty good questions beat zero. It's why I can show with numbers that the pipeline works instead of just claiming it."
+      }
+    ],
+    "kill": "<b>\"It works, I tried a few questions.\"</b> And measuring only end-to-end: the answer is bad and which of the four stages is at fault stays unknown."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Если ответ плохой, это почти всегда вина модели-генератора.",
+        "Эвал на 30 вопросах слишком мал, чтобы что-то значить."
+      ],
+      "en": [
+        "If the answer is bad, it's almost always the generator model's fault.",
+        "An eval of 30 questions is too small to mean anything."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Четыре стадии отказа: ингестия, [[retrieval miss|промах ретривера]], ранжирование, [[генерация|generation]].",
+        "[[Faithfulness|Groundedness]] — каждое утверждение ответа подтверждено вытащенным контекстом.",
+        "Метрики retrieval — дешёвые и [[детерминированные|детерминистичные]]; метрики генерации — дорогие и шумные."
+      ],
+      "en": [
+        "Four failure stages: ingestion, [[retrieval miss]], ranking, [[generation]].",
+        "[[Faithfulness|Groundedness]] — every claim in the answer is supported by retrieved context.",
+        "Retrieval metrics are cheap and [[deterministic]]; generation metrics are expensive and noisy."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "RAG отвечает плохо. Диагностика по стадиям, в порядке проверки",
+        "items": [
+          "Ингестия: парсинг и chunking — знание вообще в индексе?",
+          "Retrieval: нужный пассаж в top-k? (recall@k)",
+          "Ранжирование: пассаж есть, но закопан?",
+          "Генерация: модель игнорирует контекст или добавляет своё?"
+        ]
+      },
+      "en": {
+        "title": "RAG answers badly. Diagnose by stage, in checking order",
+        "items": [
+          "Ingestion: parsing and chunking — is the knowledge even in the index?",
+          "Retrieval: is the gold passage in the top-k? (recall@k)",
+          "Ranking: it's there but buried?",
+          "Generation: model ignores the context or adds its own?"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Four failure stages: ingestion, retrieval miss, ranking, generation",
+      "e": "Maps onto Barnett et al.: FP1 missing content, FP2 missed top-ranked docs, FP3 not in context, FP4 not extracted.",
+      "u": [
+        "https://arxiv.org/abs/2401.05856"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Ranking failure: passage retrieved but buried and never reaches context",
+      "e": "FP2: 'did not rank highly enough'; FP3: 'did not make it into the context' due to consolidation limits.",
+      "u": [
+        "https://arxiv.org/abs/2401.05856"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Recall/hit rate: did the gold passage make the retrieved set; deterministic with labelled set",
+      "e": "ID-based context recall compares retrieved IDs with reference IDs. Note hit_rate and recall are distinct metrics in LlamaIndex (https://developers.llamaindex.ai/python/examples/evaluation/retrieval/retriever_eval/); equal with one gold passage.",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_recall/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Context relevance / precision = fraction of retrieved chunks on-topic",
+      "e": "RAGAS: context precision 'evaluates the retriever's ability to rank relevant chunks higher'; mean precision@k — ranking-aware.",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_precision/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Faithfulness: every claim in the answer supported by retrieved context; LLM judge",
+      "e": "'Number of claims in the response supported by the retrieved context / Total number of claims'; LLM-based.",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Groundedness is a synonym for faithfulness",
+      "e": "TruLens groundedness: answer 'stays faithful to the facts in the retrieved context' by checking claims.",
+      "u": [
+        "https://www.trulens.org/getting_started/core_concepts/rag_triad/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Answer relevance: answers the question asked",
+      "e": "'measures how relevant a response is to the user input'.",
+      "u": [
+        "https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/answer_relevance/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Retrieval metrics cheap/deterministic; generation metrics (LLM judge) expensive and noisier",
+      "e": "Code-based grading 'Fastest and most reliable'; LLM grading: 'Test to ensure reliability first then scale.'",
+      "u": [
+        "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Spot-check the LLM judge by hand",
+      "e": "'LLM-as-judge graders should be closely calibrated with human experts.'",
+      "u": [
+        "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "30–50 good questions beat zero",
+      "e": "'20-50 simple tasks drawn from real failures is a great start.'",
+      "u": [
+        "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: 30 questions too small to mean anything (must be false)",
+      "e": "Anthropic: 20–50 tasks is a great start; early changes have large effect sizes. Lie is false.",
+      "u": [
+        "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: bad answer almost always the generator's fault (must be false)",
+      "e": "Most listed failure points (FP1–FP3) are ingestion/retrieval/ranking, not generation. Lie is false.",
+      "u": [
+        "https://arxiv.org/abs/2401.05856"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Steps: ingestion → retrieval → ranking → generation",
+      "e": "Order follows pipeline order of FP1–FP4; matches answer text.",
+      "u": [
+        "https://arxiv.org/abs/2401.05856"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "n": 30,
+  "tag": "New · coverage gap",
+  "sec": "behav",
+  "core": [
+    45
+  ],
+  "ru": {
+    "topic": "Лидерство без власти, быстрое обучение, почему сейчас",
+    "qs": [
+      "Как ты продвигал техническое решение без формальной власти над командой?",
+      "Расскажи, как ты быстро выучил что-то новое и применил это. Годится пивот в AI.",
+      "Почему уходишь с текущего места именно сейчас?"
+    ],
+    "a": [
+      {
+        "q": "Влияние без власти",
+        "t": "Структура: назвать техническое решение, которое ты продвигал не будучи тимлидом; как убеждал — через прототип/proof of concept, а не через мнение; как реагировал на сопротивление — слушал возражение по существу, а не продавливал. Result — приняли ли решение, и если да, что стало доказательством, что оно было правильным (метрика, инцидент, который оно предотвратило). [Заполнить: конкретное решение с текущего места или сайд-проекта, где ты не был formal owner, но продавил через демонстрацию, а не позицию]."
+      },
+      {
+        "q": "Быстрое обучение",
+        "t": "Тут есть готовый материал — сам пивот. За несколько месяцев, с апреля 2026 года, с нуля в AI до RAG-пайплайна с эвалом и tool-use агента на новом для тебя SDK. Механизм, а не просто факт: как ты реально учился — не курсы пассивно, а строил и ломал; что было первым, что реально сломалось, и как ты это диагностировал; что из старого опыта (senior frontend intuition про debugging, про чтение чужого кода, про декомпозицию большой задачи) перенеслось напрямую, а что пришлось учить с нуля. Это единственная behavioral-история, где честный ответ и питч пивота — одно и то же, не разводи их на два разных рассказа."
+      },
+      {
+        "q": "Почему сейчас",
+        "t": "Ответ не про недовольство текущим местом, а про то, что ты нашёл направление, которое хочешь строить дальше, и текущая роль не даёт расти в него в нужном темпе. Не говоришь плохо о работодателе — это красный флаг для любого интервьюера, независимо от того, насколько ты прав. Формула: что ты ценишь в текущем месте (искренне, не для галочки) → что именно там не растёт в направлении, которое тебе теперь важно → почему именно сейчас, а не раньше или позже (пивот уже на стадии, где нужна реальная работа, не сайд-проект). [Заполнить: что конкретно не даёт расти на текущем месте в сторону AI]."
+      }
+    ],
+    "kill": "Плохие слова о текущем работодателе — сигнал, что через год ты так же будешь говорить об этом месте. И «влияние без власти» без реального доказательства (метрика/инцидент) — тогда это просто «я предложил», а не «меня послушали»."
+  },
+  "en": {
+    "topic": "Leading without authority, learning fast, why now",
+    "qs": [
+      "How have you driven a technical decision without formal authority over the team?",
+      "Tell me about learning something new fast and applying it. The AI pivot counts.",
+      "Why are you leaving your current role now, specifically?"
+    ],
+    "a": [
+      {
+        "q": "Influence without authority",
+        "t": "Structure: name a technical decision you pushed without being the tech lead — how you convinced people: through a prototype/proof of concept, not an opinion; how you handled pushback — actually listened to the substance of the objection instead of just pushing harder. Result — did it get adopted, and if so, what proved it was right (a metric, an incident it prevented). [Fill in: a specific decision at your current job or a side project where you weren't the formal owner but won through demonstration, not position]."
+      },
+      {
+        "q": "Learning fast",
+        "t": "You already have the material — the pivot itself. In a few months since April 2026, from zero in AI to a RAG pipeline with evals and a tool-use agent on an SDK that was new to you. The mechanism matters, not just the fact: how you actually learned — not passive courses, building and breaking things; what was the first thing that genuinely broke and how you diagnosed it; what carried over directly from your old experience (senior-frontend instincts for debugging, reading unfamiliar code, breaking a big problem into steps) versus what you had to learn from zero. This is the one behavioral story where the honest answer and the pivot pitch are the same thing — don't split them into two different stories."
+      },
+      {
+        "q": "Why now",
+        "t": "The answer isn't about dissatisfaction with your current place, it's about having found a direction you want to build toward, and the current role not letting you grow into it fast enough. Don't speak badly of the employer — that's a red flag for any interviewer regardless of how justified it is. Formula: what you genuinely value about the current place (sincerely, not a token line) → what specifically doesn't let you grow in the direction that matters to you now → why now specifically, not earlier or later (the pivot is at a stage that needs real work, not a side project anymore). [Fill in: what specifically caps your growth toward AI at the current place]."
+      }
+    ],
+    "kill": "Speaking badly of your current employer — signals you'll talk about this place the same way in a year. And 'influence without authority' with no real proof (a metric/incident) is just 'I suggested it', not 'they listened'."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Лучший способ показать лидерство без власти — говорить громче своего мнения на митингах.",
+        "«Почему уходишь сейчас» лучше отвечать через недовольство текущим местом — это честно."
+      ],
+      "en": [
+        "The best way to show leadership without authority is being the loudest voice with an opinion in meetings.",
+        "The honest way to answer 'why leaving now' is through dissatisfaction with your current place."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Правоту решения, продвинутого без формальной власти, доказывают [[метрика]] или [[инцидент]], который оно предотвратило, а не «я предложил».",
+        "«Почему уходишь» — формула: ценишь → [[что не даёт расти|не растёт в нужном направлении]] → почему именно сейчас.",
+        "Быстрое обучение: честный ответ и [[питч пивота|pivot pitch]] — одна и та же история."
+      ],
+      "en": [
+        "A decision pushed without formal authority is proven right by a [[metric]] or an [[incident]] it prevented, not by 'I suggested it'.",
+        "'Why leaving' formula: what you value → [[what doesn't let you grow|the growth cap]] → why now specifically.",
+        "Learning fast: the honest answer and the [[pivot pitch]] are the same story."
+      ]
+    }
+  },
+  "sources": []
+}

@@ -1,0 +1,267 @@
+{
+  "n": 46,
+  "tag": "Frontend core · Browser",
+  "sec": "web",
+  "core": [
+    61
+  ],
+  "ru": {
+    "topic": "Core Web Vitals: LCP, INP, CLS",
+    "qs": [
+      "Какие три Core Web Vitals, что каждая реально измеряет и что считается хорошим результатом?",
+      "Lighthouse показывает 98, а Search Console говорит, что INP плохой. Как оба могут быть правы?",
+      "Возьми каждую метрику по очереди: что ты сделаешь первым делом, если она красная? Допустим, это страница чата со стримингом ответа LLM."
+    ],
+    "a": [
+      {
+        "q": "Три метрики",
+        "t": "LCP (Largest Contentful Paint, отрисовка самого крупного элемента) это момент, когда во viewport (видимой области) отрисовался самый большой элемент, картинка или блок текста. Для пользователя это ощущение «страница загрузилась». Хорошо это 2,5 секунды или меньше. INP (Interaction to Next Paint, задержка до следующего кадра) измеряет отзывчивость. Для кликов, тапов и нажатий клавиш это время от ввода до отрисовки следующего кадра, и оно состоит из трёх фаз: input delay (ожидание занятого главного потока), processing (работа обработчиков) и presentation delay (рендеринг до показа кадра). Берётся практически худшее взаимодействие за визит: на каждые 50 взаимодействий одно самое медленное отбрасывается, хорошо это 200 миллисекунд или меньше. CLS (Cumulative Layout Shift, суммарный сдвиг макета) измеряет визуальную стабильность: неожиданные сдвиги оцениваются по тому, какая доля экрана сдвинулась и насколько, группируются во всплески, и берётся самый большой. Хорошо это 0,1 или меньше. Что часто упускают: «хорошо» значит, что порог проходит 75-й перцентиль реальных загрузок, отдельно для мобильных и десктопа. И INP заменил FID в марте 2024 года. FID мерил только задержку первого ввода, его было легко пройти, пока приложение тормозило."
+      },
+      {
+        "q": "Поле и лаборатория",
+        "t": "Потому что они меряют разное. Lighthouse это lab data (лабораторные данные): одна симулированная загрузка на замедленном профиле, без живого пользователя и без взаимодействий. Поэтому обычный отчёт в режиме navigation, тот, что даёт оценку, INP измерить не может и показывает Total Blocking Time как приближение. В лаборатории INP записывают только режим timespan в Lighthouse или панель Performance в DevTools, и только для взаимодействий, которые я выполняю сам. Search Console берёт field data (полевые данные) из CrUX (Chrome User Experience Report, отчёт по реальным пользователям Chrome): реальные люди, скользящее окно 28 дней, 75-й перцентиль. Поле видит то, чего лаборатория не увидит никогда: медленные Android-телефоны среднего класса, клики во время гидрации (оживления серверного HTML), длинные сессии, где список разросся до тысяч строк, сторонние скрипты, которые грузятся после согласия на cookies. Мой подход: полевые данные решают, что сломано, а лабораторные инструменты помогают это отладить. Я добавляю библиотеку web-vitals для своего RUM (мониторинга реальных пользователей) и отправляю INP через её attribution-сборку (с атрибуцией причин), чтобы знать, какой элемент и какая фаза были медленными, а не только число. Потом воспроизвожу конкретное взаимодействие в DevTools с замедлением CPU."
+      },
+      {
+        "q": "План починки",
+        "t": "Для LCP я сначала нахожу LCP-элемент и раскладываю время на части. Если большой TTFB (время до первого байта), проблема в сервере или кешировании. Если картинка начинает грузиться поздно, значит браузер не мог найти её в HTML заранее, например она задана в CSS или её вставляет JS. Я делаю её обычным img в HTML, никогда не ставлю ей lazy-загрузку, добавляю fetchpriority=high и делаю preload (упреждающую загрузку), если она указана только в CSS или JS. Для INP правило такое: меньше работы в обработчике и yield (уступить главный поток) перед тяжёлой частью, чтобы браузер успел отрисовать отклик. Длинные задачи я режу на куски через scheduler.yield там, где он есть. В Chrome и Firefox он есть, в Safari на момент проверки нет, так что нужен фолбэк (запасной вариант) на setTimeout. Для CLS я резервирую место: width и height или aspect-ratio у картинок, фиксированные слоты под встраивания и рекламу, font-display и подогнанные по размеру запасные шрифты, чтобы текст не прыгал при подмене шрифта. В стриминговом чате вылезает и то и другое. Парсить весь markdown на каждый токен убивает INP, поэтому я коплю токены до кадра и парсю инкрементально. И ничего не должно стоять в потоке под растущим сообщением, иначе его толкает вниз на каждом токене."
+      }
+    ],
+    "kill": "<b>«У нас Lighthouse 100, значит с Core Web Vitals всё хорошо»</b> — Google оценивает полевые данные на 75-м перцентиле, а оценка Lighthouse считается по загрузке без взаимодействий, так что <b>INP</b> в ней нет вообще."
+  },
+  "en": {
+    "topic": "Core Web Vitals: LCP, INP, CLS",
+    "qs": [
+      "What are the three Core Web Vitals, what does each one actually measure, and what counts as good?",
+      "Lighthouse gives us a 98, but Search Console says our INP is poor. How can both be true?",
+      "Take each vital in turn: what's the first thing you'd do if it's red? Say it's a chat page streaming an LLM response."
+    ],
+    "a": [
+      {
+        "q": "The three metrics",
+        "t": "LCP, Largest Contentful Paint, is when the biggest image or text block in the viewport renders. It's the user's sense that the page has loaded, and good is 2.5 seconds or less. INP, Interaction to Next Paint, measures responsiveness. For clicks, taps and key presses, it's the time from the input to the next frame being painted, and it has three phases: input delay while the main thread is busy, processing time in the handlers, and presentation delay, the rendering work until the frame is shown. It reports close to the worst interaction of the visit, dropping one slowest outlier per 50 interactions, and good is 200 milliseconds or less. CLS, Cumulative Layout Shift, measures visual stability. Unexpected shifts are scored by how much of the viewport moved and how far, grouped into bursts, and the largest burst is reported. Good is 0.1 or less. The detail people miss is that good means the 75th percentile of real page loads meets the threshold, split by mobile and desktop. Also, INP replaced FID in March 2024. FID only measured the input delay of the first interaction, so it was easy to pass while the app felt sluggish."
+      },
+      {
+        "q": "Field vs lab",
+        "t": "Because they measure different things. Lighthouse is lab data: one simulated load on a throttled profile, with no real user and no interactions. So the standard navigation report, the one that gives the score, can't measure INP and reports Total Blocking Time as a proxy. In the lab, only Lighthouse timespan mode or the DevTools Performance panel record INP, and only for interactions I perform. Search Console uses field data from CrUX, the Chrome User Experience Report: real Chrome users, a rolling 28-day window, at the 75th percentile. The field sees things the lab never will. Slow mid-range Android phones, users clicking while hydration is still running, long sessions where a list grows to thousands of rows, third-party scripts that load after cookie consent. My rule is that field data decides what's broken and lab tools help me debug it. I'd add the web-vitals library for our own RUM, real user monitoring, and send INP with its attribution build, so I know which element and which phase was slow, not just the number. Then I reproduce that specific interaction in DevTools with CPU throttling."
+      },
+      {
+        "q": "Fix playbook",
+        "t": "For LCP I find the LCP element first and break its time into parts. If TTFB is big, it's server or caching work. If the image starts loading late, the browser couldn't discover it early, usually because it's referenced from CSS or inserted by JS instead of sitting in the HTML. So I make it a real img in the HTML, never lazy-load it, add fetchpriority=high, and preload it if it's only referenced from CSS or JS. For INP the rule is to do less work in the handler and yield before the heavy part, so the browser can paint feedback first. I break long tasks into chunks with scheduler.yield where it exists. Chrome and Firefox have it, Safari didn't last time I checked, so I fall back to setTimeout. For CLS I reserve space: width and height or aspect-ratio on images, fixed slots for embeds and ads, and font-display with size-adjusted fallback fonts so text doesn't move when the web font swaps in. A streaming chat hits both. Parsing the whole markdown on every token hurts INP, so I batch tokens per animation frame and parse incrementally. And nothing should sit in the flow below the growing message, or it gets shoved down with every token."
+      }
+    ],
+    "kill": "<b>\"Our Lighthouse score is 100, so our Core Web Vitals are fine\"</b> — Google judges field data at the 75th percentile, and the Lighthouse score comes from a load with no interactions, so it has no <b>INP</b> at all."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "INP измеряет только задержку перед запуском обработчика первого взаимодействия на странице.",
+        "Если Lighthouse показывает 100, страница гарантированно проходит Core Web Vitals в Search Console."
+      ],
+      "en": [
+        "INP measures only the delay before the handler of the first interaction on the page starts running.",
+        "If Lighthouse shows 100, the page is guaranteed to pass Core Web Vitals in Search Console."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Хороший LCP это [[2,5|2.5]] секунды или меньше, хороший INP это [[200]] миллисекунд или меньше, хороший CLS это [[0,1|0.1]] или меньше.",
+        "В марте 2024 года INP заменил [[FID|First Input Delay]] в составе Core Web Vitals.",
+        "Полевые данные из [[CrUX|Chrome User Experience Report]] оцениваются на [[75-м|семьдесят пятом]] перцентиле."
+      ],
+      "en": [
+        "A good LCP is [[2.5]] seconds or less, a good INP is [[200]] milliseconds or less, and a good CLS is [[0.1]] or less.",
+        "In March 2024, INP replaced [[FID|First Input Delay]] as a Core Web Vital.",
+        "Field data from [[CrUX|Chrome User Experience Report]] is scored at the [[75th|seventy-fifth]] percentile."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Из чего складывается одно взаимодействие в INP",
+        "items": [
+          "Пользователь кликает, тапает или жмёт клавишу",
+          "Input delay: ввод ждёт занятый главный поток",
+          "Processing: выполняются обработчики событий",
+          "Presentation delay: рендеринг следующего кадра",
+          "Кадр показан, и отсчёт INP останавливается"
+        ]
+      },
+      "en": {
+        "title": "Anatomy of one INP interaction",
+        "items": [
+          "The user clicks, taps or presses a key",
+          "Input delay: the input waits for the busy main thread",
+          "Processing: the event handlers run",
+          "Presentation delay: rendering work for the next frame",
+          "The frame is shown and the INP clock stops"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "LCP = render time of largest image/text block in viewport; good <= 2.5 s",
+      "e": "Render time of the largest image, text block, or video visible in the viewport; aim for 2.5 s or less.",
+      "u": [
+        "https://web.dev/articles/lcp"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "INP covers clicks, taps, key presses; latency from input to next paint; three phases input delay/processing/presentation delay",
+      "e": "Clicking, tapping, pressing a key; input delay, processing duration, presentation delay until next frame.",
+      "u": [
+        "https://web.dev/articles/inp"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "INP reports roughly the worst interaction; good <= 200 ms",
+      "e": "Ignores one highest interaction for every 50 interactions; <=200 ms good.",
+      "u": [
+        "https://web.dev/articles/inp"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "CLS: shifts scored by impact and distance, grouped into bursts, largest burst reported; good <= 0.1",
+      "e": "Impact fraction * distance fraction; session windows (1 s gap, 5 s max); largest burst; 0.1 or less.",
+      "u": [
+        "https://web.dev/articles/cls"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "'Good' means 75th percentile of page loads, segmented by mobile and desktop",
+      "e": "75th percentile of page loads, segmented across mobile and desktop devices.",
+      "u": [
+        "https://web.dev/articles/vitals"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "INP replaced FID in March 2024; FID measured only the first interaction's input delay",
+      "e": "INP will officially become a Core Web Vital and replace FID on March 12.",
+      "u": [
+        "https://web.dev/blog/inp-cwv-march-12"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Lighthouse can't measure INP at all; reports TBT as proxy",
+      "e": "INP measurement available in Lighthouse 'timespan' mode; TBT is the lab proxy for navigation reports.",
+      "u": [
+        "https://developer.chrome.com/blog/inp-tools-2022"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "fix",
+      "c": "Kill: Lighthouse can't even measure INP",
+      "e": "Lighthouse timespan mode measures INP; the navigation report (the score) cannot.",
+      "u": [
+        "https://developer.chrome.com/blog/inp-tools-2022"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "CrUX = real Chrome users, rolling 28-day window, 75th percentile; used by Search Console",
+      "e": "28-day rolling average data updated daily; applies to CrUX API, PageSpeed Insights, Search Console.",
+      "u": [
+        "https://developer.chrome.com/docs/crux/methodology/tools"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "web-vitals attribution build reports which element and which INP phase was slow",
+      "e": "INP attribution: interactionTarget, inputDelay, processingDuration, presentationDelay.",
+      "u": [
+        "https://github.com/GoogleChrome/web-vitals"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "LCP fix: break into subparts (TTFB etc.), make image discoverable in HTML, never lazy-load, fetchpriority=high, preload if referenced from CSS/JS",
+      "e": "Discoverable in initial HTML; fetchpriority=high; never apply loading=lazy to LCP images; four subparts incl. TTFB.",
+      "u": [
+        "https://web.dev/articles/optimize-lcp"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "INP fix: do less in handlers, yield before heavy work",
+      "e": "Do as little work as possible in event callbacks; yield to let the next frame render.",
+      "u": [
+        "https://web.dev/articles/optimize-inp"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "scheduler.yield exists in Chrome and Firefox but not Safari",
+      "e": "BCD: Chrome 129, Firefox 142, Safari not supported; MDN marks it Limited availability.",
+      "u": [
+        "https://github.com/mdn/browser-compat-data/blob/main/api/Scheduler.json"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "CLS fix: width/height or aspect-ratio, reserved slots for embeds/ads, font fallbacks",
+      "e": "Always include width and height or CSS aspect-ratio; reserve space for ads and embeds; manage font fallbacks.",
+      "u": [
+        "https://web.dev/articles/optimize-cls"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: Lighthouse 100 guarantees passing CWV in Search Console (must be false)",
+      "e": "Core Web Vitals are assessed on field data at the 75th percentile, not lab scores.",
+      "u": [
+        "https://web.dev/articles/vitals"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+{
+  "n": 42,
+  "tag": "Frontend core · React",
+  "sec": "react",
+  "core": [
+    57
+  ],
+  "ru": {
+    "topic": "Конкурентный рендеринг, Suspense и Server Components",
+    "qs": [
+      "Поле поиска фильтрует список из 10 000 строк, и ввод лагает. useTransition или useDeferredValue — и почему?",
+      "Страница с вложенными Suspense грузится лесенкой. Что происходит и как это исправить?",
+      "Во время миграции на App Router как вы объясняли команде разницу между SSR и Server Components, и где ставить 'use client'?"
+    ],
+    "a": [
+      {
+        "q": "Transition или deferred",
+        "t": "Оба механизма делают под капотом одно и то же: помечают часть рендера как несрочную, чтобы React рендерил её в фоне и выбрасывал эту работу, если пришло более срочное обновление. Нажатие клавиши остаётся срочным — поле ввода должно управляться обычным state, и в документации React прямо сказано, что text input через transition (несрочное обновление) контролировать нельзя. Разница в том, кому принадлежит обновление. Если setState для тяжёлой части мой, я оборачиваю его в startTransition: setQuery остаётся срочным, setFilter уходит внутрь transition, и я получаю isPending, чтобы приглушить список. Если я получаю только значение, например через props, или сеттер (функция обновления) живёт в библиотеке, беру useDeferredValue(query) и отдаю отложенное значение списку. В обоих случаях медленный список должен быть обёрнут в memo, иначе он перерисовывается на каждое нажатие и выигрыша нет. В отличие от debounce (отложенного вызова) тут нет фиксированной задержки, всё подстраивается под устройство, но работы меньше не становится. Если рендер списка сам по себе занимает 200 мс, приоритеты его не ускорят, поэтому я сначала делаю виртуализацию."
+      },
+      {
+        "q": "Водопад Suspense",
+        "t": "Suspense boundary (граница ожидания) ловит любой компонент внутри, который приостановился, то есть ждёт данные через use() или библиотеку с поддержкой Suspense, либо ждёт lazy-код, и показывает ближайший fallback (заглушку), пока всё внутри не будет готово. Лесенка возникает из fetch-on-render (загрузки во время рендера): родитель рендерится, начинает свой запрос и приостанавливается; только когда запрос разрешился, дети рендерятся и начинают свои. Это и есть водопад. Три уровня — три последовательных round trip (сетевых круга). Лечится это подходом render-as-you-fetch (рендером параллельно с загрузкой), то есть предзагрузкой: все запросы стартуют до или в начале рендера, в loader маршрута (функции загрузки данных роутера), в обработчике навигации или в Server Component. Вниз передаются промисы, дети читают их через use(), и всё грузится параллельно. Где ставить границы — это дизайнерское решение: одна граница на смысловую область, а не на каждый компонент, иначе страница выскакивает кусками. И Suspense не видит данные, загруженные в useEffect, это просто локальное состояние загрузки. Промис тоже должен кешироваться: новый промис на каждый рендер даёт бесконечный fallback."
+      },
+      {
+        "q": "RSC и SSR",
+        "t": "Они решают разные задачи и работают вместе. SSR (серверный рендеринг) выполняет компоненты на сервере, чтобы получить HTML для первой отрисовки, но потом код этих компонентов всё равно едет в браузер и проходит hydration (оживление готового HTML обработчиками), так что каждый компонент стоит JavaScript. Server Components выполняются только на сервере и никогда не гидрируются. Их результат — сериализованный RSC payload (поток описания дерева), который React на клиенте вливает в дерево. Их код и зависимости не попадают в бандл (итоговый JS для браузера), и они могут читать базу напрямую. 'use client' помечает модуль как вход в клиентский граф: этот компонент и всё, что он импортирует, становится клиентским кодом. Пропсы через эту границу должны быть сериализуемыми: примитивы, обычные объекты, Date, Map, JSX, даже промисы, но не обычные функции и не экземпляры классов. Единственные разрешённые функции — Server Functions с 'use server', на этом и работают Server Actions. При миграции на App Router в Dats.Team правило, которое я продвигал, — держать 'use client' в листьях дерева. А при streaming (потоковой отдаче) loading.js это просто Suspense boundary: оболочка уходит сразу, медленные части догружаются потоком."
+      }
+    ],
+    "kill": "<b>«Server Components — это просто SSR»</b>: SSR всё равно гидрирует и отправляет JS компонента, а Server Components не гидрируются и присылают сериализованный payload. И <b>передать onClick из Server Component</b> нельзя: обычные функции не сериализуются."
+  },
+  "en": {
+    "topic": "Concurrent rendering, Suspense and Server Components",
+    "qs": [
+      "A search box filters a 10,000-row list and typing feels laggy. Would you reach for useTransition or useDeferredValue, and why?",
+      "A page with nested Suspense boundaries loads in a staircase. What's going on and how do you fix it?",
+      "During your App Router migration, how did you explain the difference between SSR and Server Components to the team, and where does 'use client' go?"
+    ],
+    "a": [
+      {
+        "q": "Transition vs deferred",
+        "t": "Under the hood they do the same thing: they mark some rendering as non-urgent, so React can render it in the background and throw that work away if a more urgent update arrives. The keystroke stays urgent — the input has to be driven by normal state, and the React docs say explicitly you can't control a text input through a transition. The difference is who owns the update. If I own the setState for the expensive part, I wrap it in startTransition: setQuery stays urgent, setFilter goes inside the transition, and I get isPending to dim the list. If I only receive the value, say as a prop, or the setter lives in a library, I use useDeferredValue(query) and pass the deferred value to the list. Either way the slow list has to be wrapped in memo, otherwise it re-renders on every keystroke anyway and nothing is gained. Compared to debouncing there's no fixed delay, it adapts to the device, but it doesn't reduce the work. If rendering the list itself takes 200 milliseconds, priorities won't make it faster, so I virtualize first."
+      },
+      {
+        "q": "Suspense waterfall",
+        "t": "A Suspense boundary catches any component inside it that suspends, meaning it's waiting on data through use() or a Suspense-enabled library, or on lazy-loaded code, and shows the nearest fallback until everything inside is ready. The staircase comes from fetch-on-render: the parent renders, starts its fetch and suspends, and only when that resolves do the children render and start their own fetches. That's the waterfall. Three levels means three round trips back to back. The fix is render-as-you-fetch, meaning preloading: start all the requests before or as rendering begins, in the route loader, in the navigation handler, or in a Server Component. Then pass promises down, children read them with use(), and everything loads in parallel. Where I put boundaries is a design call: one per meaningful region, not one per component, otherwise the page pops in piece by piece. Also, Suspense doesn't see data fetched in useEffect, that's just local loading state. And the promise has to be cached, because a new promise every render means an endless fallback."
+      },
+      {
+        "q": "RSC vs SSR",
+        "t": "They solve different problems and they stack. SSR runs components on the server to produce HTML for the first paint, but that component code still ships to the browser and hydrates, so every component still costs JavaScript. Server Components run only on the server and never hydrate. Their output is a serialized RSC payload, which React on the client merges into the tree. Their code and dependencies never reach the bundle, and they can read the database directly. 'use client' marks a module as the entry into the client graph: that component and everything it imports becomes client code. Props crossing that boundary must be serializable: primitives, plain objects, Dates, Maps, JSX, even promises, but not regular functions or class instances. The only functions allowed are Server Functions marked 'use server', which is how Server Actions work. In the App Router migration at Dats.Team, the rule I pushed was to keep 'use client' at the leaves. And with streaming, loading.js is just a Suspense boundary, so the shell flushes right away and slow parts stream in."
+      }
+    ],
+    "kill": "<b>\"Server Components are just SSR\"</b> — SSR still hydrates and ships the component's JS; Server Components never hydrate and send a serialized payload. And <b>passing an onClick from a Server Component</b> fails because regular functions don't serialize."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Рекомендуемый способ сохранить отзывчивость ввода — обернуть setState самого поля ввода в startTransition.",
+        "Suspense показывает fallback, пока дочерний компонент загружает данные в useEffect."
+      ],
+      "en": [
+        "The recommended way to keep typing responsive is to wrap the input's own setState in startTransition.",
+        "Suspense shows its fallback while a child component loads data in useEffect."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Transition может быть [[прерван]] более срочным обновлением, например вводом с клавиатуры.",
+        "Запросы, которые стартуют только после рендера родителя, дают [[водопад|лесенку|waterfall]]; ранний старт всех запросов называется [[render-as-you-fetch|предзагрузка|preloading]].",
+        "Пропсы через границу 'use client' должны быть [[сериализуемыми]], поэтому из функций разрешены только [[Server Functions]]."
+      ],
+      "en": [
+        "A transition can be [[interrupted]] by a more urgent update like typing.",
+        "Fetches that start only after the parent renders create a [[waterfall|staircase]]; starting all requests early is called [[render-as-you-fetch|preloading]].",
+        "Props crossing the 'use client' boundary must be [[serializable]], so the only functions allowed are [[Server Functions]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Transitions are interruptible by more urgent updates",
+      "e": "'A state update marked as a Transition will be interrupted by other state updates'.",
+      "u": [
+        "https://react.dev/reference/react/useTransition"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React docs say you can't control a text input through a transition",
+      "e": "'Transition updates can't be used to control text inputs.'",
+      "u": [
+        "https://react.dev/reference/react/useTransition"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Own the setter -> startTransition + isPending; only have the value (prop/library) -> useDeferredValue",
+      "e": "'If you want to start a Transition in response to some prop or a custom Hook value, try useDeferredValue instead.'",
+      "u": [
+        "https://react.dev/reference/react/useTransition"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "The slow list must be wrapped in memo for the optimization to work",
+      "e": "'This optimization requires SlowList to be wrapped in memo'.",
+      "u": [
+        "https://react.dev/reference/react/useDeferredValue"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Unlike debouncing, no fixed delay; adapts to device; doesn't reduce the work",
+      "e": "'doesn't require choosing any fixed delay'; lags proportionally to device speed; 'does not by itself prevent extra network requests'.",
+      "u": [
+        "https://react.dev/reference/react/useDeferredValue"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Suspense activates for use()/Suspense-enabled libraries/lazy and shows nearest fallback until children ready",
+      "e": "Activated by Suspense-enabled frameworks, lazy, use with cached Promise; nearest boundary's fallback shown until all children load.",
+      "u": [
+        "https://react.dev/reference/react/Suspense"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Suspense doesn't detect data fetched in useEffect",
+      "e": "'Suspense does not detect when data is fetched inside an Effect or event handler.'",
+      "u": [
+        "https://react.dev/reference/react/Suspense"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Fetch-on-render causes waterfalls; render-as-you-fetch starts all requests early",
+      "e": "Render-as-you-fetch: 'Start fetching all the required data ... as early as possible'; waterfall = unintentional sequence.",
+      "u": [
+        "https://17.reactjs.org/docs/concurrent-mode-suspense.html"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Don't put a boundary around every component; placement is a design decision",
+      "e": "'Suspense boundaries should not be more granular than the loading sequence ... ask [a designer]'.",
+      "u": [
+        "https://react.dev/reference/react/Suspense"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Promise must be cached; new promise each render means repeated fallback",
+      "e": "'If a new Promise is created directly in render, React will display the Suspense fallback on every re-render.'",
+      "u": [
+        "https://react.dev/reference/react/use"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Server Components run only on server, code not in bundle, can read DB directly",
+      "e": "Component code 'never sent to the browser'; can read filesystem/database directly.",
+      "u": [
+        "https://react.dev/reference/rsc/server-components"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "RSC output is serialized RSC payload merged on client; only Client Components hydrate",
+      "e": "'RSC Payload is a compact, serialized representation'; 'JavaScript is used to hydrate Client Components'.",
+      "u": [
+        "https://nextjs.org/docs/app/getting-started/server-and-client-components"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "'use client' marks module and its transitive imports as client code",
+      "e": "'mark the module and its transitive dependencies as client code'.",
+      "u": [
+        "https://react.dev/reference/rsc/use-client"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Serializable props: primitives, plain objects, Date, Map, JSX, Promises; not regular functions or class instances",
+      "e": "Supported: primitives, Map/Set, Date, plain objects, Server Functions, JSX, Promises; not classes/instances or plain functions.",
+      "u": [
+        "https://react.dev/reference/rsc/use-client"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Only functions allowed across the boundary are Server Functions ('use server'), which power Server Actions",
+      "e": "Server Action = Server Function passed to an action prop or called inside an action; 'use server' creates Server Functions.",
+      "u": [
+        "https://react.dev/reference/rsc/server-functions"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Next.js loading.js is a Suspense boundary enabling streaming",
+      "e": "'automatically wrap the page.js file and any children below in a <Suspense> boundary'.",
+      "u": [
+        "https://nextjs.org/docs/app/api-reference/file-conventions/loading"
+      ]
+    }
+  ]
+}

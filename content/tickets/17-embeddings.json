@@ -1,0 +1,256 @@
+{
+  "n": 17,
+  "tag": "Core-40 #29",
+  "sec": "rag",
+  "core": [
+    29
+  ],
+  "ru": {
+    "topic": "Embeddings",
+    "qs": [
+      "Что такое эмбеддинг и что означает расстояние между двумя?",
+      "Cosine против dot product. Размерности. Где хранить.",
+      "Два случая, где семантический поиск промахивается, и что ты добавляешь."
+    ],
+    "a": [
+      {
+        "q": "Что это",
+        "t": "Вектор из тысячи с лишним чисел, который энкодер строит так, чтобы тексты со схожим смыслом оказались рядом. Расстояние — это близость смысла, как её выучила модель на своих данных, а не абсолютная истина. Ключевое правило: запрос и документы — в одном пространстве эмбеддингов, обычно это одна модель. Некоторые семейства, вроде Voyage 4, специально обучены в общем пространстве. Но если смешать несвязанные модели, расстояния бессмысленны: ничего не падает, поиск просто молча возвращает мусор, и это находят через неделю."
+      },
+      {
+        "q": "Метрики",
+        "t": "Cosine смотрит только на угол между векторами, игнорируя длину. Dot product учитывает и длину. Если векторы нормализованы до единичной длины — а большинство провайдеров возвращают именно такие, — это одно и то же, и dot product просто дешевле. Размерности: у OpenAI text-embedding-3-small — тысяча пятьсот тридцать шесть, у их же -large можно до трёх тысяч семидесяти двух; у моделей Voyage 4 по умолчанию тысяча двадцать четыре, а поддерживаются от двухсот пятидесяти шести до двух тысяч сорока восьми. Больше измерений — тоньше различия, но дороже хранить и медленнее искать; некоторые модели позволяют усекать вектор. Храню в Postgres с pgvector и индексом HNSW — на моём масштабе отдельная векторная база не нужна."
+      },
+      {
+        "q": "Промахи",
+        "t": "Первый — точные идентификаторы: артикулы, имена, коды ошибок. Семантика их не различает, «ошибка 4017» и «ошибка 4071» рядом. Лечится гибридом с BM25, обычным лексическим поиском, и слиянием результатов. Второй — доменный сдвиг: модель училась на общем вебе, а у меня юридические или медицинские тексты, и расстояния теряют смысл. Лечится доменной моделью или реранкером, который читает запрос и каждый найденный документ вместе. И ещё нюанс: запрос и документ — тексты разной природы, у некоторых моделей для них разные режимы."
+      }
+    ],
+    "kill": "<b>«Эмбеддинги понимают смысл»</b> без слов «относительно данных обучения». И считать cosine и dot product разными метриками на нормализованных векторах: там они дают одно и то же."
+  },
+  "en": {
+    "topic": "Embeddings",
+    "qs": [
+      "What is an embedding, and what does the distance between two mean?",
+      "Cosine versus dot product. Dimensions. Where do you store them?",
+      "Two cases where semantic search misses, and what you add."
+    ],
+    "a": [
+      {
+        "q": "What it is",
+        "t": "A vector of a thousand-odd numbers that an encoder produces so that texts with similar meaning land close together. Distance is semantic closeness as the model learned it from its training data, not absolute truth. The key rule: query and documents must share one embedding space, normally the same model. Some families, like Voyage 4, share a space by design, but mix unrelated models and the distances mean nothing: nothing throws, search just quietly returns junk, and you find out a week later."
+      },
+      {
+        "q": "Metrics",
+        "t": "Cosine looks only at the angle between vectors and ignores length. Dot product includes length. If the vectors are normalised to unit length — and most providers return them that way — the two are identical, and dot product is simply cheaper. Dimensions: OpenAI's text-embedding-3-small is fifteen thirty-six, their -large goes up to three thousand seventy-two; the Voyage 4 models default to ten twenty-four and support two fifty-six up to two thousand forty-eight. More dimensions, finer distinctions, but more storage and slower search; some models let you truncate the vector. I store in Postgres with pgvector and an HNSW index — at my scale a separate vector database isn't justified."
+      },
+      {
+        "q": "Misses",
+        "t": "First — exact identifiers: part numbers, names, error codes. Semantics doesn't separate them; error 4017 and error 4071 sit side by side. The fix is hybrid search with BM25, plain lexical matching, and merging the two result lists. Second — domain shift: the model was trained on the general web and my documents are legal or medical, so distances lose meaning. The fix is a domain model or a reranker that reads the query and each retrieved document together. One more nuance: a query and a document are different kinds of text, and some models have separate modes for each."
+      }
+    ],
+    "kill": "<b>\"Embeddings understand meaning\"</b> without adding \"relative to their training data\". And treating cosine and dot product as different on normalised vectors: there they give the same result."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Запрос и документы можно эмбеддить любыми двумя несвязанными моделями — расстояния всё равно сопоставимы.",
+        "Cosine и dot product дают разные результаты на нормализованных векторах."
+      ],
+      "en": [
+        "Query and documents can be embedded with any two unrelated models; distances are still comparable.",
+        "Cosine and dot product give different results on normalised vectors."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Запрос и документы обычно эмбеддятся [[одной|одной и той же|той же]] моделью — несвязанные модели делают расстояния бессмысленными.",
+        "На [[нормализованных|единичных]] векторах cosine и dot product — одно и то же, dot просто дешевле.",
+        "Точные идентификаторы семантика не различает — добавляю гибрид с [[BM25]]."
+      ],
+      "en": [
+        "Query and documents are normally embedded with the [[same]] model — unrelated models make distances meaningless.",
+        "On [[normalised|unit|normalized]] vectors cosine and dot product are identical; dot is just cheaper.",
+        "Semantics can't separate exact identifiers — I add hybrid search with [[BM25]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "An embedding is a vector of a thousand-odd numbers",
+      "e": "text-embedding-3-small 1536, -large 3072; Voyage default 1024 — 'thousand-odd' is a fair hedge.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "fix",
+      "c": "Query and documents must use the same model; mixed models' distances mean nothing",
+      "e": "Voyage 4: 'All four models produce compatible embeddings... can be used interchangeably' (docs large, queries lite).",
+      "u": [
+        "https://blog.voyageai.com/2026/01/15/voyage-4/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Cosine ignores length; on unit vectors cosine == dot product, dot is cheaper",
+      "e": "'Cosine similarity is equivalent to dot-product similarity, while the latter can be computed more quickly.'",
+      "u": [
+        "https://docs.voyageai.com/docs/faq"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Most providers return unit-normalised embeddings",
+      "e": "OpenAI: embeddings normalized to length 1; Voyage FAQ: 'normalized to length 1' (https://docs.voyageai.com/docs/faq). Cohere docs don't state it.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "text-embedding-3-small is 1536 dims",
+      "e": "text-embedding-3-small: 1536 dimensions by default.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "text-embedding-3-large goes up to 3072 dims",
+      "e": "text-embedding-3-large: 3072; 'dimensions' parameter can shorten.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix",
+      "c": "Voyage-3 defaults to 1024 dims",
+      "e": "voyage-3: 1024 is the only option; listed under 'Older models'. voyage-4 family: default 1024, supports 256/512/1024/2048.",
+      "u": [
+        "https://docs.voyageai.com/docs/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "voyage-3-large can be truncated down to 256 dims",
+      "e": "voyage-3-large: default 1024; supported 256, 512, 1024, 2048.",
+      "u": [
+        "https://docs.voyageai.com/docs/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Some models let you truncate the vector",
+      "e": "Cohere embed-v4.0 Matryoshka dims [256, 512, 1024, 1536]; OpenAI 'dimensions' param.",
+      "u": [
+        "https://docs.cohere.com/docs/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Store in Postgres with pgvector and an HNSW index",
+      "e": "pgvector supports HNSW and IVFFlat. Caveat: vector type indexes up to 2,000 dims (halfvec 4,000) — 3072-dim needs halfvec or shortening.",
+      "u": [
+        "https://github.com/pgvector/pgvector"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Embeddings miss exact identifiers; fix with hybrid BM25 + result fusion",
+      "e": "'Error code TS-999'... embedding 'could miss the exact TS-999 match. BM25 looks for this specific text string'; rank fusion merges.",
+      "u": [
+        "https://www.anthropic.com/news/contextual-retrieval"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Domain shift fix: domain-specific model or reranker",
+      "e": "Voyage offers voyage-law-2 ('Optimized for legal retrieval'), voyage-finance-2, voyage-code-3/4.",
+      "u": [
+        "https://docs.voyageai.com/docs/embeddings"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Some models have separate query/document modes",
+      "e": "Voyage input_type 'query'/'document'; Cohere search_query/search_document (https://docs.cohere.com/docs/embeddings).",
+      "u": [
+        "https://docs.voyageai.com/docs/embeddings"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "fix",
+      "c": "LIE: different models for query/docs keep distances comparable (must be false)",
+      "e": "True for Voyage 4 family: 'embeddings generated from different models can be used interchangeably'.",
+      "u": [
+        "https://blog.voyageai.com/2026/01/15/voyage-4/"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "LIE: cosine and dot differ on normalised vectors (must be false)",
+      "e": "Normalized → dot product gives identical ranking to cosine. Lie is false.",
+      "u": [
+        "https://developers.openai.com/api/docs/guides/embeddings"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "fix2",
+      "c": "Only the Voyage 4 models support 256/512/1024/2048 dimensions (default 1024); voyage-law-2 and voyage-finance-2 are fixed at 1024.",
+      "e": "Voyage embeddings docs, model table.",
+      "u": [
+        "https://docs.voyageai.com/docs/embeddings"
+      ]
+    }
+  ]
+}

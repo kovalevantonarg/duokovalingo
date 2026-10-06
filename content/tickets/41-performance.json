@@ -1,0 +1,234 @@
+{
+  "n": 41,
+  "tag": "Frontend core · React",
+  "sec": "react",
+  "core": [
+    56
+  ],
+  "ru": {
+    "topic": "Производительность",
+    "qs": [
+      "Экран в React тормозит. С чего начнёшь и что на самом деле дают memo, useMemo и useCallback?",
+      "Мы положили user, theme и cart в один Context, и всё приложение перерендеривается при каждом изменении корзины. Почему и как это чинить?",
+      "Спроектируй рендеринг длинной переписки в AI-чате, где последнее сообщение приходит потоком, токен за токеном."
+    ],
+    "a": [
+      {
+        "q": "Сначала замер",
+        "t": "Я сначала измеряю, а потом что-то трогаю. React DevTools Profiler записывает каждый commit (применение изменений к DOM) как flame graph (диаграмму времени по компонентам), показывает, сколько занял каждый компонент, а с включённой опцией записи причин рендера говорит, что это было: изменение state, props или рендер родителя. Часто оказывается, что виноват большой компонент, который рендерится на каждое нажатие клавиши, или одно дорогое вычисление, а не сам React. memo позволяет компоненту пропустить рендер, если props поверхностно равны прошлым. useMemo кэширует вычисленное значение, useCallback кэширует функцию, оба по зависимостям. Они стоят сравнения и памяти на каждом рендере и окупаются только в паре, memo на ребёнке плюс стабильные ссылки от родителя: memo на дочернем компоненте бесполезен, если я каждый рендер передаю ему новый объект или inline-стрелку (функцию, созданную прямо в JSX), потому что поверхностное сравнение проваливается. На этом требовании стабильных props ручная мемоизация чаще всего и ломается. Сегодня я бы опирался на React Compiler, который вышел в версии 1.0 в октябре 2025. Это Babel-плагин, который на этапе сборки мемоизирует компоненты и значения автоматически. Лучше всего он работает с React 19, поддерживает 17 и 18 через react-compiler-runtime, но только если код соблюдает правила React."
+      },
+      {
+        "q": "Ловушка Context",
+        "t": "Каждый потребитель context перерендеривается, когда новый value провайдера не равен старому по Object.is, и memo на потребителе этого не останавливает. Обычно ломаются две вещи. Провайдер создаёт value как новый объектный литерал на каждом рендере, так что даже посторонний рендер родителя расходится по всем потребителям. И один context несёт несвязанные данные, поэтому изменение корзины перерендеривает всё, что читает только тему. Исправления, от самого дешёвого. Мемоизировать value через useMemo по реальным полям. Разделить контексты по частоте изменений: тему и пользователя отдельно от корзины, и часто ещё отделить state от dispatch, потому что сеттеры стабильны. Когда много компонентов читают маленькие кусочки быстро меняющегося состояния, я переношу его в store (внешнее хранилище) с селекторами. Zustand построен на useSyncExternalStore: каждый компонент подписывается через селектор и рендерится, только если изменился выбранный кусок. Context — это внедрение зависимостей для редко меняющихся значений, а не state-менеджер (библиотека управления состоянием)."
+      },
+      {
+        "q": "Стриминговый чат",
+        "t": "Ключевое наблюдение: переписка только дописывается, и меняется только последнее сообщение. Поэтому я храню сообщения как массив объектов со стабильными id, а во время стриминга (потоковой выдачи ответа) заменяю только объект последнего сообщения, сохраняя ссылки на все остальные. Каждая строка — memo-компонент с key по id сообщения, который получает объект сообщения как prop. Старые строки видят ту же ссылку и пропускают рендер, и во время стриминга перерендеривается только стримящаяся строка. Дорогое в строке — обычно парсинг markdown и подсветка синтаксиса, поэтому это остаётся внутри мемоизированной строки. Токены могут приходить чаще, чем кадры, поэтому я копирую куски в ref и сбрасываю в state раз за кадр анимации, а не на каждый токен. Если диалоги дорастают до сотен длинных сообщений, я делаю virtualization (виртуализацию), например через TanStack Virtual, и рендерю только то, что в видимой области, плюс небольшой запас. Цена в том, что строки разной высоты нужно измерять, а ещё надо отдельно решать прилипание скролла к низу и поиск по странице, который ломается, когда строк нет в DOM."
+      }
+    ],
+    "kill": "<b>«Оберну всё в useMemo и useCallback на всякий случай»</b> — каждый стоит сравнения и памяти и ничего не даёт, если вычисление не дорогое и результат не идёт в memo-компонент или в зависимости хука."
+  },
+  "en": {
+    "topic": "Performance",
+    "qs": [
+      "A React screen feels slow. Where do you start, and what do memo, useMemo and useCallback actually buy you?",
+      "We put user, theme and cart in one Context, and the whole app re-renders on every cart change. Why, and how do you fix it?",
+      "Design the rendering for a long AI chat transcript where the last message streams in token by token."
+    ],
+    "a": [
+      {
+        "q": "Measure first",
+        "t": "I measure before I touch anything. The React DevTools Profiler records each commit as a flame graph, shows how long every component took, and with the option to record why each component rendered, it tells me whether it was a state change, a props change or the parent. Often the culprit is a big component re-rendering on every keystroke, or one expensive computation, not React itself. memo lets a component skip rendering when its props are shallow-equal to last time. useMemo caches a computed value and useCallback caches a function, both keyed on deps. They cost a comparison and memory on every render, and they only pay off as a pair, memo on the child plus stable references from the parent. memo on a child is useless if I pass it a new object or an inline arrow every render, because the shallow compare fails. That stable-props requirement is where hand-written memoization quietly breaks. Today I'd lean on React Compiler, which hit 1.0 in October 2025. It's a Babel plugin that memoizes components and values automatically at build time. It works best with React 19 and supports 17 and 18 through react-compiler-runtime, but only if the code follows the rules of React."
+      },
+      {
+        "q": "Context pitfall",
+        "t": "Every consumer of a context re-renders when the provider's new value isn't equal to the old one under Object.is, and memo on the consumer doesn't stop it. Two things usually go wrong. The provider builds value as a new object literal on every render, so even an unrelated parent render ripples to all consumers. And one context carries unrelated data, so a cart change re-renders everything that only reads the theme. The fixes, cheapest first. Memoize the value with useMemo, keyed on the actual fields. Split contexts by how often they change, theme and user separately from cart, and often split state from dispatch too, since setters are stable. When many components read small slices of fast-changing state, I move it to a store with selectors. Zustand is built on useSyncExternalStore: each component subscribes with a selector and re-renders only if its selected slice changes. Context is dependency injection for rarely-changing values. It isn't a state manager."
+      },
+      {
+        "q": "Streaming transcript",
+        "t": "The key observation is that the transcript is append-only and only the last message changes. So I keep messages as an array of objects with stable ids, and while streaming I replace only the last message object and keep all the others by reference. Each row is a memo component keyed by message id, receiving the message object as a prop. Old rows see the same reference and skip rendering, so only the streaming row re-renders while the answer streams. The expensive part of a row is usually markdown parsing and syntax highlighting, so that stays inside the memoized row. Tokens can arrive faster than frames, so I buffer chunks in a ref and flush to state once per animation frame, not once per token. If conversations grow to hundreds of long messages, I add virtualization with something like TanStack Virtual, rendering only what's in the viewport plus some overscan. The trade-off is that variable-height rows need measuring, and I have to handle stick-to-bottom scrolling and find-in-page, which breaks when rows aren't in the DOM."
+      }
+    ],
+    "kill": "<b>\"I wrap everything in useMemo and useCallback to be safe\"</b> — each one costs a comparison and memory, and buys nothing unless the calculation is genuinely expensive or the result feeds a memo child or a hook dependency."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Если обернуть потребителя context в memo, он не будет перерендериваться при изменении value.",
+        "React Compiler работает только с React 19."
+      ],
+      "en": [
+        "Wrapping a context consumer in memo stops it from re-rendering when the context value changes.",
+        "React Compiler only works with React 19."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Каждый потребитель context перерендеривается, когда новый value провайдера не равен старому по [[Object.is]].",
+        "memo пропускает рендер, только если props [[поверхностно равны|shallow-equal]] прошлым.",
+        "Для длинных списков [[виртуализация|virtualization|windowing]] рендерит только строки в видимой области плюс запас."
+      ],
+      "en": [
+        "Every context consumer re-renders when the provider's new value isn't equal to the old one under [[Object.is]].",
+        "memo skips a render only when the props are [[shallow-equal|shallowly equal]] to last time.",
+        "For long lists, [[virtualization|windowing]] renders only the rows in the viewport plus some overscan."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React DevTools Profiler records each commit, flame chart, per-component render time",
+      "e": "'The DevTools profiler groups performance info by commit'; flame chart bars show component render time.",
+      "u": [
+        "https://legacy.reactjs.org/blog/2018/09/10/introducing-the-react-profiler.html"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Profiler option records why each component rendered (state/props/parent)",
+      "e": "DevTools 4.15.0: hook indices shown as a reason a component rendered in the profiler (why-did-this-render feature). Secondary detail only in changelog.",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-devtools/CHANGELOG.md"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "memo skips render when props are shallow-equal (Object.is per prop)",
+      "e": "React compares each prop with Object.is; new objects/functions every render break memo.",
+      "u": [
+        "https://react.dev/reference/react/memo"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "useMemo caches a value, useCallback caches a function, keyed on deps",
+      "e": "useCallback is equivalent to useMemo returning a function; both keyed on dependencies.",
+      "u": [
+        "https://react.dev/reference/react/useMemo"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React Compiler 1.0 released October 2025",
+      "e": "React Compiler v1.0 post dated October 7, 2025.",
+      "u": [
+        "https://react.dev/blog/2025/10/07/react-compiler-1"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "React Compiler is a Babel plugin that memoizes automatically at build time",
+      "e": "Package babel-plugin-react-compiler; 'build-time tool'; also runs via swc in Next.js 15.3.1+.",
+      "u": [
+        "https://react.dev/learn/react-compiler/installation"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Compiler works best with React 19, supports 17/18 via react-compiler-runtime",
+      "e": "'designed to work best with React 19, but it also supports React 17 and 18'; targets 17/18 need react-compiler-runtime.",
+      "u": [
+        "https://react.dev/reference/react-compiler/target"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Compiler requires following the Rules of React",
+      "e": "When the rule reports an error 'the compiler will skip optimizing that specific component or hook'.",
+      "u": [
+        "https://react.dev/learn/react-compiler/installation"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Every context consumer re-renders when value changes by Object.is; memo doesn't stop it",
+      "e": "Values 'compared with the Object.is'; 'Skipping re-renders with memo does not prevent the children receiving fresh context values'.",
+      "u": [
+        "https://react.dev/reference/react/useContext"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Memoize the provider value with useMemo",
+      "e": "Docs example wraps contextValue in useMemo and functions in useCallback to avoid consumer re-renders.",
+      "u": [
+        "https://react.dev/reference/react/useContext"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Split state and dispatch contexts; setters are stable",
+      "e": "'The set function has a stable identity'; scaling-up guide uses separate TasksContext and TasksDispatchContext.",
+      "u": [
+        "https://react.dev/reference/react/useState"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Zustand is built on useSyncExternalStore; selector-based re-render only when slice changes",
+      "e": "useStore calls React.useSyncExternalStore(api.subscribe, () => selector(api.getState()), ...).",
+      "u": [
+        "https://raw.githubusercontent.com/pmndrs/zustand/main/src/react.ts"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "TanStack Virtual renders viewport plus overscan; variable heights need measuring",
+      "e": "overscan: 'number of items to render above and below the visible area' (default 1); measureElement for dynamic sizes.",
+      "u": [
+        "https://tanstack.com/virtual/latest/docs/api/virtualizer"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "fix",
+      "c": "useMemo/useCallback buy nothing unless result feeds a memo child or an effect dependency",
+      "e": "Docs also list a third case: 'The calculation ... is noticeably slow, and its dependencies rarely change'.",
+      "u": [
+        "https://react.dev/reference/react/useMemo"
+      ]
+    }
+  ]
+}

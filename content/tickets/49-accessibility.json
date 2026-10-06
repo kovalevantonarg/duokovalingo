@@ -1,0 +1,245 @@
+{
+  "n": 49,
+  "tag": "Frontend core · Browser",
+  "sec": "web",
+  "core": [
+    64
+  ],
+  "ru": {
+    "topic": "Доступность (accessibility)",
+    "qs": [
+      "Коллега сделал выпадающее меню из div с onClick. Что с этим не так и как ты это исправишь?",
+      "Расскажи, как ты управляешь фокусом в модальном окне и при смене роута в SPA.",
+      "Как сделать доступным стримящийся ответ в AI-чате, и как ты вообще тестируешь доступность?"
+    ],
+    "a": [
+      {
+        "q": "Семантика",
+        "t": "div не получает фокус, не реагирует на Enter и Space, а screen reader (программа чтения с экрана) объявляет его как обычный текст или в лучшем случае как «кликабельное». button даёт всё это бесплатно: фокус, активацию с клавиатуры, роль кнопки, состояние disabled. Поэтому я начинаю с семантического HTML. Настоящие кнопки и ссылки, label, привязанный к каждому полю, один h1 и заголовки по порядку, потому что пользователи скринридеров навигируют по заголовкам. И landmarks (ориентиры-регионы) вроде header, nav, main, чтобы можно было прыгать между областями. ARIA идёт вторым шагом. Первое правило ARIA: не используй её, если нативный элемент справляется, а плохая ARIA хуже, чем никакой. role button на div обещает поведение клавиатуры, которого у div нет. Из ARIA я реально беру состояния: aria-expanded на триггере меню, aria-invalid и aria-describedby на поле с ошибкой, aria-current на активной ссылке навигации. Для самого меню, если это список действий, я следую паттерну menu button из ARIA APG (сборника паттернов W3C). А часто простой disclosure (раскрывающийся блок) со списком ссылок проще и надёжнее."
+      },
+      {
+        "q": "Фокус",
+        "t": "Пользователи клавиатуры и скринридеров находятся там, где фокус, и если я его не перемещаю, они теряются. Для модалки я сначала запоминаю элемент, который её открыл. При открытии переношу фокус внутрь диалога, обычно на первый контрол или заголовок. Дальше держу Tab внутри и делаю страницу за ним inert (неактивной), чтобы фон нельзя было ни достичь, ни прочитать. Escape закрывает окно. При закрытии возвращаю фокус на триггер, иначе пользователь окажется в начале документа. Нативный dialog с showModal даёт inert-фон и Escape бесплатно, но возврат фокуса я всё равно проверяю руками. Вторая ловушка — смена роута (маршрута) в SPA (одностраничном приложении). Полная загрузка страницы сбрасывает фокус, и скринридер читает новый title. Клиентская навигация не делает ни того, ни другого. Поэтому после перехода я переношу фокус на h1 или main новой страницы с tabIndex -1 или объявляю заголовок через live region (область, изменения в которой зачитываются). В App Router у Next.js есть встроенный route announcer (объявление смены страницы), но куда попадает фокус, я всё равно проверяю."
+      },
+      {
+        "q": "Стриминг и тесты",
+        "t": "Если повесить aria-live на сообщение, которое стримится (приходит по частям), скринридер пытается читать каждый токен, и получается заикание или обрывки. Поэтому сам пузырь со стримом не live region. Я держу отдельную визуально скрытую область с aria-live polite, которая есть в DOM с самого начала. Когда ответ завершён, кладу туда финальный текст или короткое «ответ готов». Для очень длинных ответов можно троттлить (ограничивать частоту) до кусков размером с предложение. Во время генерации ставлю aria-busy на контейнер сообщения, но поддержка в скринридерах разная, так что настоящая гарантия — одно объявление в конце. Кнопка Stop — настоящий button, видимый и доступный по Tab, а фокус остаётся в поле ввода, чтобы можно было продолжать печатать. Я уважаю prefers-reduced-motion: убираю анимацию печати и плавный автоскролл. Тестирую так: сначала проход только с клавиатуры, потом VoiceOver или NVDA. axe и Lighthouse ловят только часть проблем, по исследованию самого Deque около 57% найденных проблем по их числу. Ориентир — WCAG 2.2 уровня AA, текущая рекомендация W3C, а WCAG 3 пока черновик."
+      }
+    ],
+    "kill": "<b>«Повешу role=\"button\" и aria-label — и готово»</b> — ARIA меняет только то, что объявляется, а не поведение: div всё так же не получает фокус и не реагирует на Enter и Space."
+  },
+  "en": {
+    "topic": "Accessibility",
+    "qs": [
+      "A teammate built a dropdown out of divs with onClick. What's wrong with it and how would you fix it?",
+      "Walk me through focus management for a modal and for route changes in a SPA.",
+      "How would you make a streaming AI chat response accessible, and how do you test accessibility at all?"
+    ],
+    "a": [
+      {
+        "q": "Semantic HTML",
+        "t": "The div isn't focusable, doesn't respond to Enter or Space, and a screen reader announces it as plain text, or \"clickable\" at best. A button gives me all of that for free: focus, keyboard activation, the button role, a disabled state. That's why I start with semantic HTML. Real buttons and links, a label tied to every input, one h1 and headings in order, because screen reader users navigate by headings. And landmarks like header, nav and main, so they can jump between regions. ARIA comes second. The first rule of ARIA is don't use it if a native element does the job, and bad ARIA is worse than none. role button on a div promises keyboard behavior the div doesn't have. The ARIA I actually reach for is state: aria-expanded on the menu trigger, aria-invalid and aria-describedby on a field with an error, aria-current on the active nav link. For the menu itself, if it's a list of actions I follow the menu button pattern from the ARIA Authoring Practices. Often a plain disclosure with a list of links is simpler and more robust."
+      },
+      {
+        "q": "Focus management",
+        "t": "Keyboard and screen reader users live where focus is, so if I don't move it, they're lost. For a modal I first remember the element that opened it. On open I move focus into the dialog, usually to the first control or the heading. Then I keep Tab inside and make the page behind it inert, so nothing in the background can be reached or read out. Escape closes it. On close I return focus to the trigger, otherwise the user lands at the top of the document. The native dialog element with showModal gives me the inert background and Escape for free, but I still test that focus comes back. SPA route changes are the second trap. A full page load resets focus and the screen reader announces the new title. A client-side navigation does neither. So after navigating I move focus to the new page's h1 or main with tabIndex -1, or announce the title in a live region. The Next.js App Router has a built-in route announcer, but I still check where focus lands."
+      },
+      {
+        "q": "Streaming and testing",
+        "t": "If I put aria-live on the message that's streaming, the screen reader tries to read every token and it turns into stutter or gets cut off. So the streaming bubble itself isn't a live region. I keep a separate, visually hidden aria-live polite region that's in the DOM from the start. When the response completes, I put the final text or a short \"response ready\" into it. For very long answers I might throttle to sentence-sized chunks. While generating I set aria-busy on the message container, but screen reader support varies, so the real guarantee is one announcement at the end. The Stop button is a real button, visible and reachable by Tab, and focus stays in the composer so the user can keep typing. I respect prefers-reduced-motion by dropping typing animations and smooth auto-scroll. For testing I do a keyboard-only pass first, then VoiceOver or NVDA. axe and Lighthouse catch only part of the issues, about 57% of the issues found, by count, per Deque's own study. My reference is WCAG 2.2 AA, the current W3C Recommendation, while WCAG 3 is still a draft."
+      }
+    ],
+    "kill": "<b>\"I'll add role=\"button\" and an aria-label and we're done\"</b> — ARIA changes what gets announced, not behavior: the div still isn't focusable and ignores Enter and Space."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Если добавить role=\"button\" на div, он станет фокусируемым и начнёт активироваться с клавиатуры.",
+        "Если axe и Lighthouse не нашли ни одной проблемы, страница доступна."
+      ],
+      "en": [
+        "Adding role=\"button\" to a div makes it focusable and keyboard-activatable.",
+        "If axe and Lighthouse report zero issues, the page is accessible."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Первое правило ARIA: не используй ARIA, если нативный [[элемент|HTML-элемент]] справляется.",
+        "При закрытии модалки фокус нужно вернуть на [[триггер|элемент, который её открыл|кнопку открытия]].",
+        "Для стриминга я использую регион aria-live=\"[[polite]]\" и объявляю ответ по [[завершении|окончании]]."
+      ],
+      "en": [
+        "The first rule of ARIA: don't use ARIA if a native [[element|HTML element]] does the job.",
+        "When the modal closes, return focus to the [[trigger|element that opened it|opening button]].",
+        "For streaming output I use an aria-live=\"[[polite]]\" region and announce the response once it's [[complete|finished|done]]."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "Фокус в модальном окне",
+        "items": [
+          "Запомнить элемент, который открыл модалку",
+          "Перенести фокус внутрь диалога",
+          "Держать Tab внутри и сделать фон inert",
+          "Закрывать по Escape",
+          "При закрытии вернуть фокус на триггер"
+        ]
+      },
+      "en": {
+        "title": "Modal focus management",
+        "items": [
+          "Remember the element that opened the modal",
+          "Move focus into the dialog",
+          "Keep Tab inside and make the background inert",
+          "Close on Escape",
+          "On close, return focus to the trigger"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A div with onClick isn't focusable and doesn't handle Enter/Space; native button gives focus, keyboard activation, role, disabled",
+      "e": "Native buttons provide keyboard and focus handling automatically.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/button_role"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "role=button on a div doesn't add focusability or keyboard behavior",
+      "e": "role=button does not provide functionality; add tabindex=0 and handle Enter and Space yourself.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/button_role"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "First rule of ARIA: don't use ARIA if a native element does the job",
+      "e": "If you can use a native HTML element with the semantics and behavior you require... then do so.",
+      "u": [
+        "https://www.w3.org/TR/using-aria/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Bad ARIA is worse than none",
+      "e": "'No ARIA is better than Bad ARIA': incorrect ARIA misrepresents visual experiences.",
+      "u": [
+        "https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Menu button pattern exists in the ARIA Authoring Practices",
+      "e": "A menu button is a button that opens a menu (Menu and Menubar Pattern).",
+      "u": [
+        "https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Modal: focus into dialog (first control or heading), Tab trapped, Escape closes, return focus to trigger on close",
+      "e": "When a dialog closes, focus returns to the element that invoked the dialog; Escape closes the dialog.",
+      "u": [
+        "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Native dialog with showModal makes background inert and closes on Escape",
+      "e": "Modal dialogs make the rest of the page inert; can be dismissed by pressing Esc.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Next.js App Router has a built-in route announcer",
+      "e": "Next.js includes a route announcer by default (App Router: app-router-announcer.tsx).",
+      "u": [
+        "https://nextjs.org/docs/architecture/accessibility"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Live region must exist in DOM before updates; polite waits for idle",
+      "e": "Live regions must be established before content updates; polite announces when user is idle.",
+      "u": [
+        "https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "aria-busy marks content as updating but screen reader support varies",
+      "e": "MDN: AT may wait until false; blog (practitioner test): NVDA did not support aria-busy at all.",
+      "u": [
+        "https://gerardkcohen.me/writing/2025/aria-busy-not-your-friend.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "axe/Lighthouse catch a bit over half of issues by volume per Deque",
+      "e": "Automated testing identified 57 percent of issues, measured by total volume.",
+      "u": [
+        "https://www.deque.com/blog/automated-testing-study-identifies-57-percent-of-digital-accessibility-issues/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "WCAG 2.2 is the current W3C Recommendation",
+      "e": "WCAG 2.2 published 5 October 2023, update 12 December 2024.",
+      "u": [
+        "https://www.w3.org/WAI/standards-guidelines/wcag/"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "WCAG 3 is still a draft",
+      "e": "W3C Working Draft 10 September 2026.",
+      "u": [
+        "https://www.w3.org/TR/wcag-3.0/"
+      ]
+    }
+  ]
+}

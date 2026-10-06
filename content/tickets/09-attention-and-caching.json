@@ -1,0 +1,212 @@
+{
+  "n": 9,
+  "tag": "глубина / depth",
+  "sec": "bonus",
+  "core": [
+    41
+  ],
+  "ru": {
+    "topic": "Attention и кэш",
+    "qs": [
+      "Что такое Q, K и V? Объясни своими словами.",
+      "Почему кэшируют K и V, но не Q? И почему кэш только префиксный?",
+      "Чем prompt caching отличается от KV cache внутри запроса? Что значит ephemeral?"
+    ],
+    "a": [
+      {
+        "q": "Q/K/V",
+        "t": "Для каждого токена модель считает три вектора. K — это как бирка, «про что я, чем могу быть полезен». V — фактическое содержимое, то, что этот токен передаёт дальше. А Q — запрос текущего токена, «что я сейчас ищу». Механика такая: Q сравнивается со всеми K, из этого получаются веса релевантности, и уже этими весами взвешиваются V. То есть Q ищет, K отвечает за находимость, V переносит смысл."
+      },
+      {
+        "q": "Почему KV",
+        "t": "Потому что токен смотрит только назад, и его K и V зависят только от него самого и от того, что было до него, и никогда — от того, что придёт после. Значит, посчитав их однажды, можно хранить: они не изменятся. А Q нужен ровно один раз, в момент обработки своего токена, и хранить его незачем — отсюда и название KV cache, а не QKV. Префиксность следует оттуда же: если поменять токен на пятой позиции, все, кто идёт после, находятся уже в другом контексте, и их K и V другие. А то, что было до пятого, не затронуто вообще. Это, кстати, общий закон — кэшируется то, что зависит только от прошлого, ровно как useMemo или инкрементальная сборка."
+      },
+      {
+        "q": "Prompt caching",
+        "t": "KV cache внутри одного запроса работает всегда, автоматически и бесплатно, но живёт ровно один запрос: ответ отдан, состояние выброшено. Prompt caching его не выбрасывает, а держит между запросами — механизм тот же, другая область жизни. Хранение стоит провайдеру памяти, поэтому запись при стандартном времени жизни примерно на четверть дороже обычного входа, а чтение стоит десятую часть входа или меньше, в зависимости от модели — сверяюсь с текущим прайсом. Ephemeral (временный) — это минимум пять минут жизни с бесплатным продлением при каждом попадании, есть и более дорогой вариант на час. Попадания всё равно не гарантированы: префикс меняется, запись истекает. Отсюда правило: код обязан работать одинаково при нуле попаданий, кэш — это оптимизация цены, а не часть логики."
+      }
+    ],
+    "kill": "<b>«Кэш чтобы не платить дважды»</b> — мелко. Правильно: продление жизни KV-состояния между запросами, поэтому запись с наценкой, а чтение почти даром."
+  },
+  "en": {
+    "topic": "Attention and caching",
+    "qs": [
+      "What are Q, K and V? Explain in your own words.",
+      "Why are K and V cached but not Q? And why is the cache prefix-only?",
+      "How is prompt caching different from the KV cache inside a request? What does ephemeral mean?"
+    ],
+    "a": [
+      {
+        "q": "Q/K/V",
+        "t": "For every token the model computes three vectors. K is like a label — what this token is about, what it can be useful for. V is the actual content, what this token passes along. And Q is the current token's query — what it's looking for right now. The mechanics are that Q gets compared against every K, that produces relevance weights, and those weights are then applied to the Vs. So Q searches, K makes a token findable, and V carries the meaning."
+      },
+      {
+        "q": "Why KV",
+        "t": "Because a token only looks backwards, its K and V depend only on itself and on what came before it, and never on what comes after. So once you've computed them you can store them — they won't change. Q is needed exactly once, at the moment its own token is processed, so there's nothing worth keeping — which is why it's called a KV cache and not a QKV cache. Prefix-only follows from the same thing: change the token at position five and everything after it sits in a different context, so their K and V differ, while everything before five is untouched. It's a general law, really — you can cache whatever depends only on the past, exactly like useMemo or an incremental build."
+      },
+      {
+        "q": "Prompt caching",
+        "t": "The KV cache inside a single request is always on, automatic and free, but it lives for exactly one request — the answer is returned and the state is thrown away. Prompt caching doesn't throw it away, it holds it between requests. Same mechanism, different scope. Holding it costs the provider memory, so a cache write carries a premium, about a quarter over normal input at the default lifetime, while a read costs a tenth of normal input or even less on some models — I'd check current pricing. Ephemeral means a short lifetime: at least five minutes, refreshed free on every hit, with a pricier one-hour option. Hits still aren't guaranteed: the prefix changes, the entry expires. Hence the rule that your code has to behave identically with zero cache hits — caching is a price optimisation, never part of the logic."
+      }
+    ],
+    "kill": "<b>\"Caching so you don't pay twice\"</b> is too shallow. It's persisting KV state across requests — which is why writes carry a premium and reads are nearly free."
+  },
+  "drills": {
+    "lies": {
+      "ru": [
+        "Кэшируют Q, потому что запрос повторяется чаще всего.",
+        "Prompt caching — это чтобы не платить за один и тот же текст дважды, и на этом всё."
+      ],
+      "en": [
+        "Q gets cached because the query repeats most often.",
+        "Prompt caching is just so you don't pay for the same text twice, nothing more."
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "K и V токена зависят только от него и от того, что [[до|перед|раньше]] него — поэтому их можно сохранить.",
+        "[[Q]] каждый раз новый: он сравнивает текущий токен с постоянными K/V.",
+        "Prompt caching продлевает жизнь [[KV]]-состояния между запросами: запись дороже, чтение почти [[бесплатно|даром]]."
+      ],
+      "en": [
+        "A token's K and V depend only on itself and what came [[before]] it — so they can be stored.",
+        "[[Q]] is fresh every time: it compares the current token against the fixed K/V.",
+        "Prompt caching persists [[KV]] state across requests: writes cost more, reads are nearly [[free]]."
+      ]
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Q is compared with every K to produce weights; the weights are applied to the Vs",
+      "e": "'Attention(Q, K, V) = softmax(QK⊤/√d_head × mask) V' (scaled dot-product attention from Vaswani et al.).",
+      "u": [
+        "https://huggingface.co/docs/transformers/cache_explanation"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Each token produces Q, K and V vectors (Q = what I seek, K = findability, V = content)",
+      "e": "Attention maps a query and key-value pairs to an output: weighted sum of values, weights from query-key compatibility.",
+      "u": [
+        "https://arxiv.org/abs/1706.03762"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "A token's K and V depend only on itself and earlier tokens, never later ones, so they can be stored",
+      "e": "'Once a token is processed, its representation never changes with respect to future tokens… K_past and V_past can be cached'.",
+      "u": [
+        "https://huggingface.co/docs/transformers/cache_explanation"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Q is needed only once, for its own token — hence KV cache, not QKV",
+      "e": "'At inference time, you only need the last token's query to compute the representation'.",
+      "u": [
+        "https://huggingface.co/docs/transformers/cache_explanation"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Cache is prefix-only: changing a token invalidates everything after it",
+      "e": "'Prompt caching caches the full prefix… tools, system, and messages (in that order), up to and including the block designated with cache_control'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Prompt caching = the same KV-state mechanism persisted across requests",
+      "e": "APC 'caches the KV cache of existing queries, so that a new query can directly reuse the KV cache if it shares the same prefix'. (Anthropic doesn't document internals.)",
+      "u": [
+        "https://docs.vllm.ai/en/v0.7.0/features/automatic_prefix_caching.html"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Cache write billed at a 25% premium",
+      "e": "'5-minute cache write: 1.25x base input price'; 1-hour write is 2x.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "Cache read is ten times cheaper than normal input",
+      "e": "'0.1x base input price (0.025x on Claude Fable 5.1 and Claude Mythos 5.1; 0.05x on Claude Opus 5.5)'.",
+      "u": [
+        "https://platform.claude.com/docs/en/about-claude/pricing"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix",
+      "c": "ephemeral = ~5 minutes, best-effort, can be evicted early",
+      "e": "'Cached entries have a minimum lifetime of 5 minutes (standard) or 1 hour (extended)'; 'refreshed for no additional cost each time… used'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "Prompt caching saves money (and latency), not just 'paying twice'",
+      "e": "Caching 'significantly reduces processing time and costs for repetitive tasks'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    },
+    {
+      "w": [
+        "d"
+      ],
+      "s": "ok",
+      "c": "Lie: Q gets cached because the query repeats most often (false)",
+      "e": "Only K and V of past tokens are cached; only the last token's query is needed.",
+      "u": [
+        "https://huggingface.co/docs/transformers/cache_explanation"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "fix2",
+      "c": "Cache write ≈ 1.25x base input at the default 5-minute lifetime; 1-hour writes cost 2x. RU now states the condition like EN.",
+      "e": "Pricing: '5-minute cache write 1.25x base input'; '1-hour cache write 2x base input'.",
+      "u": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+      ]
+    }
+  ]
+}
