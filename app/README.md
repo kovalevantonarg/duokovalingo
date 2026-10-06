@@ -11,7 +11,8 @@ Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 | `css/theme.css` | Shared design tokens (surfaces, text, accent and status colours, fonts). Each page's stylesheet in `css/` builds on it. |
 | `lib/srs.js` | Spaced-repetition rules (intervals, what's due). The only copy: imported by the API, by `today.mjs` and by `index.html` (as an ES module). |
 | `api/_grade.js` | "Check my answer": prompt, JSON schema, parser. Shared with `today.mjs`. |
-| `api/[route].js` | Auth, storage (Supabase RPC), routes. |
+| `api/[route].js` | Auth and routes. |
+| `api/_store.js` | Progress storage: versioned read-modify-write with retry (two devices can't overwrite each other), exam attempts in their own table; falls back to the old RPCs until the migration in `supabase/migrations/` has run. |
 | `tickets.js`, `drills.js`, `sources.js` | **Generated** bundles the pages load. The source is `content/tickets/NN-slug.json` at the repo root (one file per ticket: answers, drills, sources); rebuild with `node scripts/build-content.mjs`. |
 | `lessons/` | One lesson JSON per ticket, loaded on demand by `learn.html`. |
 

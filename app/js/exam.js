@@ -123,31 +123,33 @@ let EX = (() => {
 })();
 const attemptsOf = (n) => EX.filter((e) => e.n === n).sort((a, b) => (a.t || 0) - (b.t || 0));
 const lastOf = (n) => attemptsOf(n).slice(-1)[0];
+// merge attempts from the server into the local copy; entries with the same ticket+time are updated in place
 function mergeAttempts(list) {
   if (!Array.isArray(list)) return;
   const key = (e) => e.n + "|" + (e.t || e.d);
-  const have = new Set(EX.map(key));
-  for (const e of list) if (!have.has(key(e))) EX.push(e);
-  EX = EX.slice(-400);
+  const byKey = new Map(EX.map((e) => [key(e), e]));
+  for (const e of list) byKey.set(key(e), { ...byKey.get(key(e)), ...e });
+  EX = [...byKey.values()].sort((a, b) => (a.t || 0) - (b.t || 0)).slice(-400);
   try {
     localStorage.setItem("exam.attempts", JSON.stringify(EX));
   } catch {}
 }
+// scores of every attempt, for the chips (without answer texts)
 async function loadAttempts() {
   try {
-    const r = await fetch("/api/state", { cache: "no-store" });
-    if (r.ok) {
-      const db = await r.json();
-      if (Array.isArray(db.exams)) {
-        EX = db.exams.slice();
-        try {
-          localStorage.setItem("exam.attempts", JSON.stringify(EX));
-        } catch {}
-      }
-    }
+    const r = await fetch("/api/exams", { cache: "no-store" });
+    if (r.ok) mergeAttempts(await r.json());
   } catch {}
   renderChips();
   if (cur) renderAttempts(cur);
+}
+// one ticket's attempts with answer and verdict, when it's opened
+async function loadTicketAttempts(n) {
+  try {
+    const r = await fetch("/api/exams?n=" + n, { cache: "no-store" });
+    if (r.ok) mergeAttempts(await r.json());
+  } catch {}
+  if (cur && cur.n === n) renderAttempts(cur);
 }
 const fmtD = (d) => {
   const x = new Date(d);
@@ -370,6 +372,7 @@ function show(t) {
   };
   $("chk").onclick = () => checkAnswer(t, ta.value);
   renderAttempts(t);
+  loadTicketAttempts(t.n);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function scoreCls(n) {

@@ -1,9 +1,10 @@
-// drill API — one Vercel function: login, logout, state, log, done, sync, explain, check.
-// Storage: Supabase RPC guarded by DRILL_DB_KEY (anon key can only call the functions; the tables live in a private schema).
+// drill API — one Vercel function: login, logout, state, log, done, sync, exams, explain, check.
+// Storage: app/api/_store.js (Supabase RPCs guarded by DRILL_DB_KEY, versioned writes).
 // Auth: single password (DRILL_PASSWORD) → HMAC-signed HttpOnly cookie (DRILL_SECRET), 90 days.
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { checkPrompt, parseJson, GRADE_BODY } from "./_grade.js";
 import { applyHit } from "../lib/srs.js";
+import { createStore } from "./_store.js";
 
 const env = (k) => process.env[k] || "";
 const SB = env("SUPABASE_URL"), ANON = env("SUPABASE_ANON_KEY"), DBKEY = env("DRILL_DB_KEY");
@@ -21,16 +22,10 @@ function authed(req) {
 }
 const setCookie = (res, val, maxAge) => res.setHeader("set-cookie", `${COOKIE}=${val}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
 
-async function rpc(fn, args = {}) {
-  const r = await fetch(`${SB}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: ANON, authorization: `Bearer ${ANON}`, "content-type": "application/json" }, body: JSON.stringify({ p_key: DBKEY, ...args }) });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`rpc ${fn} ${r.status}: ${t.slice(0, 200)}`);
-  return t ? JSON.parse(t) : null;
-}
-const load = () => rpc("drill_load");
-const save = (data) => rpc("drill_save", { p_data: data });
-const out = (db) => ({ ...db, auth: true, explain: !!AKEY });
-export { stFromScore };
+const store = createStore({ url: SB, anonKey: ANON, dbKey: DBKEY });
+const rpc = store.rpc;
+// progress for the client; exam attempts are served separately by /api/exams
+const out = ({ exams, ...db }) => ({ ...db, auth: true, explain: !!AKEY });
 
 const SECS = new Set(["llm", "rag", "agents", "sysd", "behav", "bonus", "meta", "js", "ts", "react", "web"]);
 // add catalog items the client knows about (new tickets) but the stored state doesn't have yet
@@ -48,18 +43,13 @@ function syncItems(db, list) {
 // one attempt → activity + status/interval; the rules live in lib/srs.js (shared with today.mjs and the browser)
 const logHit = (db, p) => applyHit(db, p);
 
-// exam attempt: store the graded answer and count it as a drill session for the ticket's core items
+// graded exam → the score sets the status of the ticket's core items (a drill session for each)
 const stFromScore = (sc) => (sc >= 8 ? "green" : sc >= 5 ? "yellow" : "red");
-function logExam(db, p, g) {
-  const n = Number(p.n); if (!Number.isInteger(n) || n < 1 || n > 999) return [];
-  const d = new Date().toISOString().slice(0, 10);
-  db.exams = Array.isArray(db.exams) ? db.exams : [];
-  db.exams.push({ n, lang: p.lang === "en" ? "en" : "ru", d, t: Date.now(), score: g.score, q: g.questions, chars: String(p.answer || "").length,
-    answer: String(p.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300) });
-  if (db.exams.length > 400) db.exams.splice(0, db.exams.length - 400);
-  for (const id of (Array.isArray(p.core) ? p.core : []).slice(0, 10)) logHit(db, { id, d, st: stFromScore(g.score), xp: g.score, mode: "exam" });
-  return db.exams.filter((e) => e.n === n).slice(-20);
-}
+const examRecord = (p, g) => ({
+  n: Number(p.n), lang: p.lang === "en" ? "en" : "ru", d: new Date().toISOString().slice(0, 10), t: Date.now(),
+  score: g.score, q: g.questions, chars: String(p.answer || "").length,
+  answer: String(p.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300),
+});
 
 export default async function handler(req, res) {
   const route = String(req.query.route || "");
@@ -76,15 +66,27 @@ export default async function handler(req, res) {
     if (!authed(req)) return res.status(401).json({ error: "auth" });
     if (!SB || !ANON || !DBKEY) return res.status(500).json({ error: "server not configured: SUPABASE_URL / SUPABASE_ANON_KEY / DRILL_DB_KEY" });
 
-    if (route === "state") { const db = await load(); return res.status(200).json(out(db)); }
+    if (route === "state") {
+      const { db } = await store.read();
+      await store.moveLeftoverExams(db);
+      return res.status(200).json(out(db));
+    }
     if (route === "log" || route === "done") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
-      const db = await load(); if (!logHit(db, body)) return res.status(400).json({ error: "bad id" });
-      await save(db); return res.status(200).json(out(db));
+      const { db, result } = await store.update((d) => logHit(d, body));
+      if (result === false) return res.status(400).json({ error: "bad id" });
+      return res.status(200).json(out(db));
     }
     if (route === "sync") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
-      const db = await load(); if (syncItems(db, body.items)) await save(db); return res.status(200).json(out(db));
+      const { db } = await store.update((d) => syncItems(d, body.items) > 0 || false);
+      return res.status(200).json(out(db));
+    }
+    if (route === "exams") {
+      // ?n=12 → that ticket's attempts with answer and verdict; no n → all attempts, scores only
+      const n = req.query.n ? Number(req.query.n) : null;
+      if (n !== null && !(Number.isInteger(n) && n > 0 && n < 1000)) return res.status(400).json({ error: "bad ticket" });
+      return res.status(200).json(await store.exams(n));
     }
     if (route === "check") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
@@ -96,7 +98,15 @@ export default async function handler(req, res) {
       if (j.stop_reason === "max_tokens") return res.status(502).json({ error: "grader ran out of tokens, try again" });
       const text = (j.content || []).map((c) => c.text || "").join("");
       let g; try { g = parseJson(text); } catch { return res.status(502).json({ error: "bad grader output: " + text.slice(0, 200) }); }
-      let attempts = []; try { const db = await load(); attempts = logExam(db, body, g); await save(db); } catch (e) { g.saveError = e.message; }
+      let attempts = [];
+      try {
+        const exam = examRecord(body, g);
+        if (!(Number.isInteger(exam.n) && exam.n > 0 && exam.n < 1000)) throw new Error("bad ticket");
+        await store.addExam(exam);
+        const core = (Array.isArray(body.core) ? body.core : []).slice(0, 10);
+        if (core.length) await store.update((d) => { for (const id of core) logHit(d, { id, d: exam.d, st: stFromScore(g.score), xp: g.score, mode: "exam" }); });
+        attempts = (await store.exams(exam.n)).slice(-20);
+      } catch (e) { g.saveError = e.message; }
       return res.status(200).json({ ...g, attempts });
     }
     if (route === "explain") {

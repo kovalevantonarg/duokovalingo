@@ -85,7 +85,7 @@ if (cmd === "serve") {
   const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5-5";
   const CACHE = join(DIR, "explain-cache.json");
   const cache = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
-  const out = () => ({ ...db, auth: false, explain: !!apiKey() });
+  const out = () => { const { exams, ...rest } = db; return { ...rest, auth: false, explain: !!apiKey() }; };
   const json = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(obj)); };
   const body = (req) => new Promise((ok) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch { ok({}); } }); });
   const logHit = (p) => applyHit(db, p, TODAY);
@@ -93,6 +93,10 @@ if (cmd === "serve") {
   createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
     if (url.pathname === "/api/state") return json(res, 200, out());
+    if (url.pathname === "/api/exams") {
+      const all = Array.isArray(db.exams) ? db.exams : [], n = url.searchParams.get("n");
+      return json(res, 200, n ? all.filter((e) => e.n === Number(n)) : all.map(({ answer, verdict, ...e }) => e));
+    }
     if (req.method === "POST" && (url.pathname === "/api/log" || url.pathname === "/api/done")) {
       const p = await body(req);
       if (!logHit(p)) return json(res, 400, { error: "bad id" });
