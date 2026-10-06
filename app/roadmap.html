@@ -144,7 +144,6 @@ h1 .to{color:var(--acc)}
 <main class="page" id="app"></main>
 <div id="tip" role="tooltip"></div>
 
-<script src="state.js"></script>
 <script src="tickets.js"></script>
 <script>
 // ---------- plan data: dates are facts or the plan's own targets (plan.md, pivot reframe 2026-05-30) ----------
@@ -203,7 +202,7 @@ const UI={
    offline:"Progress didn't load: sign in to the trainer and the roadmap will pick it up.",login:"Sign in",cantSave:"No connection to the server: marks won't be saved right now."}};
 
 let lang=(()=>{try{return localStorage.getItem("drill.lang")||"ru"}catch{return "ru"}})();
-let DB=window.STATE||{items:[],history:[]}, live=false, needLogin=false, open=new Set();
+let DB={items:[],history:[]}, live=false, needLogin=false, open=new Set();
 const L=()=>UI[lang], $=s=>document.querySelector(s), app=$("#app");
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function pl(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:(m>=2&&m<=4&&(h<12||h>14))?b:c}

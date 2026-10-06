@@ -3,12 +3,11 @@
 // Auth: single password (DRILL_PASSWORD) → HMAC-signed HttpOnly cookie (DRILL_SECRET), 90 days.
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { checkPrompt, parseJson, GRADE_BODY } from "./_grade.js";
+import { applyHit } from "../lib/srs.js";
 
 const env = (k) => process.env[k] || "";
 const SB = env("SUPABASE_URL"), ANON = env("SUPABASE_ANON_KEY"), DBKEY = env("DRILL_DB_KEY");
 const PW = env("DRILL_PASSWORD"), SECRET = env("DRILL_SECRET"), AKEY = env("ANTHROPIC_API_KEY"), MODEL = env("DRILL_MODEL") || "claude-sonnet-5-5";
-const INTERVAL = { red: 1, yellow: 3, green: 7 }; // base intervals; green grows on repeat success
-const MAX_IV = 90, EASE = 2;
 const COOKIE = "drill";
 const DAY = 864e5;
 
@@ -54,20 +53,8 @@ function setRoadmap(db, p) {
   return false;
 }
 
-function logHit(db, p) {
-  const it = db.items.find((i) => i.id === Number(p.id)); if (!it) return false;
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(p.d || "") ? p.d : new Date().toISOString().slice(0, 10);
-  let h = db.history.find((x) => x.d === d); if (!h) db.history.push((h = { d, ids: [], xp: 0 }));
-  if (!h.ids.includes(it.id)) h.ids.push(it.id);
-  h.xp = (h.xp || 0) + (Number(p.xp) || 0);
-  if (p.st && INTERVAL[p.st]) {
-    it.iv = (p.st === "green" && it.st === "green" && it.iv) ? Math.min(MAX_IV, Math.round(it.iv * EASE)) : INTERVAL[p.st];
-    it.st = p.st; it.last = d;
-  }
-  if (p.mode) it.lastMode = String(p.mode).slice(0, 20);
-  if (p.transcript) it.lastAnswer = String(p.transcript).slice(0, 600);
-  return true;
-}
+// one attempt → activity + status/interval; the rules live in lib/srs.js (shared with today.mjs and the browser)
+const logHit = (db, p) => applyHit(db, p);
 
 // exam attempt: store the graded answer and count it as a drill session for the ticket's core items
 const stFromScore = (sc) => (sc >= 8 ? "green" : sc >= 5 ? "yellow" : "red");

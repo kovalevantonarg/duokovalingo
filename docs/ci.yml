@@ -1,0 +1,14 @@
+# Copy to .github/workflows/ci.yml (the assistant can't write into .github):
+#   mkdir -p .github/workflows && cp docs/ci.yml .github/workflows/ci.yml
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test

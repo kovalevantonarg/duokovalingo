@@ -2,6 +2,22 @@
 
 Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 
+## Where the logic lives
+
+| File | What |
+|---|---|
+| `lib/srs.js` | Spaced-repetition rules (intervals, what's due). The only copy: imported by the API, by `today.mjs` and by `index.html` (as an ES module). |
+| `api/_grade.js` | "Check my answer": prompt, JSON schema, parser. Shared with `today.mjs`. |
+| `api/[route].js` | Auth, storage (Supabase RPC), routes. |
+| `tickets.js`, `drills.js`, `sources.js`, `lessons/` | Study content. Validated by `npm test` at the repo root. |
+
+## Dev loop (repo root)
+
+- `npm test` — unit tests for `lib/srs.js` and `api/_grade.js`, plus a consistency check of all content (3 questions/answers per language, cloze blanks match RU/EN, every lesson's decode quotes still exist in its answer, sources have URLs).
+- `node scripts/apply-fixes.mjs fixes.json` — apply reviewed text edits to tickets/drills (refuses if any `old` text isn't found).
+- `node scripts/build-lesson-index.mjs` — rebuild `lessons/index.json` after editing a lesson.
+- `npm run serve` — local server on :4040 against `queue.json`.
+
 ## Lessons ("Разбор с нуля")
 
 `learn.html#t1` opens the from-zero lesson for ticket 1, RU and EN; all 50 tickets have one.

@@ -232,8 +232,8 @@ svg{flex:none}
 
 <script src="tickets.js"></script>
 <script src="drills.js"></script>
-<script src="state.js"></script>
-<script>
+<script type="module">
+import { applyHit, intervalOf, isDue as isDueOn, dueItems } from "./lib/srs.js";
 // ---------- icons (inline stroke svg) ----------
 const I={
  flame:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
@@ -293,7 +293,6 @@ const UI={
      hintNext:"next",hintMore:"more",hintQuit:"quit",hintCheck:"check",hintSpeak:"speak / stop",hintNextQ:"next question",hintMove:"move",wk:"wk",cell:"cell",ofw:"of",pw:"Password",enter:"Sign in",wrongpw:"Wrong password",logout:"Sign out",noserver:"Server not configured"}
 };
 const SEC={llm:"LLM",rag:"RAG",agents:"Agents",sysd:"System design",behav:"Behavioral",bonus:"Depth",meta:"Meta",js:"JavaScript",ts:"TypeScript",react:"React",web:"Browser"};
-const INTERVAL={red:1,yellow:3,green:7};
 const NEW_ORDER=[38,39,22,25,23,32,27,28,29,30,31,40,35,36,37,42];
 let lang=localStorage.getItem("drill.lang")||"ru";
 const L=()=>UI[lang];
@@ -308,7 +307,7 @@ const codify=s=>esc(s).replace(/\b([a-z]+_[a-z_]+|text\/event-stream|[A-Za-z]+\.
 const fmtDate=()=>new Date().toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{weekday:"short",day:"numeric",month:"short"});
 
 // ---------- state ----------
-let DB=window.STATE||{items:[],history:[]}, live=false;
+let DB={items:[],history:[]}, live=false;
 let pending=JSON.parse(localStorage.getItem("drill.pending")||"[]");
 let needLogin=false;
 async function loadState(){ needLogin=false; try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){DB=await r.json(); live=true;} else if(r.status===401){needLogin=true;}}catch{} if(!live&&!needLogin) for(const p of pending) applyLocal(p); if(!needLogin) await syncCatalog(); }
@@ -323,14 +322,15 @@ function loginScreen(err){
       if(r.ok){await loadState(); await flushPending(); return route();} const j=await r.json().catch(()=>({})); loginScreen(r.status===401?L().wrongpw:(j.error||L().noserver));}
     catch(e){loginScreen(e.message)} };
 }
-function applyLocal(p){ const it=DB.items.find(i=>i.id===p.id); if(!it) return; let h=DB.history.find(x=>x.d===p.d); if(!h){h={d:p.d,ids:[],xp:0};DB.history.push(h)} if(!h.ids.includes(p.id)) h.ids.push(p.id); h.xp=(h.xp||0)+(p.xp||0); if(p.st){it.st=p.st; it.last=p.d;} if(p.mode) it.lastMode=p.mode; }
+// offline: record the attempt locally with the same rules the server uses (lib/srs.js)
+const applyLocal=p=>applyHit(DB,p,TODAY);
 async function post(path,body){ body.d=TODAY; if(live){try{const r=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}); if(r.ok){DB=await r.json();return true}}catch{} live=false;} pending.push({...body,path}); localStorage.setItem("drill.pending",JSON.stringify(pending)); applyLocal(body); return false; }
 async function flushPending(){ if(!live||!pending.length) return; for(const p of pending.slice()){try{const r=await fetch(p.path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(p)}); if(r.ok){DB=await r.json(); pending.shift();}}catch{break}} localStorage.setItem("drill.pending",JSON.stringify(pending)); }
 const byId=id=>DB.items.find(i=>i.id===id);
 const ticketFor=id=>window.TICKETS.find(t=>(t.core||[]).includes(id));
-const due=()=>DB.items.filter(i=>ivOf(i)&&i.last).map(i=>({...i,over:days(i.last)-ivOf(i)})).filter(i=>i.over>=0).sort((a,b)=>b.over-a.over);
-const ivOf=i=>i.iv||INTERVAL[i.st];
-const isDue=i=>!!(i.last&&ivOf(i)&&days(i.last)-ivOf(i)>=0);
+const due=()=>dueItems(DB.items);
+const ivOf=intervalOf;
+const isDue=i=>isDueOn(i);
 const nextNew=()=>NEW_ORDER.map(byId).find(i=>i&&i.st==="new");
 function streak(){const set=new Set(DB.history.filter(h=>h.ids&&h.ids.length).map(h=>h.d));let n=0,d=dLocal(TODAY);if(!set.has(TODAY)) d.setDate(d.getDate()-1);while(set.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
 const xpToday=()=>(DB.history.find(h=>h.d===TODAY)||{}).xp||0;

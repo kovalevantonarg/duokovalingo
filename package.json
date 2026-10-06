@@ -1,0 +1,13 @@
+{
+  "name": "duokovalingo-workspace",
+  "private": true,
+  "type": "module",
+  "description": "Study system + drill app. The deployed app lives in app/ (Vercel root directory); this file only holds dev scripts.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "check:content": "node scripts/check-content.mjs",
+    "lessons:index": "node scripts/build-lesson-index.mjs",
+    "serve": "node today.mjs serve"
+  }
+}
