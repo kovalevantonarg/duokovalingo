@@ -1,7 +1,7 @@
 // Reads and writes the study content.
 // Source of truth: content/tickets/NN-slug.json, one file per ticket with everything about it:
 //   { n, tag, sec, core, ru, en, drills: { lies, cloze, steps? }, sources: [...] }
-// The app loads three generated bundles (app/tickets.js, app/drills.js, app/sources.js); build them with
+// The app loads generated bundles (app/tickets.js, app/drills.js, app/sources.js, app/lib/catalog.js); build them with
 // `node scripts/build-content.mjs`. Never edit the bundles by hand.
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
 
@@ -31,10 +31,14 @@ export const writeMeta = (m) => writeFileSync(META, JSON.stringify(m, null, 2) +
 
 const GENERATED = "// GENERATED from content/tickets/*.json by scripts/build-content.mjs. Do not edit by hand.\n";
 
-/** The three bundles the app loads, as strings. */
+/** The generated files the app loads, as strings. */
 export function bundles(tickets = readTickets(), meta = readMeta()) {
   const plain = tickets.map(({ n, tag, sec, core, ru, en }) => ({ n, tag, sec, core, ru, en }));
   return {
+    "app/lib/catalog.js":
+      GENERATED +
+      "// The ticket list for the progress model (lib/srs.js): number, section, and the old drill-item ids it replaced.\n" +
+      `export const CATALOG = [\n${tickets.map(({ n, sec, core }) => "  " + JSON.stringify({ n, sec, core })).join(",\n")},\n];\n`,
     "app/tickets.js":
       GENERATED +
       "// Shape: {n, tag, sec, core:[ids], ru:{topic, qs[3], a[{q,t}x3], kill}, en:{...}}\n" +

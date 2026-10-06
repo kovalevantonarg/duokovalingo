@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// today.mjs — the dispatcher. One command, zero decisions.
-//   node today.mjs              -> today's rep (terminal)
-//   node today.mjs done 24 g    -> log an item (g green / y yellow / r red), regenerates progress.html
-//   node today.mjs status       -> whole queue at a glance
-//   node today.mjs html         -> regenerate progress.html
-//   node today.mjs serve [port] -> local server for app/ (writes progress into queue.json), default :4040
+// today.mjs — local helper for the drill app.
+//   node today.mjs              -> what's due today (terminal)
+//   node today.mjs done 12 g    -> grade ticket 12 (g green / y yellow / r red)
+//   node today.mjs status       -> every ticket at a glance
+//   node today.mjs serve [port] -> local server for app/ (progress in queue.json), default :4040
 //   node today.mjs pull         -> fetch progress from the deployed app into queue.json (needs DRILL_URL + DRILL_PASSWORD in env or .env)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createServer } from "node:http";
@@ -12,288 +11,213 @@ import { exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, extname } from "node:path";
 import { checkPrompt, parseJson, GRADE_BODY } from "./app/api/_grade.js";
-import { applyHit, dueItems, dueDate, intervalOf } from "./app/lib/srs.js";
+import { applyHit, dueTickets, emptyDb, intervalOf, isTicket, migrate, setDoubt, statusOf } from "./app/lib/srs.js";
+import { CATALOG } from "./app/lib/catalog.js";
 
 const FILE = new URL("./queue.json", import.meta.url);
-const HTML = new URL("./progress.html", import.meta.url);
 const DIR = dirname(fileURLToPath(import.meta.url));
 const APP = join(DIR, "app");
-const db = JSON.parse(readFileSync(FILE, "utf8"));
-db.history ??= [];
-const MARK = { new: "  ", red: "X ", yellow: "~ ", green: "OK", parked: "--" };
-const NEW_ORDER = [38, 39, 22, 25, 23, 32, 27, 28, 29, 30, 31, 40, 35, 36, 37, 42];
-const SECTIONS = [
-  ["llm", "LLM engineering"], ["rag", "RAG"], ["agents", "Agents"], ["sysd", "System design"],
-  ["behav", "Behavioral"], ["bonus", "Beyond core-40"], ["meta", "Meta"], ["js", "JS/TS (parked)"], ["react", "React (parked)"],
-];
-
-const today = new Date();
-const iso = (d) => d.toISOString().slice(0, 10);
-const TODAY = iso(today);
-const days = (from) => Math.floor((today - new Date(from)) / 864e5);
-const byId = (id) => db.items.find((i) => i.id === id);
+const db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : emptyDb();
 const save = () => writeFileSync(FILE, JSON.stringify(db, null, 2) + "\n");
+if (migrate(db)) save();
 
-const due = () => dueItems(db.items, today);
-const nextNew = () => NEW_ORDER.map(byId).find((i) => i && i.st === "new");
+const TODAY = new Date().toISOString().slice(0, 10);
+const MARK = { new: "  ", red: "X ", yellow: "~ ", green: "OK" };
+const topics = (() => {
+  try {
+    const src = readFileSync(join(APP, "tickets.js"), "utf8");
+    return Object.fromEntries(JSON.parse(src.slice(src.indexOf("= [") + 2, src.lastIndexOf("]") + 1)).map((t) => [t.n, t.en.topic]));
+  } catch {
+    return {};
+  }
+})();
+const label = (n) => `#${String(n).padEnd(2)} ${topics[n] || ""}`;
+const envFile = existsSync(join(DIR, ".env")) ? readFileSync(join(DIR, ".env"), "utf8") : "";
+const env = (k) => process.env[k] || (envFile.match(new RegExp(`^\\s*${k}\\s*=\\s*"?([^"\\n]+)"?`, "m")) || [])[1]?.trim() || "";
 
 const cmd = process.argv[2];
 
 if (cmd === "done") {
-  const id = Number(process.argv[3]);
+  const n = Number(process.argv[3]);
   const st = { g: "green", y: "yellow", r: "red" }[process.argv[4]];
-  const it = byId(id);
-  if (!it || !st) { console.log("usage: node today.mjs done <id> <g|y|r>"); process.exit(1); }
-  applyHit(db, { id, st, mode: "cli" }, TODAY);
-  save(); writeHtml();
-  console.log(`#${id} ${it.t} -> ${st}, next in ${intervalOf(it)}d   (progress.html updated)`);
-  process.exit(0);
-}
-
-if (cmd === "status") {
-  const n = (s) => db.items.filter((i) => i.st === s).length;
-  console.log(`green ${n("green")} | yellow ${n("yellow")} | red ${n("red")} | new ${n("new")} | parked ${n("parked")}`);
-  for (const i of db.items.filter((x) => x.st !== "parked")) {
-    const age = i.last ? ` (${days(i.last)}d ago)` : "";
-    console.log(` ${MARK[i.st]} #${String(i.id).padEnd(2)} ${i.t}${age}`);
+  if (!isTicket(n) || !st) {
+    console.log("usage: node today.mjs done <ticket> <g|y|r>");
+    process.exit(1);
   }
-  process.exit(0);
-}
-
-if (cmd === "html") { writeHtml(); console.log("progress.html written"); process.exit(0); }
-
-// ---- pull: cloud -> queue.json ----
-if (cmd === "pull") {
-  const envf = existsSync(join(DIR, ".env")) ? readFileSync(join(DIR, ".env"), "utf8") : "";
-  const ev = (k) => process.env[k] || (envf.match(new RegExp(`^\\s*${k}\\s*=\\s*"?([^"\\n]+)"?`, "m")) || [])[1] || "";
-  const base = ev("DRILL_URL").replace(/\/$/, ""), pw = ev("DRILL_PASSWORD");
-  if (!base || !pw) { console.log("need DRILL_URL and DRILL_PASSWORD (env or .env)"); process.exit(1); }
-  const lr = await fetch(base + "/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: pw }) });
-  if (!lr.ok) { console.log("login failed", lr.status); process.exit(1); }
+  applyHit(db, { n, st, mode: "cli" }, TODAY);
+  save();
+  console.log(`${label(n)} -> ${st}, next in ${intervalOf(db.tickets[n])}d`);
+} else if (cmd === "status") {
+  const active = CATALOG.filter((t) => t.sec !== "parked");
+  const count = (s) => active.filter((t) => statusOf(db, t.n) === s).length;
+  console.log(`green ${count("green")} | yellow ${count("yellow")} | red ${count("red")} | new ${count("new")}`);
+  for (const t of active) {
+    const r = db.tickets[t.n] || {};
+    console.log(` ${MARK[statusOf(db, t.n)]} ${label(t.n)}${r.last ? `  (${r.last})` : ""}${r.doubt ? "  ?" : ""}`);
+  }
+} else if (cmd === "pull") {
+  const base = env("DRILL_URL").replace(/\/$/, ""),
+    pw = env("DRILL_PASSWORD");
+  if (!base || !pw) {
+    console.log("need DRILL_URL and DRILL_PASSWORD (env or .env)");
+    process.exit(1);
+  }
+  const lr = await fetch(base + "/api/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ password: pw }),
+  });
+  if (!lr.ok) {
+    console.log("login failed", lr.status);
+    process.exit(1);
+  }
   const cookie = (lr.headers.get("set-cookie") || "").split(";")[0];
-  const sr = await fetch(base + "/api/state", { headers: { cookie } }); if (!sr.ok) { console.log("state failed", sr.status); process.exit(1); }
-  const cloud = await sr.json(); delete cloud.auth; delete cloud.explain;
-  Object.assign(db, cloud); db.items = cloud.items; db.history = cloud.history; save(); writeHtml();
-  console.log(`pulled: ${db.items.length} items, ${db.history.length} sessions -> queue.json, progress.html`); process.exit(0);
+  const sr = await fetch(base + "/api/state", { headers: { cookie } });
+  if (!sr.ok) {
+    console.log("state failed", sr.status);
+    process.exit(1);
+  }
+  const { auth, explain, ...cloud } = await sr.json();
+  for (const k of Object.keys(db)) delete db[k];
+  Object.assign(db, cloud);
+  migrate(db);
+  save();
+  console.log(`pulled: ${Object.keys(db.tickets).length} tickets with progress, ${db.history.length} days -> queue.json`);
+} else if (cmd === "serve") {
+  serve(Number(process.argv[3] || 4040));
+} else {
+  const due = dueTickets(db);
+  const next = CATALOG.find((t) => t.sec !== "parked" && statusOf(db, t.n) === "new");
+  console.log(`\n=== TODAY - ${new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} ===\n`);
+  console.log(due.length ? "DUE" : "Nothing due.");
+  for (const r of due.slice(0, 5)) console.log(`  ${label(r.n)}  [${r.st}, ${r.over}d overdue]`);
+  if (due.length > 5) console.log(`  (+${due.length - 5} more)`);
+  if (next) console.log(`\nNEXT NEW\n  ${label(next.n)}`);
+  console.log(`\nplay: node today.mjs serve   |   grade: node today.mjs done <ticket> <g|y|r>\n`);
 }
 
-// ---- local server: app/ reads/writes queue.json through /api ----
-if (cmd === "serve") {
-  const port = Number(process.argv[3] || 4040);
-  const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json", ".css": "text/css", ".png": "image/png", ".md": "text/plain; charset=utf-8" };
-  const apiKey = () => { if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY; const envp = join(DIR, ".env"); if (!existsSync(envp)) return ""; const m = readFileSync(envp, "utf8").match(/^\s*ANTHROPIC_API_KEY\s*=\s*"?([^"\n]+)"?/m); return m ? m[1].trim() : ""; };
-  const MODEL = process.env.DRILL_MODEL || "claude-sonnet-5-5";
+// ---- local server: app/ reads and writes queue.json through the same /api as the Vercel function ----
+function serve(port) {
+  const MIME = {
+    ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json",
+    ".css": "text/css", ".png": "image/png", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml",
+  };
+  const MODEL = env("DRILL_MODEL") || "claude-sonnet-5-5";
   const CACHE = join(DIR, "explain-cache.json");
   const cache = existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
-  const out = () => { const { exams, ...rest } = db; return { ...rest, auth: false, explain: !!apiKey() }; };
-  const json = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(obj)); };
-  const body = (req) => new Promise((ok) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { try { ok(JSON.parse(b || "{}")); } catch { ok({}); } }); });
-  const logHit = (p) => applyHit(db, p, TODAY);
+  const out = () => {
+    const { exams, legacy, ...rest } = db;
+    return { ...rest, auth: false, explain: !!env("ANTHROPIC_API_KEY") };
+  };
+  const json = (res, code, obj) => {
+    res.writeHead(code, { "content-type": "application/json", "cache-control": "no-store" });
+    res.end(JSON.stringify(obj));
+  };
+  const body = (req) =>
+    new Promise((ok) => {
+      let b = "";
+      req.on("data", (c) => (b += c));
+      req.on("end", () => {
+        try {
+          ok(JSON.parse(b || "{}"));
+        } catch {
+          ok({});
+        }
+      });
+    });
+  const claude = async (payload) => {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": env("ANTHROPIC_API_KEY"), "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error?.message || "api " + r.status);
+    console.log(`  claude ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
+    return j;
+  };
+  // the old standalone pages now live inside the app (same redirects as vercel.json)
+  const OLD = { "/exam-tickets": "exam", "/exam-tickets.html": "exam", "/learn": "learn", "/learn.html": "learn", "/map": "map", "/map.html": "map", "/roadmap": "map", "/roadmap.html": "map" };
 
   createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
-    if (url.pathname === "/api/state") return json(res, 200, out());
-    if (url.pathname === "/api/exams") {
-      const all = Array.isArray(db.exams) ? db.exams : [], n = url.searchParams.get("n");
+    const p = url.pathname;
+    if (OLD[p]) {
+      res.writeHead(301, { location: "/?from=" + OLD[p] });
+      return res.end();
+    }
+    if (p === "/api/state") return json(res, 200, out());
+    if (p === "/api/exams") {
+      const all = Array.isArray(db.exams) ? db.exams : [],
+        n = url.searchParams.get("n");
       return json(res, 200, n ? all.filter((e) => e.n === Number(n)) : all.map(({ answer, verdict, ...e }) => e));
     }
-    if (req.method === "POST" && (url.pathname === "/api/log" || url.pathname === "/api/done")) {
-      const p = await body(req);
-      if (!logHit(p)) return json(res, 400, { error: "bad id" });
-      save(); writeHtml();
-      console.log(`  ${p.d || TODAY}  #${p.id}  ${p.mode || ""}  ${p.st ? "-> " + p.st : ""}  +${p.xp || 0}xp`);
+    if (req.method === "POST" && (p === "/api/log" || p === "/api/done")) {
+      const hit = await body(req);
+      if (!applyHit(db, hit, TODAY)) return json(res, 400, { error: "bad ticket" });
+      save();
+      console.log(`  ${hit.d || TODAY}  #${hit.n ?? "item " + hit.id}  ${hit.mode || ""}  ${hit.st ? "-> " + hit.st : ""}  +${hit.xp || 0}xp`);
       return json(res, 200, out());
     }
-    if (req.method === "POST" && url.pathname === "/api/sync") {
-      const p = await body(req); const SECS = new Set(["llm","rag","agents","sysd","behav","bonus","meta","js","ts","react","web"]); let added = 0;
-      for (const x of Array.isArray(p.items) ? p.items.slice(0, 200) : []) { const id = Number(x && x.id); if (!Number.isInteger(id) || id < 1 || id > 999 || !SECS.has(x.s) || byId(id)) continue; db.items.push({ id, s: x.s, t: String(x.t || "").slice(0, 120), st: "new" }); added++; }
-      if (added) { db.items.sort((a, b) => a.id - b.id); save(); writeHtml(); console.log(`  synced ${added} new items`); }
+    if (req.method === "POST" && p === "/api/flag") {
+      const b = await body(req);
+      if (setDoubt(db, b.n, !!b.doubt)) save();
       return json(res, 200, out());
     }
-    if (req.method === "POST" && url.pathname === "/api/check") {
-      const key = apiKey(); if (!key) return json(res, 400, { error: "no_key" });
-      const p = await body(req); if (!p || String(p.answer || "").trim().length < 40) return json(res, 400, { error: "too_short" });
-      const { sys, user } = checkPrompt(p);
-      const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify(GRADE_BODY(MODEL, sys, user)) });
-      const j = await r.json(); if (!r.ok) return json(res, 502, { error: j.error?.message || ("api " + r.status) });
-      if (j.stop_reason === "max_tokens") return json(res, 502, { error: "grader ran out of tokens, try again" });
-      console.log(`  check    ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
-      let g; try { g = parseJson((j.content || []).map((c) => c.text || "").join("")); } catch { return json(res, 502, { error: "bad grader output" }); }
-      db.exams = Array.isArray(db.exams) ? db.exams : [];
-      db.exams.push({ n: Number(p.n), lang: p.lang === "en" ? "en" : "ru", d: TODAY, t: Date.now(), score: g.score, q: g.questions, chars: String(p.answer || "").length, answer: String(p.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300) });
-      for (const id of (Array.isArray(p.core) ? p.core : []).slice(0, 10)) logHit({ id, st: g.score >= 8 ? "green" : g.score >= 5 ? "yellow" : "red", xp: g.score, mode: "exam" });
-      save(); writeHtml();
-      return json(res, 200, { ...g, attempts: db.exams.filter((e) => e.n === Number(p.n)).slice(-20) });
-    }
-    if (req.method === "POST" && url.pathname === "/api/explain") {
-      const p = await body(req); const key = apiKey();
-      if (!key) return json(res, 400, { error: "no ANTHROPIC_API_KEY (env or .env next to today.mjs)" });
-      const ck = [p.lang, p.ok, p.stmt].join("|");
-      if (cache[ck]) return json(res, 200, { text: cache[ck], cached: true });
-      const sys = `You are explaining one statement from an AI-engineering interview drill to a senior frontend engineer (10 years, TypeScript) who is learning LLM engineering. Answer in ${p.lang === "ru" ? "Russian; technical terms stay in English" : "English"}. 4-7 sentences of connected prose, no bullet points, no headings. Start from the mechanism, not the rule. One concrete analogy or a tiny example if it genuinely helps. If the statement is false, say precisely which part is false and give the true version. Do not repeat the reference text; explain it differently.`;
-      const user = `Statement: "${p.stmt}"\nThis statement is ${p.ok ? "TRUE" : "FALSE"}.\nTopic: ${p.topic}\nReference answer (facts only, do not quote): ${p.ref}\nCommon trap: ${p.kill}`;
+    if (req.method === "POST" && p === "/api/check") {
+      if (!env("ANTHROPIC_API_KEY")) return json(res, 400, { error: "no_key" });
+      const b = await body(req);
+      if (String(b.answer || "").trim().length < 40) return json(res, 400, { error: "too_short" });
+      const { sys, user } = checkPrompt(b);
+      let g;
       try {
-        const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" }, body: JSON.stringify({ model: MODEL, max_tokens: 600, system: sys, messages: [{ role: "user", content: user }] }) });
-        const j = await r.json();
-        if (!r.ok) return json(res, 502, { error: j.error?.message || ("api " + r.status) });
-        const text = (j.content || []).map((c) => c.text || "").join("").trim();
-        cache[ck] = text; writeFileSync(CACHE, JSON.stringify(cache, null, 1));
-        console.log(`  explain  ${MODEL}  in ${j.usage?.input_tokens} out ${j.usage?.output_tokens}`);
-        return json(res, 200, { text });
-      } catch (e) { return json(res, 502, { error: e.message }); }
+        const j = await claude(GRADE_BODY(MODEL, sys, user));
+        if (j.stop_reason === "max_tokens") return json(res, 502, { error: "grader ran out of tokens, try again" });
+        g = parseJson((j.content || []).map((c) => c.text || "").join(""));
+      } catch (e) {
+        return json(res, 502, { error: e.message });
+      }
+      const n = Number(b.n), interview = b.kind === "interview";
+      db.exams = Array.isArray(db.exams) ? db.exams : [];
+      db.exams.push({
+        n, lang: b.lang === "en" ? "en" : "ru", d: TODAY, t: Date.now(), score: g.score, q: g.questions,
+        chars: String(b.answer || "").length, answer: String(b.answer || "").slice(0, 1500), verdict: g.verdict.slice(0, 300),
+        ...(interview ? { kind: "interview" } : {}),
+      });
+      const st = g.score >= 8 ? "green" : g.score >= 5 ? "yellow" : "red";
+      applyHit(db, { n, xp: g.score, mode: interview ? "interview" : "exam", ...(interview ? {} : { st }) }, TODAY);
+      save();
+      return json(res, 200, { ...g, attempts: db.exams.filter((e) => e.n === n).slice(-20) });
     }
-    let f = (url.pathname === "/" || url.pathname === "/drill.html") ? "/index.html" : decodeURIComponent(url.pathname);
+    if (req.method === "POST" && p === "/api/explain") {
+      const b = await body(req);
+      if (!env("ANTHROPIC_API_KEY")) return json(res, 400, { error: "no ANTHROPIC_API_KEY (env or .env next to today.mjs)" });
+      const ck = [b.lang, b.ok, b.stmt].join("|");
+      if (cache[ck]) return json(res, 200, { text: cache[ck], cached: true });
+      const sys = `You are explaining one statement from an AI-engineering interview drill to a senior frontend engineer (10 years, TypeScript) who is learning LLM engineering. Answer in ${b.lang === "ru" ? "Russian; technical terms stay in English" : "English"}. 4-7 sentences of connected prose, no bullet points, no headings. Start from the mechanism, not the rule. One concrete analogy or a tiny example if it genuinely helps. If the statement is false, say precisely which part is false and give the true version. Do not repeat the reference text; explain it differently.`;
+      const user = `Statement: "${b.stmt}"\nThis statement is ${b.ok ? "TRUE" : "FALSE"}.\nTopic: ${b.topic}\nReference answer (facts only, do not quote): ${b.ref}\nCommon trap: ${b.kill}`;
+      try {
+        const j = await claude({ model: MODEL, max_tokens: 600, system: sys, messages: [{ role: "user", content: user }] });
+        const text = (j.content || []).map((c) => c.text || "").join("").trim();
+        cache[ck] = text;
+        writeFileSync(CACHE, JSON.stringify(cache, null, 1));
+        return json(res, 200, { text });
+      } catch (e) {
+        return json(res, 502, { error: e.message });
+      }
+    }
+    if (p.startsWith("/api/")) return json(res, 404, { error: "no such route" });
+    const f = p === "/" ? "/index.html" : decodeURIComponent(p);
     const fp = join(APP, f);
-    if (!fp.startsWith(APP) || !existsSync(fp) || f.includes("..")) { res.writeHead(404); return res.end("not found"); }
+    if (!fp.startsWith(APP) || f.includes("..") || !existsSync(fp)) {
+      res.writeHead(404);
+      return res.end("not found");
+    }
     res.writeHead(200, { "content-type": MIME[extname(fp)] || "application/octet-stream", "cache-control": "no-store" });
     res.end(readFileSync(fp));
   }).listen(port, () => {
     const u = `http://localhost:${port}/`;
-    console.log(`\ndrill: ${u}\nprogress writes to queue.json. "Explain differently": ${apiKey() ? "on (" + MODEL + ")" : "off — set ANTHROPIC_API_KEY or put it in .env"}. Ctrl-C to stop.\n`);
+    console.log(`\ndrill: ${u}\nprogress writes to queue.json. Grading and "Explain differently": ${env("ANTHROPIC_API_KEY") ? "on (" + MODEL + ")" : "off — set ANTHROPIC_API_KEY or put it in .env"}. Ctrl-C to stop.\n`);
     if (process.platform === "darwin" && !process.argv.includes("--no-open")) exec(`open ${u}`);
   });
-}
-
-
-// ---- today's card (terminal) ----
-if (cmd !== "serve") {
-  const d = due(); const nn = nextNew();
-  const dow = today.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-  console.log(`\n=== TODAY - ${dow} ===\n`);
-  console.log("REVISIT  (cold, no notes, out loud, 60-90s each)");
-  if (!d.length) console.log("  nothing due. straight to the new one.");
-  for (const i of d.slice(0, 2)) console.log(`  #${i.id} ${i.t}  [${i.st}, ${i.over}d overdue]`);
-  if (d.length > 2) console.log(`  (+${d.length - 2} more in the backlog - ignore them, 2 is the cap)`);
-  console.log("\nNEW  (pre-test cold first, then lesson)");
-  console.log(nn ? `  #${nn.id} ${nn.t}` : "  queue empty");
-  if (db.today_overrides?.ship) console.log(`\nSHIP\n  ${db.today_overrides.ship}`);
-  const five = d[0] || nn;
-  console.log(`\n5-MINUTE VERSION (bad day, still counts)`);
-  console.log(`  #${five.id} out loud, 60 sec, then: node today.mjs done ${five.id} <g|y|r>`);
-  console.log(`\n-> open a Claude session, say "drill", point it at _private/learning-system.md`);
-  console.log(`   log it:  node today.mjs done <id> <g|y|r>   |   play:  node today.mjs serve   |   picture:  open progress.html\n`);
-}
-
-// ---- progress.html ----
-function writeHtml() {
-  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const active = db.items.filter((i) => i.st !== "parked");
-  const n = (s) => active.filter((i) => i.st === s).length;
-  const d = due(); const nn = nextNew();
-  const lastSession = db.history.length ? days(db.history[db.history.length - 1].d) : null;
-  const GLYPH = { green: "&#10003;", yellow: "~", red: "&#10007;", new: "", parked: "&#8211;" };
-  const LABEL = { green: "green — said it cold", yellow: "yellow — shaky", red: "red — missed", new: "new — never opened", parked: "parked — assumed known" };
-
-  // the wall
-  const wall = SECTIONS.map(([key, name]) => {
-    const items = db.items.filter((i) => i.s === key);
-    if (!items.length) return "";
-    const cells = items.map((i) => {
-      const dd = dueDate(i);
-      const tip = `#${i.id} ${i.t}\n${LABEL[i.st]}${i.last ? `\nlast: ${i.last}` : ""}${dd ? `\ndue: ${dd}${dd <= TODAY ? " (overdue)" : ""}` : ""}${i.why ? `\n${i.why}` : ""}`;
-      const overdue = dd && dd <= TODAY ? " overdue" : "";
-      return `<a class="cell ${i.st}${overdue}" href="app/exam-tickets.html#core-${i.id}" title="${esc(tip)}"><span class="id">${i.id}</span><span class="g">${GLYPH[i.st]}</span></a>`;
-    }).join("");
-    const g = items.filter((i) => i.st === "green").length;
-    return `<div class="sec"><div class="sech"><span>${esc(name)}</span><span class="muted">${g}/${items.length}</span></div><div class="cells">${cells}</div></div>`;
-  }).join("");
-
-  // heat map: 16 weeks, columns = weeks, rows = Mon..Sun
-  const counts = Object.fromEntries(db.history.map((h) => [h.d, h.ids.length]));
-  const end = new Date(today); const dow = (end.getDay() + 6) % 7; // Mon=0
-  const start = new Date(end); start.setDate(end.getDate() - dow - 7 * 15);
-  let cols = ""; const monthLabels = [];
-  for (let w = 0; w < 16; w++) {
-    let col = "";
-    for (let r = 0; r < 7; r++) {
-      const dt = new Date(start); dt.setDate(start.getDate() + w * 7 + r);
-      const k = iso(dt); const c = counts[k] || 0;
-      const future = dt > today;
-      const lvl = c === 0 ? 0 : c === 1 ? 1 : c <= 3 ? 2 : 3;
-      col += `<div class="day l${lvl}${future ? " future" : ""}${k === TODAY ? " today" : ""}" title="${k}${c ? ` — ${c} item${c > 1 ? "s" : ""}` : ""}"></div>`;
-      if (r === 0 && dt.getDate() <= 7) monthLabels.push([w, dt.toLocaleDateString("en-GB", { month: "short" })]);
-    }
-    cols += `<div class="week">${col}</div>`;
-  }
-  const months = monthLabels.map(([w, m]) => `<span style="left:${w * 16}px">${m}</span>`).join("");
-  const sessions = db.history.length;
-  const itemsLogged = db.history.reduce((a, h) => a + h.ids.length, 0);
-
-  // due timeline: next 14 days
-  const tl = [];
-  for (let k = 0; k < 14; k++) {
-    const dt = new Date(today); dt.setDate(today.getDate() + k); const key = iso(dt);
-    const ids = active.filter((i) => { const dd = dueDate(i); return dd && (k === 0 ? dd <= key : dd === key); }).map((i) => i.id);
-    tl.push(`<div class="tl"><span class="tld${k === 0 ? " now" : ""}">${k === 0 ? "today" : dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</span><span class="tli">${ids.length ? ids.map((x) => `<b>#${x}</b>`).join(" ") : "<i>—</i>"}</span></div>`);
-  }
-
-  const card = `
-    <div class="row"><span class="k">revisit</span><span>${d.length ? d.slice(0, 2).map((i) => `<b>#${i.id}</b> ${esc(i.t)} <i>(${i.over}d overdue)</i>`).join("<br>") : "nothing due"}${d.length > 2 ? `<br><i class="muted">+${d.length - 2} in backlog, ignore — 2 is the cap</i>` : ""}</span></div>
-    <div class="row"><span class="k">new</span><span>${nn ? `<b>#${nn.id}</b> ${esc(nn.t)}` : "queue empty"}</span></div>
-    ${db.today_overrides?.ship ? `<div class="row"><span class="k">ship</span><span>${esc(db.today_overrides.ship)}</span></div>` : ""}
-    <div class="row"><span class="k">5-min</span><span>#${(d[0] || nn).id} out loud, 60s, then <code>node today.mjs done ${(d[0] || nn).id} g|y|r</code></span></div>`;
-
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>progress — core-40</title>
-<style>
-  :root{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--base:#383835;--ring:rgba(255,255,255,.10);
-    --good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--h1:#1c5cab;--h2:#3987e5;--h3:#86b6ef}
-  *{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:28px 24px 60px;max-width:1080px;margin-inline:auto}
-  h1{font-size:15px;font-weight:600;margin:0 0 4px;letter-spacing:.02em}.sub{color:var(--muted);margin:0 0 22px;font-size:13px}
-  .muted{color:var(--muted)}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:26px}
-  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:12px 14px}.tile .v{font-size:26px;font-weight:600;line-height:1.1}.tile .l{color:var(--ink2);font-size:12px;margin-top:4px}
-  .tile .v.good{color:var(--good)}.tile .v.warn{color:var(--warn)}
-  h2{font-size:12px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin:26px 0 10px}
-  .card{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 16px}
-  .row{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:6px 0;border-top:1px solid var(--grid)}.row:first-child{border-top:0}.k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
-  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--page);padding:1px 6px;border-radius:4px;border:1px solid var(--grid)}
-  .sec{margin-bottom:12px}.sech{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:6px}
-  .cells{display:flex;flex-wrap:wrap;gap:4px}
-  .cell{text-decoration:none;width:44px;height:36px;border-radius:4px;border:1px solid var(--ring);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;position:relative}
-  .cell .id{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink2)}.cell .g{font-size:11px;line-height:1;color:var(--ink);min-height:11px}
-  .cell.green{background:var(--good);border-color:var(--good)}.cell.green .id,.cell.green .g{color:#07300a}
-  .cell.yellow{background:var(--warn);border-color:var(--warn)}.cell.yellow .id,.cell.yellow .g{color:#3a2a00}
-  .cell.red{background:var(--crit);border-color:var(--crit)}
-  .cell.new{background:var(--surface);border-style:dashed;border-color:var(--base)}
-  .cell.parked{background:repeating-linear-gradient(135deg,var(--surface) 0 4px,var(--grid) 4px 6px);border-color:var(--grid)}.cell.parked .id,.cell.parked .g{color:var(--muted)}
-  .cell.overdue::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--ink);opacity:.85}
-  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink2);margin:10px 0 0}.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;border:1px solid var(--ring)}
-  .legend .lg::before{background:var(--good)}.legend .ly::before{background:var(--warn)}.legend .lr::before{background:var(--crit)}.legend .ln::before{border-style:dashed;border-color:var(--base)}.legend .lp::before{background:repeating-linear-gradient(135deg,var(--surface) 0 3px,var(--grid) 3px 5px)}.legend .lo::before{background:var(--ink);border-radius:50%;width:6px;height:6px;margin:0 8px 0 2px}
-  .heat{position:relative;padding-top:18px}.months{position:absolute;top:0;left:0;height:14px;font-size:11px;color:var(--muted)}.months span{position:absolute}
-  .weeks{display:flex;gap:3px}.week{display:flex;flex-direction:column;gap:3px}
-  .day{width:13px;height:13px;border-radius:2px;background:var(--surface);border:1px solid var(--grid)}.day.l1{background:var(--h1);border-color:var(--h1)}.day.l2{background:var(--h2);border-color:var(--h2)}.day.l3{background:var(--h3);border-color:var(--h3)}
-  .day.future{opacity:.25}.day.today{outline:1px solid var(--ink);outline-offset:1px}
-  .hl{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted);margin-top:8px}.hl .day{width:11px;height:11px}
-  .tls{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}.tl{background:var(--surface);border:1px solid var(--ring);border-radius:6px;padding:8px 10px;font-size:12px}.tld{display:block;color:var(--muted);margin-bottom:3px}.tld.now{color:var(--ink)}.tli b{font-family:ui-monospace,Menlo,monospace;font-weight:600}.tli i{color:var(--base)}
-  b{font-weight:600}i{color:var(--muted);font-style:normal}
-  .foot{color:var(--muted);font-size:12px;margin-top:30px}
-</style></head><body>
-<h1>core-40 &middot; progress</h1>
-<p class="sub">${today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} &middot; regenerate: <code>node today.mjs html</code> (auto after every <code>done</code>)</p>
-
-<div class="tiles">
-  <div class="tile"><div class="v good">${n("green")}<span class="muted" style="font-size:14px;font-weight:400"> / ${active.length}</span></div><div class="l">green &middot; said it cold</div></div>
-  <div class="tile"><div class="v warn">${n("yellow")}</div><div class="l">yellow &middot; shaky, in rotation</div></div>
-  <div class="tile"><div class="v">${n("new")}</div><div class="l">new &middot; never opened</div></div>
-  <div class="tile"><div class="v">${d.length}</div><div class="l">due today (cap 2)</div></div>
-  <div class="tile"><div class="v">${lastSession === null ? "—" : lastSession + "d"}</div><div class="l">since last logged session</div></div>
-</div>
-
-<h2>Today</h2>
-<div class="card">${card}</div>
-
-<h2>The wall &middot; ${active.length} active, ${db.items.length - active.length} parked</h2>
-${wall}
-<div class="legend"><span class="lg">green</span><span class="ly">yellow</span><span class="lr">red</span><span class="ln">new</span><span class="lp">parked</span><span class="lo">overdue for revisit</span></div>
-
-<h2>Sessions &middot; last 16 weeks &middot; ${sessions} sessions, ${itemsLogged} items logged</h2>
-<div class="card"><div class="heat"><div class="months">${months}</div><div class="weeks">${cols}</div></div>
-<div class="hl">less <div class="day"></div><div class="day l1"></div><div class="day l2"></div><div class="day l3"></div> more &nbsp;&middot;&nbsp; rows Mon&rarr;Sun &nbsp;&middot;&nbsp; the gaps are the data, not a verdict</div></div>
-
-<h2>Coming due &middot; next 14 days</h2>
-<div class="tls">${tl.join("")}</div>
-
-<p class="foot">Hover any cell for the item, status, last drilled, due date. Click it to open its exam ticket. Data: <code>queue.json</code>. Log: <code>node today.mjs done &lt;id&gt; g|y|r</code>.</p>
-</body></html>`;
-  writeFileSync(HTML, html);
 }

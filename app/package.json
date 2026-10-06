@@ -1,1 +1,11 @@
-{ "name": "duokovalingo", "private": true, "type": "module", "engines": { "node": "22.x" } }
+{
+  "name": "duokovalingo",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

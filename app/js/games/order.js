@@ -1,17 +1,16 @@
 // Order-the-steps game.
 import { icon } from "../icons.js";
-import { home } from "../screens/home.js";
 import { bestPara, finish, sheet, wireSheet } from "../screens/verdict.js";
 import { beep } from "../sound.js";
 import { state } from "../state.js";
-import { ticketFor } from "../store.js";
-import { app, kbd, rtop, setCombo, ui, wireQuit } from "../ui.js";
+import { tk } from "../store.js";
+import { app, exitRound, kbd, roundFrame, rtop, setCombo, ui, wireQuit } from "../ui.js";
 import { $, codify, esc, shuffle } from "../util.js";
 
-export function playOrder(id) {
-  const t = ticketFor(id);
+export function playOrder(n) {
+  const t = tk(n);
   const st0 = window.DRILLS[t.n]?.steps?.[state.lang];
-  if (!st0) return home();
+  if (!st0) return exitRound();
   state.combo = 0;
   const ST = () => window.DRILLS[t.n]?.steps?.[state.lang] || st0;
   let cur = shuffle(st0.items.map((s, i) => i));
@@ -21,9 +20,9 @@ export function playOrder(id) {
     lastRes = null;
   const render = (result) => {
     const st = ST();
-    app.innerHTML = `<div class="round">${rtop(result && result.ok ? 100 : 0, result && result.ok)}<div class="body"><span class="tag">${esc(t[state.lang].topic)}</span><p class="q">${esc(st.title)}</p>
+    roundFrame(`<div class="round">${rtop(result && result.ok ? 100 : 0, result && result.ok)}<div class="body"><span class="tag">${esc(t[state.lang].topic)}</span><p class="q">${esc(st.title)}</p>
       <div class="steps">${cur.map((idx, pos) => `<div class="step${sel === pos ? " sel" : ""}${result ? (idx === pos ? " ok" : " bad") : ""}" data-pos="${pos}" draggable="${!result}"><span class="n">${pos + 1}</span><span class="sx">${codify(st.items[idx])}</span><span class="mv"><button data-up="${pos}" aria-label="up">${icon.up}</button><button data-dn="${pos}" aria-label="down">${icon.down}</button></span></div>`).join("")}</div></div>
-      ${result ? "" : `<div class="act"><button class="btn blue full big" id="chk">${ui().check} ${kbd("Enter", 1)}</button><div class="hint"><span>${kbd("↑")}${kbd("↓")} ${ui().hintMove}</span><span>${kbd("Enter")} ${ui().hintCheck}</span></div></div>`}<div id="sheetSlot"></div></div>`;
+      ${result ? "" : `<div class="act"><button class="btn blue full big" id="chk">${ui().check} ${kbd("Enter", 1)}</button><div class="hint"><span>${kbd("↑")}${kbd("↓")} ${ui().hintMove}</span><span>${kbd("Enter")} ${ui().hintCheck}</span></div></div>`}<div id="sheetSlot"></div></div>`);
     wireQuit();
     const move = (a, b) => {
       if (b < 0 || b >= cur.length) return;
@@ -85,7 +84,7 @@ export function playOrder(id) {
         } else if (e.key === "ArrowDown" && sel !== null) {
           e.preventDefault();
           move(sel, sel + 1);
-        } else if (e.key === "Escape") location.hash = "home";
+        } else if (e.key === "Escape") exitRound();
       };
   };
   const drawResult = ({ ok, n }) => {
@@ -108,7 +107,7 @@ export function playOrder(id) {
       ok
         ? () => {
             state.rerender = null;
-            finish(id, "order", 1, 1, tries === 1 ? 5 : 2);
+            finish(n, "order", 1, 1, tries === 1 ? 5 : 2);
           }
         : () => {
             lastRes = null;

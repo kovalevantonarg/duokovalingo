@@ -5,7 +5,8 @@ import { app, ui } from "../ui.js";
 import { $ } from "../util.js";
 
 export function loginScreen(err) {
-  app.innerHTML = `<div class="login"><a class="wm">duokovalingo<small>core-40</small></a><form id="lf"><input type="password" id="pw" placeholder="${ui().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${ui().enter}</button><div class="err">${err || ""}</div></form></div>`;
+  document.body.classList.add("inround");
+  app.innerHTML = `<div class="v-app"><div class="login"><a class="wm">duokovalingo</a><form id="lf"><input type="password" id="pw" placeholder="${ui().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${ui().enter}</button><div class="err">${err || ""}</div></form></div></div>`;
   $("#lf").onsubmit = async (e) => {
     e.preventDefault();
     const b = $("#lf button");

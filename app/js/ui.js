@@ -1,60 +1,80 @@
-// Shared UI pieces: current-language strings, header, item rows and chips, the round top bar, question helpers.
+// Shared UI pieces: current-language strings, the app frame (header + tab bar), ticket rows, the round top bar, question helpers.
 import { STRINGS } from "./i18n.js";
 import { icon } from "./icons.js";
-import { route } from "./router.js";
-import { loginScreen } from "./screens/login.js";
-import { beep, soundOn, toggleSound } from "./sound.js";
-import { state } from "./state.js";
-import { isDue, streak, ticketFor, xpToday } from "./store.js";
+import { openSettings } from "./screens/settings.js";
+import { persist, state } from "./state.js";
+import { lastScore, rec, status, streak, xpToday } from "./store.js";
 import { $, esc } from "./util.js";
+import { isDue } from "../lib/srs.js";
 
 export const app = $("#app");
 
 /** Strings for the current language. */
 export const ui = () => STRINGS[state.lang];
 
-export const fmtDate = () =>
-  new Date().toLocaleDateString(state.lang === "ru" ? "ru-RU" : "en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+export const setLang = (l) => {
+  state.lang = l;
+  persist("drill.lang", l);
+  document.documentElement.lang = l;
+};
+
+export const fmtDate = (d = new Date(), o = { weekday: "short", day: "numeric", month: "short" }) =>
+  d.toLocaleDateString(state.lang === "ru" ? "ru-RU" : "en-GB", o);
 
 export const kbd = (k, dk) => `<span class="kbd${dk ? " dk" : ""}">${k}</span>`;
 
-export function header() {
-  return `<header class="hdr"><a class="wm" href="#home"><span class="wmfull">duokovalingo</span><span class="wmshort">duo</span><small>core-40</small></a><span class="sp"></span><span class="stat fire">${icon.flame}${streak()}</span><span class="stat xp" style="margin-left:6px">${icon.bolt}${xpToday()}</span><button class="icb${soundOn() ? "" : " off"}" id="snd" aria-label="sound" style="margin-left:8px">${icon.sound}</button>${state.db.auth ? `<button class="icb" id="lo" aria-label="${ui().logout}" title="${ui().logout}">${icon.out}</button>` : ""}<div class="seg"><button id="ru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button id="en" class="${state.lang === "en" ? "on" : ""}">EN</button></div></header>`;
+export const TABS = [
+  { id: "home", icon: "today", match: ["home"] },
+  { id: "tickets", icon: "deck", match: ["tickets", "t", "exam", "interview"] },
+  { id: "learn", icon: "book", match: ["learn"] },
+  { id: "progress", icon: "chart", match: ["progress"] },
+];
+
+/** Bottom tab bar (phones) / top tabs (desktop), drawn once; `setTab` marks the current one. */
+export function drawTabs() {
+  const nav = $("#tabs");
+  nav.innerHTML = TABS.map(
+    (t) => `<a href="#${t.id}" data-tab="${t.id}">${icon[t.icon]}<span>${ui().tabs[t.id]}</span></a>`,
+  ).join("");
+}
+export function setTab(screen) {
+  const cur = TABS.find((t) => t.match.includes(screen));
+  document.querySelectorAll("#tabs a").forEach((a) => {
+    const on = cur && a.dataset.tab === cur.id;
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  });
+}
+
+/** Header: brand (or a back link), streak and today's XP, settings. */
+export function header(back) {
+  const left = back
+    ? `<a class="hback" href="#${back.href}">${icon.back}<span>${esc(back.label)}</span></a>`
+    : `<a class="wm" href="#home"><span class="wmfull">duokovalingo</span><span class="wmshort">duo</span></a>`;
+  return `<header class="hdr">${left}<span class="sp"></span><span class="stat fire" title="${ui().streak}">${icon.flame}${streak()}</span><span class="stat xp" style="margin-left:6px" title="${ui().xpt}">${icon.bolt}${xpToday()}</span><button class="icb" id="cfg" aria-label="${ui().settings}" title="${ui().settings}" style="margin-left:6px">${icon.gear}</button></header>`;
+}
+
+/**
+ * Render a tab screen: header + content in the given scope class (v-app, v-exam, v-learn, v-map).
+ * Returns the content element.
+ */
+export function frame(html, { back, scope = "v-app", cls = "page" } = {}) {
+  document.body.classList.remove("inround");
+  app.innerHTML = header(back) + `<main class="${scope}"><div class="${cls}">${html}</div></main>`;
+  wireHeader();
+  return app.querySelector("main > div");
 }
 
 export function wireHeader() {
-  const lo = $("#lo");
-  if (lo)
-    lo.onclick = async () => {
-      await fetch("/api/logout", { method: "POST" });
-      state.db = { items: [], history: [] };
-      state.live = false;
-      loginScreen();
-    };
-  const r = $("#ru"),
-    e = $("#en"),
-    s = $("#snd");
-  if (r)
-    r.onclick = () => {
-      state.lang = "ru";
-      localStorage.setItem("drill.lang", state.lang);
-      route();
-    };
-  if (e)
-    e.onclick = () => {
-      state.lang = "en";
-      localStorage.setItem("drill.lang", state.lang);
-      route();
-    };
-  if (s)
-    s.onclick = () => {
-      s.classList.toggle("off", !toggleSound());
-      beep(true);
-    };
+  const c = $("#cfg");
+  if (c) c.onclick = openSettings;
+}
+
+/** Round screens (games, session) take the whole screen: no header, no tab bar. */
+export function roundFrame(html) {
+  document.body.classList.add("inround");
+  app.innerHTML = `<div class="v-app">${html}</div>`;
 }
 
 export const MODE_ICON = {
@@ -65,25 +85,20 @@ export const MODE_ICON = {
   ticket: icon.doc,
 };
 
-export function chips(id, hot) {
-  const t = ticketFor(id);
-  if (!t) return "";
-  const d = window.DRILLS[t.n] || {};
-  const b = (m, label) =>
-    `<button class="chip${hot === m ? " hot" : ""}" onclick="location.hash='play/${id}/${m}'">${MODE_ICON[m]}${label}</button>`;
-  return `<div class="chips">${b("voice", ui().voice)}${b("tf", "T/F")}${d.cloze ? b("gap", ui().gap) : ""}${d.steps ? b("order", ui().order) : ""}<a class="chip" href="learn.html#t${t.n}">${icon.doc}${ui().learn}</a><a class="chip" href="exam-tickets.html#t${t.n}">${icon.doc}${ui().ticket} ${t.n}</a></div>`;
-}
+export const scoreCls = (n) => (n >= 8 ? "g" : n >= 5 ? "y" : "r");
 
-export function itemRow(i, sub) {
-  const st = i.st || "new";
-  return `<div class="item"><span class="sw ${st}${isDue(i) ? " due" : ""}"></span><div class="it"><div class="t"><span class="id">#${i.id}</span>${esc(i.t)}</div><div class="s">${sub}</div>${chips(i.id)}</div>${chips(i.id)}</div>`;
+/** One ticket as a tappable row: status, number, topic, sub line, last exam score, doubt mark. */
+export function ticketRow(t, sub = "", href = `t/${t.n}`) {
+  const st = status(t.n),
+    r = rec(t.n),
+    sc = lastScore(t.n);
+  return `<a class="trow" href="#${href}"><span class="sw ${st}${isDue(r) ? " due" : ""}"></span><span class="tn">${t.n}</span><span class="tt"><b>${esc(t[state.lang].topic)}</b>${sub ? `<small>${sub}</small>` : ""}</span>${r.doubt ? `<span class="dbt" title="${ui().doubt}">?</span>` : ""}${sc != null ? `<span class="scb ${scoreCls(sc)}">${sc}</span>` : ""}${icon.chev}</a>`;
 }
 
 export function rtop(pct, ok) {
   return `<div class="rtop"><button class="x" id="quit" aria-label="${ui().quit}">${icon.x}</button><div class="pbar${ok ? " ok" : ""}" id="pbar"><i style="width:${pct}%"></i></div><span class="combo" id="combo"></span><div class="seg rl" id="rl" role="group" aria-label="language"><button data-l="ru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button data-l="en" class="${state.lang === "en" ? "on" : ""}">EN</button></div></div>`;
 }
 
-// switching language mid-round redraws the current screen in place: same question, same answer state, no progress lost
 export function setCombo(n) {
   state.combo = n;
   const c = $("#combo");
@@ -103,18 +118,20 @@ export function setProg(i, n) {
   if (i >= n) p.classList.add("ok");
 }
 
+/** Leave a round: back to the screen it was started from. */
+export const exitRound = () => {
+  location.hash = state.back || "home";
+};
+
+// switching language mid-round redraws the current screen in place: same question, same answer state, no progress lost
 export const wireQuit = () => {
   const q = $("#quit");
-  if (q)
-    q.onclick = () => {
-      location.hash = "home";
-    };
+  if (q) q.onclick = exitRound;
   app.querySelectorAll("#rl [data-l]").forEach(
     (b) =>
       (b.onclick = () => {
         if (state.lang === b.dataset.l) return;
-        state.lang = b.dataset.l;
-        localStorage.setItem("drill.lang", state.lang);
+        setLang(b.dataset.l);
         if (state.rerender) state.rerender();
         else
           app

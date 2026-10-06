@@ -2,7 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkPrompt, parseJson, GRADE_BODY, GRADE_SCHEMA } from "../app/api/_grade.js";
 
-const input = { lang: "ru", topic: "Токены", qs: ["a", "b", "c"], answer: "x".repeat(60), ref: [{ q: "Определение", t: "..." }], kill: "k" };
+const input = {
+  lang: "ru",
+  topic: "Токены",
+  qs: ["a", "b", "c"],
+  answer: "x".repeat(60),
+  ref: [{ q: "Определение", t: "..." }],
+  kill: "k",
+};
 
 test("prompt carries questions, answer and hidden reference", () => {
   const { sys, user } = checkPrompt(input);
@@ -18,7 +25,9 @@ test("request uses structured output with every schema key required", () => {
 });
 
 test("parser clamps scores and tolerates code fences", () => {
-  const g = parseJson('```json\n{"score": 12.6, "verdict": "ok", "covered": [], "missing": [], "wrong": [{"said": "s", "actually": "a"}], "questions": [11, -1, 4.4], "followup": "", "language": [], "next": ""}\n```');
+  const g = parseJson(
+    '```json\n{"score": 12.6, "verdict": "ok", "covered": [], "missing": [], "wrong": [{"said": "s", "actually": "a"}], "questions": [11, -1, 4.4], "followup": "", "language": [], "next": ""}\n```',
+  );
   assert.equal(g.score, 10);
   assert.deepEqual(g.questions, [10, 0, 4]);
   assert.deepEqual(g.wrong, [{ said: "s", actually: "a" }]);

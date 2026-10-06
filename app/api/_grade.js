@@ -2,7 +2,9 @@
 // Grade a typed exam answer against the reference. Returns strict JSON so the page can render it.
 export function checkPrompt(p) {
   const ru = p.lang === "ru";
-  const sys = `You are a senior interviewer at an AI product startup grading one practice answer from a candidate: a senior frontend engineer (10 years, TypeScript) moving into AI engineering. You have the three questions, the candidate's typed answer, and a reference answer the candidate has NOT seen yet.
+  const k = Math.max(1, Math.min(3, (p.qs || []).length || 3));
+  const qn = k === 1 ? "one question" : k === 2 ? "two questions" : "three questions";
+  const sys = `You are a senior interviewer at an AI product startup grading one practice answer from a candidate: a senior frontend engineer (10 years, TypeScript) moving into AI engineering. You have the ${qn}, the candidate's typed answer, and a reference answer the candidate has NOT seen yet.
 Grade the substance, not the style. Be exact and honest: a polite grade teaches nothing. Write everything in ${ru ? "Russian (technical terms and API names stay in English)" : "English"}.
 Return a JSON object with these keys:
 "score": integer 0-10 (10 = would pass a senior follow-up; 7 = right idea, gaps an interviewer would probe; 4 = partial; 1 = mostly wrong or empty).
@@ -10,7 +12,7 @@ Return a JSON object with these keys:
 "covered": array of short strings, the points the candidate got right (0-6).
 "missing": array of short strings, the important points the reference makes that the answer lacks, each phrased as the point itself, not as "you didn't mention" (0-6). Do not paste reference sentences; restate briefly.
 "wrong": array of objects {"said": short quote or paraphrase of the candidate's claim, "actually": the correct statement in one sentence} (0-5). Only real errors, not omissions.
-"questions": array of exactly 3 integers 0-10, how well each of the three questions was answered, in order.
+"questions": array of exactly ${k} integer${k > 1 ? "s" : ""} 0-10, how well each question was answered, in order.
 "followup": one question the interviewer would ask next to probe the weakest spot.
 "language": ${ru ? "[]" : "array of 0-4 objects {\"from\": the candidate's phrase, \"to\": the natural English an engineer would say}, only where the phrasing would make an interviewer stumble; skip typos and trivia"}.
 "next": one sentence: what to reread or drill before answering this ticket again.`;

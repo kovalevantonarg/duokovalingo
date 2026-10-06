@@ -1,10 +1,9 @@
 // Fill-the-gap game over the ticket's cloze sentences.
-import { home } from "../screens/home.js";
 import { bestPara, finish, sheet, wireSheet } from "../screens/verdict.js";
 import { beep } from "../sound.js";
 import { state } from "../state.js";
-import { ticketFor } from "../store.js";
-import { app, kbd, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
+import { tk } from "../store.js";
+import { exitRound, kbd, roundFrame, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
 import { $, esc, shuffle } from "../util.js";
 import { clozeQs } from "./true-false.js";
 
@@ -124,7 +123,7 @@ export function runGap(qs, onDone, acc) {
     };
     const draw = () => {
       const { answers, html } = gapScreen(q, i, qs.length);
-      app.innerHTML = html;
+      roundFrame(html);
       wireQuit();
       setCombo(state.combo);
       answers.forEach((_, j) => {
@@ -142,7 +141,7 @@ export function runGap(qs, onDone, acc) {
         if (e.key === "Enter") {
           e.preventDefault();
           check(answers);
-        } else if (e.key === "Escape") location.hash = "home";
+        } else if (e.key === "Escape") exitRound();
       };
     };
     state.rerender = draw;
@@ -151,10 +150,9 @@ export function runGap(qs, onDone, acc) {
   step();
 }
 
-export function playGap(id) {
+export function playGap(n) {
   state.combo = 0;
-  const t = ticketFor(id);
-  const qs = shuffle(clozeQs(t)).slice(0, 3);
-  if (!qs.length) return home();
-  runGap(qs, (acc) => finish(id, "gap", acc.correct, acc.total, acc.xp, null, acc.missedQ));
+  const qs = shuffle(clozeQs(tk(n))).slice(0, 3);
+  if (!qs.length) return exitRound();
+  runGap(qs, (acc) => finish(n, "gap", acc.correct, acc.total, acc.xp, null, acc.missedQ));
 }

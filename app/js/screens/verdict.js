@@ -5,7 +5,7 @@ import { icon } from "../icons.js";
 import { route } from "../router.js";
 import { state } from "../state.js";
 import { post, streak, xpToday } from "../store.js";
-import { app, kbd, rtop, ui, wireQuit } from "../ui.js";
+import { exitRound, kbd, roundFrame, rtop, ui, wireQuit } from "../ui.js";
 import { $, codify, esc } from "../util.js";
 
 // which reference paragraph explains this statement: rare shared words (idf over the 3 paragraphs), shared word pairs, and the paragraph's own label
@@ -41,7 +41,7 @@ export function bestPara(t, text) {
 
 export function sheet({ ok, title, sub, text, q, btn, btnLabel }) {
   return `<div class="sheet ${ok ? "ok" : "bad"}" id="sheet"><div style="display:flex;flex-direction:column;gap:10px"><div class="h"><span class="mark">${ok ? icon.check : icon.xs}</span><span>${title}</span>${sub ? `<span class="sep">·</span><span>${sub}</span>` : ""}</div>${text ? `<p class="vp">${text}</p>` : ""}</div>
-    <div class="links"><button id="more">${ui().more}</button>${state.db.explain && state.live && q ? `<button id="expl">${icon.spark}${ui().explain}</button>` : ""}${q ? `<a href="exam-tickets.html#t${q.t.n}" style="margin-left:auto">${ui().ticket} ${q.t.n} →</a>` : ""}</div><div id="moreBox" style="display:contents"></div>
+    <div class="links"><button id="more">${ui().more}</button>${state.db.explain && state.live && q ? `<button id="expl">${icon.spark}${ui().explain}</button>` : ""}${q ? `<a href="#t/${q.t.n}" style="margin-left:auto">${ui().ticket} ${q.t.n} →</a>` : ""}</div><div id="moreBox" style="display:contents"></div>
     <button class="btn ${btn} full big" id="nx" style="margin-top:6px">${btnLabel} ${kbd("Enter", 1)}</button></div>`;
 }
 
@@ -96,7 +96,7 @@ export function wireSheet(q, stmt, next, morePara) {
       next();
     } else if (e.key === "m" || e.key === "M" || e.key === "ь") {
       if (!m.disabled) m.click();
-    } else if (e.key === "Escape") location.hash = "home";
+    } else if (e.key === "Escape") exitRound();
   };
 }
 
@@ -129,7 +129,7 @@ export function finish(id, mode, correct, total, xp, ids, missedQ) {
     xpWas = xpToday();
   const all = ids || [id];
   Promise.all(
-    all.map((cid, k) => post("/api/log", { id: cid, mode, xp: k === 0 ? xp : 0, correct, total })),
+    all.map((cid, k) => post("/api/log", { n: cid, mode, xp: k === 0 ? xp : 0, correct, total })),
   ).then(() => {
     const m = $("#mom");
     if (m) m.innerHTML = momTiles(was, xpWas);
@@ -137,22 +137,22 @@ export function finish(id, mode, correct, total, xp, ids, missedQ) {
   const hasMiss = missedQ && missedQ.length;
   const draw = () => {
     const msg = pct === 1 ? ui().perfect : pct >= 0.7 ? ui().good : ui().meh;
-    app.innerHTML = `<div class="round">${rtop(100, true)}<div class="res"><span class="tag">${ui().roundOver} · ${all.map((x) => "#" + x).join(", ")}</span><div class="n" style="margin-top:24px">${correct}<small>/${total}</small></div><div class="v">${msg}</div><div class="xp">+${xp} XP</div><div class="mom" id="mom">${momTiles(was, xpWas)}</div>${missRecap(missedQ)}</div>
+    roundFrame(`<div class="round">${rtop(100, true)}<div class="res"><span class="tag">${ui().roundOver} · ${all.map((x) => "#" + x).join(", ")}</span><div class="n" style="margin-top:24px">${correct}<small>/${total}</small></div><div class="v">${msg}</div><div class="xp">+${xp} XP</div><div class="mom" id="mom">${momTiles(was, xpWas)}</div>${missRecap(missedQ)}</div>
     ${hasMiss ? `<div class="act" style="flex-direction:row;margin-top:20px"><button class="btn blue full" id="rv">${ui().reviewMisses} · ${missedQ.length}</button></div>` : ""}
-    <div class="act" style="flex-direction:row;gap:12px;margin-top:${hasMiss ? "12" : "36"}px"><button class="btn line" id="ag" style="flex:1">${ui().again} ${kbd("R", 1)}</button><button class="btn green" id="hm" style="flex:1.4">${ui().home} ${kbd("Enter", 1)}</button></div></div>`;
+    <div class="act" style="flex-direction:row;gap:12px;margin-top:${hasMiss ? "12" : "36"}px"><button class="btn line" id="ag" style="flex:1">${ui().again} ${kbd("R", 1)}</button><button class="btn green" id="hm" style="flex:1.4">${ui().done} ${kbd("Enter", 1)}</button></div></div>`);
     wireQuit();
     const again = () => {
-      location.hash = mode === "quick" ? "quick" : `play/${id}/${mode}`;
-      route(true);
+      const h = `play/${id}/${mode.replace("-review", "")}`;
+      if (location.hash.slice(1) === h) route();
+      else location.hash = h;
     };
     $("#ag").onclick = again;
-    $("#hm").onclick = () => (location.hash = "home");
+    $("#hm").onclick = exitRound;
     if (hasMiss)
       $("#rv").onclick = () => retryMisses(missedQ, (c, t, x) => finish(id, mode + "-review", c, t, x, ids));
     document.onkeydown = (e) => {
-      if (e.key === "Enter") location.hash = "home";
+      if (e.key === "Enter" || e.key === "Escape") exitRound();
       else if (e.key === "r" || e.key === "R" || e.key === "к") again();
-      else if (e.key === "Escape") location.hash = "home";
     };
   };
   state.rerender = draw;

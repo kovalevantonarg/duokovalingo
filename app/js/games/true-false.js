@@ -2,8 +2,8 @@
 import { finish, sheet, wireSheet } from "../screens/verdict.js";
 import { beep } from "../sound.js";
 import { state } from "../state.js";
-import { ticketFor } from "../store.js";
-import { app, kbd, mkQ, other, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
+import { tk } from "../store.js";
+import { exitRound, kbd, mkQ, other, roundFrame, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
 import { $, codify, esc, shuffle } from "../util.js";
 
 export const splitS = (x) =>
@@ -61,8 +61,8 @@ export const clozeQs = (t) => {
   return (d.cloze?.[state.lang] || []).map((x, k) => mkQ({ ru: d.cloze.ru?.[k], en: d.cloze.en?.[k] }, t));
 };
 
-export function buildTF(ids, n = 10) {
-  const ts = ids.map(ticketFor).filter(Boolean);
+export function buildTF(ns, n = 10) {
+  const ts = ns.map(tk).filter(Boolean);
   if (!ts.length) return [];
   const pool = [];
   for (const t of ts) {
@@ -83,8 +83,8 @@ export function buildTF(ids, n = 10) {
 }
 
 export function tfScreen(title, q, i, n) {
-  return `<div class="round">${rtop(Math.round((i / n) * 100))}<div class="body"><span class="tag">${esc(q.t[state.lang].topic)}</span><p class="stmt">${codify(q.s)}</p></div>
-  <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←", 1).replace('class="kbd dk"', 'class="kbd dk" style="left:14px"')}${ui().false}</button><button class="ans" id="t">${ui().true}${kbd("→", 1).replace('class="kbd dk"', 'class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span>${kbd("Enter")} ${ui().hintNext}</span><span>${kbd("M")} ${ui().hintMore}</span><span>${kbd("Esc")} ${ui().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`;
+  return `<div class="round">${rtop(Math.round((i / n) * 100))}<div class="body swipe" id="sw"><span class="tag">${esc(q.t[state.lang].topic)}</span><p class="stmt">${codify(q.s)}</p><span class="swl">${ui().false}</span><span class="swr">${ui().true}</span></div>
+  <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←", 1).replace('class="kbd dk"', 'class="kbd dk" style="left:14px"')}${ui().false}</button><button class="ans" id="t">${ui().true}${kbd("→", 1).replace('class="kbd dk"', 'class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span class="touch">${ui().hintSwipe}</span><span>${kbd("Enter")} ${ui().hintNext}</span><span>${kbd("M")} ${ui().hintMore}</span><span>${kbd("Esc")} ${ui().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`;
 }
 
 export function runTF(qs, onDone, title, acc) {
@@ -143,16 +143,17 @@ export function runTF(qs, onDone, title, acc) {
       show(v, false);
     };
     const draw = () => {
-      app.innerHTML = tfScreen(title, q, i, qs.length);
+      roundFrame(tfScreen(title, q, i, qs.length));
       wireQuit();
       setCombo(state.combo);
       if (ans !== null) return show(ans, true);
       $("#t").onclick = () => answer(true);
       $("#f").onclick = () => answer(false);
+      swipe($("#sw"), answer);
       document.onkeydown = (e) => {
         if (e.key === "ArrowRight") answer(true);
         else if (e.key === "ArrowLeft") answer(false);
-        else if (e.key === "Escape") location.hash = "home";
+        else if (e.key === "Escape") exitRound();
       };
     };
     state.rerender = draw;
@@ -161,14 +162,41 @@ export function runTF(qs, onDone, title, acc) {
   step();
 }
 
-export function playTF(id) {
+/** Drag the statement right for true, left for false. */
+function swipe(el, answer) {
+  let x0 = null,
+    dx = 0;
+  el.onpointerdown = (e) => {
+    if (e.pointerType === "mouse") return;
+    x0 = e.clientX;
+    dx = 0;
+    el.setPointerCapture(e.pointerId);
+    el.classList.add("drag");
+  };
+  el.onpointermove = (e) => {
+    if (x0 === null) return;
+    dx = e.clientX - x0;
+    el.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`;
+    el.classList.toggle("toR", dx > 40);
+    el.classList.toggle("toL", dx < -40);
+  };
+  el.onpointerup = el.onpointercancel = () => {
+    if (x0 === null) return;
+    x0 = null;
+    el.classList.remove("drag", "toR", "toL");
+    el.style.transform = "";
+    if (Math.abs(dx) > 90) answer(dx > 0);
+  };
+}
+
+export function playTF(n) {
   state.combo = 0;
-  const qs = buildTF([id]);
+  const qs = buildTF([n]);
   runTF(
     qs,
     (acc) =>
       finish(
-        id,
+        n,
         "tf",
         acc.correct,
         qs.length,

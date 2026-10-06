@@ -1,3 +1,11 @@
+// "From zero" lessons: the index and one lesson (lessons/L<n>.json), with read-aloud.
+import { icon } from "../icons.js";
+import { canSpeak, chunks, readAloud } from "../speech.js";
+import { persist, state } from "../state.js";
+import { tickets } from "../store.js";
+import { frame, setLang } from "../ui.js";
+import { $, esc } from "../util.js";
+
 const UI = {
   ru: {
     home: "Главная",
@@ -26,6 +34,10 @@ const UI = {
     next: "→",
     ticket: "Билет",
     words: "мин чтения",
+    listen: "Слушать",
+    pause: "Пауза",
+    resume: "Дальше",
+    nolisten: "Браузер не умеет читать вслух.",
     err: "Не удалось загрузить разбор. Проверь сеть и обнови страницу.",
     sec: {
       llm: "LLM engineering",
@@ -68,6 +80,10 @@ const UI = {
     next: "→",
     ticket: "Ticket",
     words: "min read",
+    listen: "Listen",
+    pause: "Pause",
+    resume: "Resume",
+    nolisten: "This browser can't read aloud.",
     err: "Couldn't load the lesson. Check your connection and reload.",
     sec: {
       llm: "LLM engineering",
@@ -85,39 +101,21 @@ const UI = {
   },
 };
 const ORDER = ["llm", "rag", "agents", "sysd", "behav", "js", "ts", "react", "web", "bonus", "parked"];
-const T = window.TICKETS,
-  $ = (id) => document.getElementById(id),
-  main = $("main");
-const store = {
-  get(k, d) {
-    try {
-      const v = localStorage.getItem(k);
-      return v == null ? d : JSON.parse(v);
-    } catch {
-      return d;
-    }
-  },
-  set(k, v) {
-    try {
-      localStorage.setItem(k, JSON.stringify(v));
-    } catch {}
-  },
-};
-let lang = (() => {
-  try {
-    return localStorage.getItem("drill.lang") || "ru";
-  } catch {
-    return "ru";
-  }
-})();
-const L = () => UI[lang];
+const L = () => UI[state.lang];
 let IDX = null;
 const cache = {};
-const readSet = () => new Set(store.get("learn.read", []));
-const esc = (s) =>
-  String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const readSet = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("learn.read") || "[]"));
+  } catch {
+    return new Set();
+  }
+};
+/** Lessons marked as read. */
+export const isRead = (n) => readSet().has(n);
 // Lesson text is our own reviewed content; allow only <b>, <i>, <code> inline tags, escape everything else.
-const rich = (s) => esc(s).replace(/&lt;(\/?)(b|i|code)&gt;/g, "<$1$2>");
+const rich = (s) => esc(s ?? "").replace(/&lt;(\/?)(b|i|code)&gt;/g, "<$1$2>");
+const plain = (s) => String(s ?? "").replace(/<[^>]+>/g, "");
 const short = (u) => {
   try {
     const x = new URL(u);
@@ -127,10 +125,10 @@ const short = (u) => {
   }
 };
 
-async function index() {
+export async function lessonIndex() {
   if (IDX) return IDX;
   try {
-    IDX = await (await fetch("lessons/index.json", { cache: "no-cache" })).json();
+    IDX = await (await fetch("lessons/index.json")).json();
   } catch {
     IDX = {};
   }
@@ -138,39 +136,18 @@ async function index() {
 }
 async function lesson(n) {
   if (cache[n]) return cache[n];
-  const r = await fetch(`lessons/L${n}.json`, { cache: "no-cache" });
+  const r = await fetch(`lessons/L${n}.json`);
   if (!r.ok) throw new Error(r.status);
   return (cache[n] = await r.json());
 }
 
-function chrome(title) {
-  $("lru").className = lang === "ru" ? "on" : "";
-  $("len").className = lang === "en" ? "on" : "";
-  document.documentElement.lang = lang;
-  $("ttl").textContent = title || "";
-}
-function setBack(toIndex) {
-  const b = $("back");
-  if (toIndex) {
-    b.href = "#";
-    $("backt").textContent = L().all;
-    b.onclick = (e) => {
-      e.preventDefault();
-      location.hash = "";
-    };
-  } else {
-    b.href = "./";
-    $("backt").textContent = L().home;
-    b.onclick = null;
-  }
-}
-
-async function renderIndex() {
-  chrome("");
-  setBack(false);
+export async function lessonsIndex() {
+  const T = tickets();
+  const view = frame(`<div class="wrap" id="main"></div>`, { scope: "v-learn", cls: "" });
   document.title = L().h1;
-  const idx = await index(),
+  const idx = await lessonIndex(),
     rd = readSet();
+  if (!view.isConnected) return;
   const have = T.filter((t) => idx[t.n]),
     done = have.filter((t) => rd.has(t.n)).length;
   let h = `<div class="kick">${have.length} / ${T.length}</div><h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
@@ -182,13 +159,11 @@ async function renderIndex() {
     for (const t of ts) {
       const m = idx[t.n],
         r = rd.has(t.n);
-      h += `<a class="ti${m ? "" : " none"}${r ? " read" : ""}" href="#t${t.n}"><span class="nn">${t.n}</span><span class="tt"><b>${esc(m ? m[lang]?.title || t[lang].topic : t[lang].topic)}</b>${m ? `<small>${Math.max(1, Math.round((m[lang]?.words || 0) / 170))} ${L().words}</small>` : ""}</span><span class="st">${m ? (r ? "✓ " + L().read : L().new) : L().soon}</span></a>`;
+      h += `<a class="ti${m ? "" : " none"}${r ? " read" : ""}" href="#learn/${t.n}"><span class="nn">${t.n}</span><span class="tt"><b>${esc(m ? m[state.lang]?.title || t[state.lang].topic : t[state.lang].topic)}</b>${m ? `<small>${Math.max(1, Math.round((m[state.lang]?.words || 0) / 170))} ${L().words}</small>` : ""}</span><span class="st">${m ? (r ? "✓ " + L().read : L().new) : L().soon}</span></a>`;
     }
     h += `</div>`;
   }
-  main.innerHTML = h;
-  window.scrollTo(0, 0);
-  prog();
+  $("#main").innerHTML = h;
 }
 
 function block(b) {
@@ -204,22 +179,53 @@ function block(b) {
   return "";
 }
 
-async function renderLesson(n) {
+/** What read-aloud says, in order: [{ text, sec }] (code and tables are skipped). */
+function spoken(x) {
+  const out = [];
+  const add = (text, sec) => chunks(plain(text)).forEach((c) => out.push({ text: c, sec }));
+  add(x.title + ".", null);
+  add(x.why, null);
+  x.sections.forEach((s, i) => {
+    add(s.h + ".", "s" + i);
+    for (const b of s.body) {
+      if (typeof b === "string") add(b, "s" + i);
+      else if (b.list || b.ol) (b.list || b.ol).forEach((li) => add(li, "s" + i));
+      else for (const k of ["ex", "fe", "warn"]) if (b[k] != null) add(`${L()[k]}. ${b[k]}`, "s" + i);
+    }
+  });
+  return out;
+}
+
+let keepScroll = false;
+
+export async function lessonScreen(n) {
+  const T = tickets();
   const t = T.find((x) => x.n === n);
-  if (!t) {
-    location.hash = "";
-    return;
-  }
-  setBack(true);
-  chrome(`${L().ticket} ${n} · ${t[lang].topic}`);
+  const view = frame(
+    `<div id="prog"></div><div class="top"><div class="topin"><span class="ttl" id="ttl">${L().ticket} ${n} · ${esc(t[state.lang].topic)}</span>${canSpeak ? `<button class="btn" id="say">${icon.speaker}<span>${L().listen}</span></button>` : ""}<div class="seg"><button id="lru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button id="len" class="${state.lang === "en" ? "on" : ""}">EN</button></div></div></div><div class="wrap" id="main"></div>`,
+    { back: { href: "learn", label: L().all }, scope: "v-learn", cls: "" },
+  );
+  for (const [id, l] of [
+    ["lru", "ru"],
+    ["len", "en"],
+  ])
+    $("#" + id).onclick = () => {
+      if (state.lang === l) return;
+      const y = scrollY / Math.max(1, document.documentElement.scrollHeight);
+      setLang(l);
+      document.dispatchEvent(new Event("langchange"));
+      keepScroll = true;
+      lessonScreen(n).then(() => scrollTo(0, y * document.documentElement.scrollHeight));
+    };
   let Ld;
   try {
     Ld = await lesson(n);
   } catch {
-    main.innerHTML = `<div class="empty">${L().err}</div>`;
+    if (view.isConnected) $("#main").innerHTML = `<div class="empty">${L().err}</div>`;
     return;
   }
-  const x = Ld[lang] || Ld.ru;
+  if (!view.isConnected) return;
+  const x = Ld[state.lang] || Ld.ru;
   document.title = x.title;
   const extra = [
     ["terms", L().terms],
@@ -228,13 +234,13 @@ async function renderLesson(n) {
     ["src", L().src],
   ];
   const rd = readSet(),
-    idx = await index();
+    idx = await lessonIndex();
   const have = T.filter((k) => idx[k.n]);
   const pos = have.findIndex((k) => k.n === n);
   const prev = have[pos - 1],
     next = have[pos + 1];
-  main.innerHTML = `
-    <div class="kick">${L().ticket} ${n} · ${esc(t[lang].topic)}</div>
+  $("#main").innerHTML = `
+    <div class="kick">${L().ticket} ${n} · ${esc(t[state.lang].topic)}</div>
     <h1 class="big">${esc(x.title)}</h1>
     <div class="why"><span class="lbl">${L().why}</span>${rich(x.why)}</div>
     <details class="toc"><summary>${L().toc} ▾</summary><ol>${x.sections.map((s, i) => `<li><a href="#s${i}" data-j="s${i}">${esc(s.h)}</a></li>`).join("")}${extra.map(([id, h]) => `<li><a href="#${id}" data-j="${id}">${h}</a></li>`).join("")}</ol></details>
@@ -243,55 +249,76 @@ async function renderLesson(n) {
     ${x.decode?.length ? `<section class="ls" id="decode"><h2>${L().decode}</h2><p class="hintline">${L().decodeh}</p>${x.decode.map((d) => `<div class="dec"><q>${esc(d.s)}</q><div>${rich(d.m)}</div></div>`).join("")}</section>` : ""}
     <section class="ls" id="check"><h2>${L().check}</h2><p class="hintline">${L().checkh}</p>${x.check.map((c, i) => `<details class="chk"><summary><span class="qn">${i + 1}</span><span>${rich(c.q)}</span></summary><div class="a">${rich(c.a)}</div></details>`).join("")}</section>
     <section class="ls" id="src"><h2>${L().src}</h2><p class="hintline">${L().srch}</p><ol class="srcs">${(Ld.sources || []).map((s) => `<li>${esc(s.claim)}${s.quote ? ` — <i>${esc(s.quote)}</i>` : ""}<br><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(short(s.url))}</a></li>`).join("")}</ol></section>
-    <div class="end"><button id="mk" class="${rd.has(n) ? "done" : ""}">${rd.has(n) ? L().marked : L().mark}</button><a class="pri" href="exam-tickets.html#t${n}">${L().drill} →</a></div>
-    <div class="nav2">${prev ? `<a href="#t${prev.n}">${L().prev} ${prev.n}. ${esc(idx[prev.n][lang]?.title || prev[lang].topic)}</a>` : "<span></span>"}${next ? `<a href="#t${next.n}" style="text-align:right">${next.n}. ${esc(idx[next.n][lang]?.title || next[lang].topic)} ${L().next}</a>` : ""}</div>`;
+    <div class="end"><button id="mk" class="${rd.has(n) ? "done" : ""}">${rd.has(n) ? L().marked : L().mark}</button><a class="pri" href="#t/${n}">${L().drill} →</a></div>
+    <div class="nav2">${prev ? `<a href="#learn/${prev.n}">${L().prev} ${prev.n}. ${esc(idx[prev.n][state.lang]?.title || prev[state.lang].topic)}</a>` : "<span></span>"}${next ? `<a href="#learn/${next.n}" style="text-align:right">${next.n}. ${esc(idx[next.n][state.lang]?.title || next[state.lang].topic)} ${L().next}</a>` : ""}</div>`;
   // in-page anchors: scroll without touching the router hash
-  main.querySelectorAll("a[data-j]").forEach(
+  view.querySelectorAll("a[data-j]").forEach(
     (a) =>
       (a.onclick = (e) => {
         e.preventDefault();
         document.getElementById(a.dataset.j)?.scrollIntoView({ behavior: "smooth" });
       }),
   );
-  $("mk").onclick = () => {
+  $("#mk").onclick = () => {
     const s = readSet();
     s.has(n) ? s.delete(n) : s.add(n);
-    store.set("learn.read", [...s]);
+    persist("learn.read", [...s]);
     const on = s.has(n);
-    $("mk").className = on ? "done" : "";
-    $("mk").textContent = on ? L().marked : L().mark;
+    $("#mk").className = on ? "done" : "";
+    $("#mk").textContent = on ? L().marked : L().mark;
   };
+  wireListen(x);
   if (!keepScroll) window.scrollTo(0, 0);
   keepScroll = false;
   prog();
 }
 
-let keepScroll = false;
-function route() {
-  const m = location.hash.match(/^#t(\d+)$/);
-  m ? renderLesson(+m[1]) : renderIndex();
+// read-aloud: play / pause / resume; the section being read is highlighted
+function wireListen(x) {
+  const btn = $("#say");
+  if (!btn) return;
+  const parts = spoken(x);
+  let player = null,
+    paused = false;
+  const label = (k) => (btn.querySelector("span").textContent = L()[k]);
+  const mark = (sec) => {
+    document.querySelectorAll(".v-learn section.ls.reading").forEach((s) => s.classList.remove("reading"));
+    if (sec) document.getElementById(sec)?.classList.add("reading");
+  };
+  btn.onclick = () => {
+    if (!player) {
+      player = readAloud(
+        parts.map((p) => p.text),
+        {
+          onPart: (i) => mark(parts[i].sec),
+          onDone: () => {
+            player = null;
+            mark(null);
+            label("listen");
+            btn.classList.remove("on");
+          },
+        },
+      );
+      btn.classList.add("on");
+      return label("pause");
+    }
+    if (paused) {
+      player.resume();
+      paused = false;
+      label("pause");
+    } else {
+      player.pause();
+      paused = true;
+      label("resume");
+    }
+  };
 }
+
 function prog() {
+  const p = $("#prog");
+  if (!p) return;
   const h = document.documentElement;
   const max = h.scrollHeight - h.clientHeight;
-  $("prog").style.width =
-    (max > 0 && /^#t\d+$/.test(location.hash) ? Math.min(100, (h.scrollTop / max) * 100) : 0) + "%";
+  p.style.width = (max > 0 ? Math.min(100, (h.scrollTop / max) * 100) : 0) + "%";
 }
 addEventListener("scroll", prog, { passive: true });
-addEventListener("hashchange", route);
-for (const [id, l] of [
-  ["lru", "ru"],
-  ["len", "en"],
-])
-  $(id).onclick = () => {
-    if (lang === l) return;
-    const y = scrollY / Math.max(1, document.documentElement.scrollHeight);
-    lang = l;
-    try {
-      localStorage.setItem("drill.lang", l);
-    } catch {}
-    keepScroll = /^#t\d+$/.test(location.hash);
-    route();
-    if (keepScroll) setTimeout(() => scrollTo(0, y * document.documentElement.scrollHeight), 0);
-  };
-route();

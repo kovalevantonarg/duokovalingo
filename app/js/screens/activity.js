@@ -1,7 +1,7 @@
-// Activity card on Home: streak, this week vs target, heatmap of the last weeks and its tooltip.
+// Activity card on the Progress tab: streak, this week vs target, heatmap of the last weeks and its tooltip.
 import { icon } from "../icons.js";
 import { state } from "../state.js";
-import { byId, streak } from "../store.js";
+import { streak, tk } from "../store.js";
 import { ui } from "../ui.js";
 import { $, TODAY, dLocal, days, esc, iso } from "../util.js";
 
@@ -11,7 +11,9 @@ export const ACT_TARGET = 2;
 export function activity() {
   const W = innerWidth >= 700 ? 26 : 18,
     loc = state.lang === "ru" ? "ru-RU" : "en-GB";
-  const H = Object.fromEntries(state.db.history.filter((x) => x.ids && x.ids.length).map((x) => [x.d, x]));
+  const H = Object.fromEntries(
+    state.db.history.filter((x) => x.tickets && x.tickets.length).map((x) => [x.d, x]),
+  );
   const t = dLocal(TODAY),
     mon = new Date(t);
   mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
@@ -38,7 +40,7 @@ export function activity() {
       dt.setDate(wk0.getDate() + r);
       const k = iso(dt);
       const x = H[k];
-      const c = x ? x.ids.length : 0;
+      const c = x ? x.tickets.length : 0;
       if (k > TODAY) {
         cells += `<i class="dy fut"></i>`;
         continue;
@@ -48,13 +50,10 @@ export function activity() {
         activeDays++;
       }
       const names = x
-        ? x.ids
+        ? x.tickets
             .slice(0, 4)
-            .map((id) => {
-              const it = byId(id);
-              return `#${id} ${esc(it ? it.t : "")}`;
-            })
-            .join("<br>") + (x.ids.length > 4 ? `<br>+${x.ids.length - 4}` : "")
+            .map((n) => `${n}. ${esc(tk(n)?.[state.lang].topic || "")}`)
+            .join("<br>") + (x.tickets.length > 4 ? `<br>+${x.tickets.length - 4}` : "")
         : "";
       cells += `<i class="dy l${lvl(c)}${k === TODAY ? " today" : ""}" data-tip="${c ? `<b>${c} ${ui().cardsN(c)}${x.xp ? ` · ${x.xp} XP` : ""}</b><br>${names}` : ui().noAct}" data-sub="${esc(fmt(dt))}"></i>`;
     }
@@ -77,7 +76,7 @@ export function activity() {
     last = ds.length ? days(ds[ds.length - 1]) : null;
   const last30 = state.db.history
       .filter((x) => days(x.d) <= 29)
-      .reduce((n, x) => n + (x.ids ? x.ids.length : 0), 0),
+      .reduce((n, x) => n + (x.tickets ? x.tickets.length : 0), 0),
     xp30 = state.db.history.filter((x) => days(x.d) <= 29).reduce((n, x) => n + (x.xp || 0), 0);
   const metWeeks = weekDays.slice(-4).filter((x) => x >= ACT_TARGET).length;
   const dl =
