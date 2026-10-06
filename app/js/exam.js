@@ -251,7 +251,7 @@ function chrome() {
   $("allh").textContent = L().all;
   $("foot").innerHTML = L().foot;
   $("h1").textContent = lang === "ru" ? "Билеты" : "Tickets";
-  $("rml").textContent = lang === "ru" ? "Роадмап" : "Roadmap";
+  $("rml").textContent = lang === "ru" ? "Карта знаний" : "Knowledge map";
   $("ru").className = lang === "ru" ? "on" : "";
   $("en").className = lang === "en" ? "on" : "";
   renderChips();

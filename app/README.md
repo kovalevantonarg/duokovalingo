@@ -6,8 +6,8 @@ Static SPA + one Vercel function (`api/[route].js`). No build step, no npm deps.
 
 | File | What |
 |---|---|
-| `js/app.js` | The drill app (`index.html`): state, screens, games, router. Helpers split out: `js/i18n.js` (all UI strings), `js/icons.js`, `js/util.js` (dates, escaping), `js/sound.js`. |
-| `js/exam.js`, `js/learn.js`, `js/roadmap.js` | Scripts of the other three pages. |
+| `js/app.js` | Entry of the drill app (`index.html`): global listeners and boot. The rest is split by responsibility: `state.js` (the one mutable state object), `store.js` (progress data, API, offline queue), `router.js`, `ui.js` (shared pieces), `screens/` (home, activity, verdict sheet + finish, login), `games/` (true-false, fill-gap, order, voice, quick), helpers `i18n.js`, `icons.js`, `util.js`, `sound.js`. |
+| `js/exam.js`, `js/learn.js`, `js/map.js` | Scripts of the other three pages (exam, lessons, knowledge map). |
 | `css/theme.css` | Shared design tokens (surfaces, text, accent and status colours, fonts). Each page's stylesheet in `css/` builds on it. |
 | `lib/srs.js` | Spaced-repetition rules (intervals, what's due). The only copy: imported by the API, by `today.mjs` and by `index.html` (as an ES module). |
 | `api/_grade.js` | "Check my answer": prompt, JSON schema, parser. Shared with `today.mjs`. |

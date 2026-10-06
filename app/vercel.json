@@ -54,5 +54,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/roadmap",
+      "destination": "/map",
+      "permanent": true
+    },
+    {
+      "source": "/roadmap.html",
+      "destination": "/map",
+      "permanent": true
+    }
   ]
 }

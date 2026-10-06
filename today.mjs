@@ -106,14 +106,6 @@ if (cmd === "serve") {
       if (added) { db.items.sort((a, b) => a.id - b.id); save(); writeHtml(); console.log(`  synced ${added} new items`); }
       return json(res, 200, out());
     }
-    if (req.method === "POST" && url.pathname === "/api/roadmap") {
-      const p = await body(req); const key = String(p.key || ""); if (!/^[a-z0-9-]{1,40}$/.test(key)) return json(res, 400, { error: "bad key" });
-      db.roadmap = db.roadmap || { marks: {}, counts: {} }; db.roadmap.marks ||= {}; db.roadmap.counts ||= {};
-      if (p.type === "mark") { if (p.val) db.roadmap.marks[key] = String(p.val).slice(0, 10); else delete db.roadmap.marks[key]; }
-      else if (p.type === "count") db.roadmap.counts[key] = Math.max(0, Math.min(999, Math.round(Number(p.val) || 0)));
-      else return json(res, 400, { error: "bad type" });
-      save(); return json(res, 200, out());
-    }
     if (req.method === "POST" && url.pathname === "/api/check") {
       const key = apiKey(); if (!key) return json(res, 400, { error: "no_key" });
       const p = await body(req); if (!p || String(p.answer || "").trim().length < 40) return json(res, 400, { error: "too_short" });

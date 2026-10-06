@@ -1,4 +1,4 @@
-// drill API — one Vercel function: login, logout, state, log, done, sync, roadmap, explain, check.
+// drill API — one Vercel function: login, logout, state, log, done, sync, explain, check.
 // Storage: Supabase RPC guarded by DRILL_DB_KEY (anon key can only call the functions; the tables live in a private schema).
 // Auth: single password (DRILL_PASSWORD) → HMAC-signed HttpOnly cookie (DRILL_SECRET), 90 days.
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -44,14 +44,6 @@ function syncItems(db, list) {
   if (added) db.items.sort((a, b) => a.id - b.id);
   return added;
 }
-// roadmap: milestone marks (date or null) and counters (applications, interviews)
-function setRoadmap(db, p) {
-  const key = String(p.key || ""); if (!/^[a-z0-9-]{1,40}$/.test(key)) return false;
-  db.roadmap = db.roadmap || { marks: {}, counts: {} }; db.roadmap.marks = db.roadmap.marks || {}; db.roadmap.counts = db.roadmap.counts || {};
-  if (p.type === "mark") { if (p.val) db.roadmap.marks[key] = /^\d{4}-\d{2}-\d{2}$/.test(p.val) ? p.val : new Date().toISOString().slice(0, 10); else delete db.roadmap.marks[key]; return true; }
-  if (p.type === "count") { const v = Math.max(0, Math.min(999, Math.round(Number(p.val) || 0))); db.roadmap.counts[key] = v; return true; }
-  return false;
-}
 
 // one attempt → activity + status/interval; the rules live in lib/srs.js (shared with today.mjs and the browser)
 const logHit = (db, p) => applyHit(db, p);
@@ -93,11 +85,6 @@ export default async function handler(req, res) {
     if (route === "sync") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
       const db = await load(); if (syncItems(db, body.items)) await save(db); return res.status(200).json(out(db));
-    }
-    if (route === "roadmap") {
-      if (req.method !== "POST") return res.status(405).json({ error: "method" });
-      const db = await load(); if (!setRoadmap(db, body)) return res.status(400).json({ error: "bad roadmap op" });
-      await save(db); return res.status(200).json(out(db));
     }
     if (route === "check") {
       if (req.method !== "POST") return res.status(405).json({ error: "method" });
