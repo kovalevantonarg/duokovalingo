@@ -1,359 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b1220">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600;700;800&family=Unbounded:wght@700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<title>Билеты — Core-40</title>
-<style>
-  :root{
-    --bg:#0b1220; --panel:#121a2c; --panel2:#0e1526; --line:#22304a; --line2:#22304a;
-    --fg:#f3efe6; --dim:#98a3ba; --dim2:#6f7b95;
-    --acc:#ff7a59; --acc2:#ff7a59; --bad:#ff6b6b;
-    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
-  body{
-    background:var(--bg);color:var(--fg);font-family:'Golos Text',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.55;
-    padding:0 0 70px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);
-  }
-  .wrap{max-width:800px;margin:0 auto;padding:0 16px}
-  .topnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .topnav a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px 0 10px;border:1px solid var(--line2);border-radius:10px;color:var(--fg);text-decoration:none;font-weight:600;font-size:14px;background:var(--panel)}
-  .topnav a.rm{padding:0 14px;color:var(--dim)}
-  .topnav a:active{transform:scale(.97);opacity:.9}
-  header{padding:20px 0 14px;padding-top:calc(20px + env(safe-area-inset-top));border-bottom:1px solid var(--line);margin-bottom:18px}
-  h1{font-family:'Unbounded','Golos Text',sans-serif;font-size:15px;margin:0 0 3px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:800}
-  .sub{font-size:12px;color:var(--dim2);line-height:1.6}
-  .bar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;align-items:center}
-  button{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:8px;cursor:pointer;background:var(--panel);border:1px solid var(--line2);color:var(--fg)}
-  button:active{transform:scale(.97);opacity:.9}
-  button.primary{background:var(--acc);border-color:var(--acc);color:#1a0a05;font-weight:600}
-  button.ghost{color:var(--dim)}
-  button:disabled{opacity:.4;cursor:default}
-  .lang{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
-  .lang button{border:0;border-radius:0;padding:9px 13px;background:transparent;color:var(--dim);font-size:12px}
-  .lang button.on{background:var(--acc);color:#1a0a05;font-weight:600}
-  .timer{margin-left:auto;font-size:20px;color:var(--dim);font-variant-numeric:tabular-nums}
-  .timer.run{color:var(--acc)}
-  .timer.over{color:var(--bad)}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600;700;800&family=Unbounded:wght@700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Билеты — Core-40</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <link rel="stylesheet" href="css/exam.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <nav class="topnav">
+          <a class="back" id="back" href="./"
+            ><svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5" />
+              <path d="m12 19-7-7 7-7" /></svg
+            ><span id="backl">duokovalingo</span></a
+          ><a class="rm" href="roadmap.html" id="rml">Роадмап</a>
+        </nav>
+        <h1 id="h1">Билеты</h1>
+        <div class="sub" id="sub"></div>
+      </header>
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;margin-top:18px}
-  .tnum{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim2);margin-bottom:6px}
-  .ttopic{font-family:'Unbounded','Golos Text',sans-serif;font-size:19px;color:var(--acc);margin:0 0 4px;font-weight:800;line-height:1.3}
-  .tmeta{font-size:11.5px;color:var(--dim2);margin-bottom:16px}
-  ol.qs{margin:0;padding-left:22px}
-  ol.qs li{margin:0 0 13px;font-size:15px;line-height:1.5}
-  ol.qs li::marker{color:var(--dim2)}
-
-  textarea{width:100%;margin-top:16px;min-height:150px;resize:vertical;background:var(--panel2);border:1px solid var(--line2);border-radius:8px;color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.6;padding:12px;outline:none}
-  textarea:focus{border-color:var(--acc2)}
-  textarea::placeholder{color:var(--dim2)}
-  .tools{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
-  .count{font-size:11.5px;color:var(--dim2);margin-left:auto}
-
-  .grade{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);padding:14px 16px}
-  .grade .gh{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-  .grade .score{font-family:'Unbounded','Golos Text',sans-serif;font-weight:800;font-size:26px;line-height:1;color:var(--acc)}
-  .grade .score small{font-size:12px;color:var(--dim2);font-family:var(--mono);font-weight:500;margin-left:2px}
-  .grade .score.g{color:#5dd39e}.grade .score.y{color:#e8b86a}.grade .score.r{color:var(--bad)}
-  .grade .qs3{display:flex;gap:6px;margin-left:auto}
-  .grade .qs3 span{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--line2);color:var(--dim)}
-  .grade .verdict{font-size:14.5px;line-height:1.55;margin:0 0 12px}
-  .grade h4{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:12px 0 6px;font-weight:600}
-  .grade ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5;color:var(--fg)}
-  .grade li{margin:0 0 5px}
-  .grade .ok li::marker{color:#5dd39e}.grade .miss li::marker{color:#e8b86a}.grade .bad li::marker{color:var(--bad)}
-  .grade .bad li b{color:#ffd9d2;font-weight:600}.grade .bad li i{color:var(--dim);font-style:normal}
-  .grade .lng li s{color:var(--dim2)}.grade .lng li b{font-weight:600;color:#ffd9c9}
-  .grade .fu{margin-top:12px;padding:10px 12px;border-left:2px solid var(--acc);background:var(--panel);border-radius:0 8px 8px 0;font-size:13.5px;color:var(--fg)}
-  .grade .fu span{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:3px}
-  .grade .nx{margin-top:10px;font-size:13px;color:var(--dim)}
-  .grade.err{color:var(--dim);font-size:13.5px}
-  .grade.err a{color:var(--acc)}
-  button.chk{background:var(--panel);border-color:var(--acc);color:var(--acc)}
-  button.chk.busy{opacity:.6;cursor:progress}
-  p.lesson{margin:0 0 14px;font-size:14px}p.lesson a{color:var(--acc);font-weight:600;text-decoration:none}p.lesson a:hover{text-decoration:underline}
-  .hint{margin-top:14px;padding:11px 13px;background:var(--panel2);border-left:2px solid var(--line2);border-radius:0 6px 6px 0;font-size:12.5px;color:var(--dim)}
-  .ans{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
-  .ans h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 14px;font-weight:600}
-  .ablock{margin:0 0 20px;padding-left:12px;border-left:2px solid var(--line2)}
-  .aq{font-size:12.5px;color:var(--dim);margin-bottom:7px}
-  .atext{font-size:14.5px;line-height:1.65;color:var(--fg);margin:0}
-  .kill{margin-top:6px;padding:11px 13px;background:#1d1512;border-left:2px solid var(--bad);border-radius:0 6px 6px 0;font-size:13px;color:#e8b6ae;line-height:1.6}
-  .kill b{color:#ffd9d2}
-  .verif{font-size:11.5px;color:var(--dim2);margin:-6px 0 14px;line-height:1.5}
-  .src{margin:8px 0 0;font-size:12px}
-  .src summary{cursor:pointer;color:var(--dim2);list-style:none;display:inline-flex;gap:6px;align-items:center;font-size:11.5px;letter-spacing:.04em;padding:3px 0}
-  .src summary::-webkit-details-marker{display:none}
-  .src summary::before{content:"▸";font-size:10px;transition:transform .15s}
-  .src[open] summary::before{transform:rotate(90deg)}
-  .src .sfix{color:#e8b86a}
-  .src ul{list-style:none;margin:8px 0 4px;padding:0;display:flex;flex-direction:column;gap:8px}
-  .src li{background:var(--panel2);border-radius:6px;padding:8px 10px;border-left:2px solid var(--acc2);line-height:1.5}
-  .src li.s-fix,.src li.s-fix2{border-left-color:#e8b86a}
-  .src li.s-soft{border-left-color:var(--dim2)}
-  .src .badge{display:inline-block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);margin-bottom:3px}
-  .src li.s-fix .badge,.src li.s-fix2 .badge{color:#e8b86a}
-  .src .sc{color:var(--fg);font-size:12.5px}
-  .src li.s-fix .sc{color:var(--dim)}
-  .src .se{color:var(--dim);font-size:12px;margin-top:2px}
-  .src a{display:block;margin-top:4px;color:var(--acc2);font-family:var(--mono);font-size:11px;word-break:break-all;text-decoration:none}
-  .src a:hover{text-decoration:underline}
-  code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:.92em;color:var(--fg)}
-  .idle{color:var(--dim2);text-align:center;padding:48px 16px;font-size:14px;line-height:1.75}
-  .list{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
-  .list h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim2);margin:0 0 10px}
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-  .sech{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:6px 0 8px}
-  .secn{color:var(--dim2);letter-spacing:0}
-  .chip{font-size:11.5px;padding:5px 10px;border-radius:20px;border:1px solid var(--line2);color:var(--dim);cursor:pointer;background:transparent}
-  .chip.done{border-color:var(--acc2);color:var(--acc)}
-  .chip .sc{margin-left:6px;font-size:10px;padding:1px 6px;border-radius:9px;background:var(--panel2);color:var(--dim)}
-  .chip .sc.g{color:#5dd39e}.chip .sc.y{color:#e8b86a}.chip .sc.r{color:var(--bad)}
-  .att{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-6px 0 14px;font-size:12px;color:var(--dim2)}
-  .att span.a{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--line2);color:var(--dim)}
-  .att span.a.g{border-color:rgba(93,211,158,.5);color:#5dd39e}.att span.a.y{border-color:rgba(232,184,106,.5);color:#e8b86a}.att span.a.r{border-color:rgba(255,107,107,.5);color:var(--bad)}
-  .att span.a.sel{background:var(--panel)}
-  .prev{margin:0 0 14px;padding:10px 12px;background:var(--panel2);border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--dim);white-space:pre-wrap;max-height:220px;overflow:auto}
-  footer{max-width:800px;margin:26px auto 0;padding:16px;border-top:1px solid var(--line);color:var(--dim2);font-size:11.5px;line-height:1.75}
-</style>
-</head>
-<body>
-<div class="wrap">
-<header>
-  <nav class="topnav"><a class="back" id="back" href="./"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg><span id="backl">duokovalingo</span></a><a class="rm" href="roadmap.html" id="rml">Роадмап</a></nav>
-  <h1 id="h1">Билеты</h1>
-  <div class="sub" id="sub"></div>
-</header>
-
-<div class="bar">
-  <button class="primary" id="draw"></button>
-  <button id="reveal" disabled></button>
-  <button class="ghost" id="reset"></button>
-  <span class="lang"><button id="ru" class="on">RU</button><button id="en">EN</button></span>
-  <span class="timer" id="timer">0:00</span>
-</div>
-
-<div id="stage"></div>
-
-<div class="list"><h3 id="allh"></h3><div id="chips"></div></div>
-</div>
-<footer id="foot"></footer>
-
-<script src="tickets.js"></script>
-<script src="sources.js"></script>
-<script>
-const UI={
- ru:{sub:"Новая тема? Начни с «Разбора с нуля». Для самопроверки ответь на три вопроса, затем сравни с эталоном.",
-     draw:"Вытянуть билет",reveal:"Показать эталон",reset:"Сбросить",all:"Все темы",
-     meta:"три вопроса · 3–4 минуты",std:"Как это звучит целиком",kill:"На чём валятся: ",attempts:"Попытки",noatt:"Пока не проверялся",saved:"Сохранено: ответ, оценка и сессия в прогрессе.",notsaved:"Оценка не сохранилась: ",check:"Проверить ответ",checking:"Проверяю…",outof:"из 10",q3:"В",covered:"Попал",missing:"Не хватает",wrong:"Неверно",langh:"Как сказать по-английски",fu:"Следующий вопрос интервьюера",nxt:"Дальше: ",short:"Напиши хотя бы пару предложений, тогда будет что проверять.",nokey:"Проверка выключена: на сервере нет ANTHROPIC_API_KEY. Добавь ключ в переменные окружения проекта на Vercel и передеплой.",fail:"Не удалось проверить: ",login:"Нужно войти в приложение (главная страница), тогда проверка заработает и здесь.",src:"Источники",fixedN:"исправлено",was:"Было: ",said:"Источник: ",
-     verif:n=>`Под ответом — журнал источников от ${n}: утверждения, пояснения и ссылки. Для изучения механизма открой «Разбор с нуля». Конкретные лимиты и параметры зависят от модели и версии API.`,
-     st:{ok:"✓ подтверждено",fix:"исправлено по источнику",fix2:"исправлено при перепроверке",soft:"смягчено: первоисточника нет"},
-     ph:"Пиши ответ здесь. Своими словами, не подглядывая.",copy:"Скопировать",copied:"Скопировано",clear:"Очистить",chars:"символов",
-     idle:"Ни одного билета не вытянуто.<br>Печатать можно где угодно — главное доставать из головы, а не узнавать в готовом тексте.",
-     resetd:"Сброшено. Все билеты снова в колоде.",
-     hint:"Если тема новая, сначала изучи разбор. Если уже знакома — попробуй ответить без подсказки и только потом открой эталон.",
-     foot:"Эталон написан так, как ответ звучит вживую — связной речью, а не списком. Сравнивай не по галочкам, а по тому, смог бы ты это выговорить.<br><br>Печатать — режим по умолчанию, работает везде. Вслух — раз-два в неделю, когда дома тихо: беглость под давлением приходит только от речи.<br><br>«Проверить ответ» сохраняет ответ и оценку и засчитывает сессию по теме в основном прогрессе."},
- en:{sub:"New topic? Start with the detailed lesson in Russian. To practise recall, answer the three questions before opening the reference.",
-     draw:"Draw a ticket",reveal:"Show reference",reset:"Reset",all:"All topics",
-     meta:"three questions · 3–4 min",std:"How it sounds spoken",kill:"Where people fail: ",attempts:"Attempts",noatt:"Not checked yet",saved:"Saved: answer, score and a drill session.",notsaved:"Score not saved: ",check:"Check my answer",checking:"Checking…",outof:"out of 10",q3:"Q",covered:"Covered",missing:"Missing",wrong:"Wrong",langh:"How an engineer would say it",fu:"Interviewer's next question",nxt:"Next: ",short:"Write at least a couple of sentences first, then there is something to check.",nokey:"Checking is off: the server has no ANTHROPIC_API_KEY. Add it to the project's environment variables on Vercel and redeploy.",fail:"Could not check: ",login:"Log in on the home page first; then checking works here too.",src:"Sources",fixedN:"corrected",was:"Was: ",said:"Source says: ",
-     verif:n=>`The source ledger dated ${n} lists claims, explanations and links. Use the detailed lesson to learn the mechanism. Exact limits and parameters depend on the model and API version.`,
-     st:{ok:"✓ verified",fix:"corrected per source",fix2:"corrected on re-check",soft:"hedged: no primary source found"},
-     ph:"Write your answer here. Your own words, no peeking.",copy:"Copy",copied:"Copied",clear:"Clear",chars:"chars",
-     idle:"No ticket drawn yet.<br>Typing works anywhere — what matters is producing from memory, not recognising a finished text.",
-     resetd:"Reset. All tickets back in the deck.",
-     hint:"For a new topic, read the lesson first. For a familiar topic, try answering from memory before opening the reference.",
-     foot:"The reference is written the way the answer sounds out loud — connected speech, not a checklist. Judge yourself on whether you could say it, not on ticking items off.<br><br>Typing is the default and works anywhere. Out loud once or twice a week, when the house is quiet — fluency under pressure only comes from speaking.<br><br>Check my answer saves the answer and the score and counts a drill session for the topic in the main progress."}
-};
-
-const T=window.TICKETS;
-let lang=(()=>{try{return localStorage.getItem("drill.lang")||"ru"}catch{return "ru"}})(), cur=null, t0=null, tick=null, seen=new Set();
-// graded attempts: cloud copy from /api/state when logged in, local mirror otherwise
-let EX=(()=>{try{return JSON.parse(localStorage.getItem("exam.attempts")||"[]")}catch{return []}})();
-const attemptsOf=n=>EX.filter(e=>e.n===n).sort((a,b)=>(a.t||0)-(b.t||0));
-const lastOf=n=>attemptsOf(n).slice(-1)[0];
-function mergeAttempts(list){ if(!Array.isArray(list)) return; const key=e=>e.n+"|"+(e.t||e.d); const have=new Set(EX.map(key)); for(const e of list) if(!have.has(key(e))) EX.push(e); EX=EX.slice(-400); try{localStorage.setItem("exam.attempts",JSON.stringify(EX))}catch{} }
-async function loadAttempts(){ try{const r=await fetch("/api/state",{cache:"no-store"}); if(r.ok){const db=await r.json(); if(Array.isArray(db.exams)){EX=db.exams.slice(); try{localStorage.setItem("exam.attempts",JSON.stringify(EX))}catch{}}}}catch{} renderChips(); if(cur) renderAttempts(cur); }
-const fmtD=d=>{const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{day:"numeric",month:"short"})};
-function renderAttempts(t){
-  const box=$("att"); if(!box) return; const xs=attemptsOf(t.n);
-  if(!xs.length){box.innerHTML=`<span>${L().attempts}: ${L().noatt}</span>`;return}
-  box.innerHTML=`<span>${L().attempts}:</span>${xs.slice(-8).map((e,i)=>`<span class="a ${scoreCls(e.score)}" data-i="${xs.length-Math.min(8,xs.length)+i}" title="${esc(e.verdict||"")}">${fmtD(e.d)} · ${e.score}</span>`).join("")}<div id="prevBox" style="flex-basis:100%"></div>`;
-  box.querySelectorAll("span.a").forEach(el=>el.onclick=()=>{const e=xs[+el.dataset.i]; const pb=$("prevBox"); const open=el.classList.contains("sel"); box.querySelectorAll("span.a").forEach(x=>x.classList.remove("sel")); if(open){pb.innerHTML="";return} el.classList.add("sel"); pb.innerHTML=`<div class="prev">${esc(e.answer||"")}${e.verdict?`
-
-— ${esc(e.verdict)}`:""}</div>`;});
-}
-const $=id=>document.getElementById(id);
-const stage=$("stage"), timer=$("timer"), chips=$("chips");
-const L=()=>UI[lang];
-const D=t=>t[lang];
-
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const short=u=>{try{const x=new URL(u);return (x.host.replace(/^www\./,"")+x.pathname+x.hash).replace(/\/$/,"")}catch{return u}};
-function srcList(n,slots){
-  const xs=((window.SOURCES||{})[n]||[]).filter(x=>x.w.some(w=>slots.includes(w))); if(!xs.length) return "";
-  const nf=xs.filter(x=>x.s!=="ok").length, fx=x=>x.s==="fix"||x.s==="fix2";
-  return `<details class="src"><summary>${L().src} · ${xs.length}${nf?` · <span class="sfix">${nf} ${L().fixedN}</span>`:""}</summary><ul>${
-    xs.map(x=>`<li class="s-${x.s}"><div class="badge">${L().st[x.s]}</div>${x.c?`<div class="sc">${x.s==="fix"?L().was:""}${esc(x.c)}</div>`:""}<div class="se">${fx(x)&&x.c?L().said:""}${esc(x.e)}</div>${
-      x.u.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(short(u))}</a>`).join("")}</li>`).join("")}</ul></details>`;
-}
-function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
-function stopTimer(){if(tick){clearInterval(tick);tick=null}}
-function startTimer(){
-  stopTimer(); t0=Date.now(); timer.className="timer run"; timer.textContent="0:00";
-  tick=setInterval(()=>{
-    const s=Math.floor((Date.now()-t0)/1000);
-    timer.textContent=fmt(s);
-    timer.className="timer "+(s>240?"over":"run");
-  },500);
-}
-function chrome(){
-  $("sub").innerHTML=L().sub; $("draw").textContent=L().draw;
-  $("reveal").textContent=L().reveal; $("reset").textContent=L().reset;
-  $("allh").textContent=L().all; $("foot").innerHTML=L().foot;
-  $("h1").textContent=lang==="ru"?"Билеты":"Tickets"; $("rml").textContent=lang==="ru"?"Роадмап":"Roadmap";
-  $("ru").className=lang==="ru"?"on":""; $("en").className=lang==="en"?"on":"";
-  renderChips();
-}
-const SEC={llm:["LLM engineering","LLM engineering"],rag:["RAG","RAG"],agents:["Агенты","Agents"],sysd:["Системный дизайн","System design"],behav:["Behavioral","Behavioral"],js:["JavaScript","JavaScript"],ts:["TypeScript","TypeScript"],react:["React","React"],web:["Браузер и веб-платформа","Browser and web platform"],bonus:["Глубина","Depth"],parked:["Быстрая проверка JS/React","Quick JS/React check"]};
-const ORDER=["llm","rag","agents","sysd","behav","js","ts","react","web","bonus","parked"];
-function renderChips(){
-  chips.innerHTML="";
-  ORDER.forEach(sec=>{
-    const ts=T.filter(t=>t.sec===sec); if(!ts.length) return;
-    const h=document.createElement("div"); h.className="sech";
-    const done=ts.filter(t=>seen.has(t.n)).length;
-    h.innerHTML=`<span>${SEC[sec][lang==="ru"?0:1]}</span><span class="secn">${done}/${ts.length}</span>`;
-    chips.appendChild(h);
-    const row=document.createElement("div"); row.className="chips";
-    ts.forEach(t=>{
-      const b=document.createElement("button");
-      b.className="chip"+(seen.has(t.n)?" done":"");
-      b.textContent=t.n+". "+D(t).topic;
-      const le=lastOf(t.n); if(le){const sc=document.createElement("span"); sc.className="sc "+scoreCls(le.score); sc.textContent=le.score; b.appendChild(sc);}
-      b.title=t.tag;
-      b.onclick=()=>{location.hash="t"+t.n; show(t)};
-      row.appendChild(b);
-    });
-    chips.appendChild(row);
-  });
-}
-function openFromHash(){
-  const h=location.hash.slice(1); if(!h) return false;
-  let t=null;
-  if(h.startsWith("core-")){const id=Number(h.slice(5)); t=T.find(x=>(x.core||[]).includes(id));}
-  else if(h.startsWith("t")){const n=Number(h.slice(1)); t=T.find(x=>x.n===n);}
-  if(t){show(t); return true}
-  return false;
-}
-function show(t){
-  cur=t; seen.add(t.n); renderChips(); startTimer();
-  $("reveal").disabled=false;
-  const d=D(t);
-  stage.innerHTML=`
-    <div class="card">
-      <div class="tnum">${lang==="ru"?"Билет":"Ticket"} ${t.n} · ${t.tag}</div>
-      <div class="ttopic">${d.topic}</div>
-      <div class="tmeta">${L().meta}</div>
-      <div class="att" id="att"></div>
-      <p class="lesson"><a href="learn.html#t${t.n}">${lang==="ru"?"Разбор с нуля: термины, механика, примеры →":"From-zero lesson: terms, mechanism, examples →"}</a></p>
-      <ol class="qs">${d.qs.map(q=>`<li>${q}</li>`).join("")}</ol>
-      <textarea id="mine" placeholder="${L().ph}"></textarea>
-      <div class="tools">
-        <button id="copy">${L().copy}</button>
-        <button class="ghost" id="clr">${L().clear}</button>
-        <button class="chk" id="chk">${L().check}</button>
-        <span class="count" id="cnt">0 ${L().chars}</span>
+      <div class="bar">
+        <button class="primary" id="draw"></button>
+        <button id="reveal" disabled></button>
+        <button class="ghost" id="reset"></button>
+        <span class="lang"><button id="ru" class="on">RU</button><button id="en">EN</button></span>
+        <span class="timer" id="timer">0:00</span>
       </div>
-      <div id="gradeBox"></div>
-      <div class="hint">${L().hint}</div>
-    </div>`;
-  const ta=$("mine"), cnt=$("cnt");
-  ta.oninput=()=>{cnt.textContent=ta.value.length+" "+L().chars};
-  $("copy").onclick=async()=>{
-    try{await navigator.clipboard.writeText(ta.value);}catch(e){ta.select();document.execCommand("copy");}
-    $("copy").textContent=L().copied; setTimeout(()=>{$("copy").textContent=L().copy},1200);
-  };
-  $("clr").onclick=()=>{ta.value="";cnt.textContent="0 "+L().chars;$("gradeBox").innerHTML="";ta.focus()};
-  $("chk").onclick=()=>checkAnswer(t,ta.value);
-  renderAttempts(t);
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-function scoreCls(n){return n>=8?"g":n>=5?"y":"r"}
-async function checkAnswer(t,text){
-  const box=$("gradeBox"), btn=$("chk"), d=D(t);
-  if(text.trim().length<40){box.innerHTML=`<div class="grade err">${L().short}</div>`;return}
-  btn.disabled=true; btn.classList.add("busy"); btn.textContent=L().checking;
-  try{
-    const r=await fetch("/api/check",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({n:t.n,lang,topic:d.topic,qs:d.qs,answer:text,ref:d.a,kill:d.kill.replace(/<[^>]+>/g,""),core:t.core||[]})});
-    let j={}; try{j=await r.json()}catch{}
-    if(!r.ok){
-      const msg=r.status===401?L().login:j.error==="no_key"?L().nokey:j.error==="too_short"?L().short:L().fail+(j.error||r.status);
-      box.innerHTML=`<div class="grade err">${esc(msg)}</div>`; return;
-    }
-    const li=(xs,f)=>xs.map(x=>`<li>${f?f(x):esc(x)}</li>`).join("");
-    box.innerHTML=`<div class="grade">
-      <div class="gh"><div class="score ${scoreCls(j.score)}">${j.score}<small>${L().outof}</small></div>
-        ${j.questions?.length===3?`<div class="qs3">${j.questions.map((q,i)=>`<span>${L().q3}${i+1} · ${q}</span>`).join("")}</div>`:""}</div>
-      <p class="verdict">${esc(j.verdict)}</p>
-      ${j.covered?.length?`<h4>${L().covered}</h4><ul class="ok">${li(j.covered)}</ul>`:""}
-      ${j.missing?.length?`<h4>${L().missing}</h4><ul class="miss">${li(j.missing)}</ul>`:""}
-      ${j.wrong?.length?`<h4>${L().wrong}</h4><ul class="bad">${li(j.wrong,w=>`<b>${esc(w.said)}</b> <i>→ ${esc(w.actually)}</i>`)}</ul>`:""}
-      ${j.language?.length?`<h4>${L().langh}</h4><ul class="lng">${li(j.language,w=>`<s>${esc(w.from)}</s> → <b>${esc(w.to)}</b>`)}</ul>`:""}
-      ${j.followup?`<div class="fu"><span>${L().fu}</span>${esc(j.followup)}</div>`:""}
-      ${j.next?`<div class="nx">${L().nxt}${esc(j.next)}</div>`:""}
-      <div class="nx">${j.saveError?esc(L().notsaved+j.saveError):L().saved}</div>
-    </div>`;
-    if(Array.isArray(j.attempts)&&j.attempts.length) mergeAttempts(j.attempts); else mergeAttempts([{n:t.n,lang,d:new Date().toISOString().slice(0,10),t:Date.now(),score:j.score,q:j.questions,chars:text.length,answer:text.slice(0,1500),verdict:(j.verdict||"").slice(0,300)}]);
-    renderChips(); renderAttempts(t);
-    box.scrollIntoView({behavior:"smooth",block:"nearest"});
-  }catch(e){ box.innerHTML=`<div class="grade err">${esc(L().fail+e.message)}</div>`; }
-  finally{ btn.disabled=false; btn.classList.remove("busy"); btn.textContent=L().check; }
-}
-function draw(){
-  const pool=T.filter(t=>!seen.has(t.n));
-  const from=pool.length?pool:T;
-  show(from[Math.floor(Math.random()*from.length)]);
-}
-function reveal(){
-  if(!cur)return;
-  stopTimer(); timer.className="timer";
-  const d=D(cur);
-  stage.querySelector(".card").insertAdjacentHTML("beforeend",`
-    <div class="ans">
-      <h3>${L().std}</h3>
-      ${window.SOURCES?`<div class="verif">${L().verif(new Date(window.SOURCES_CHECKED).toLocaleDateString(lang==="ru"?"ru-RU":"en-GB",{day:"numeric",month:"long",year:"numeric"}))}</div>`:""}
-      ${d.a.map((b,i)=>`<div class="ablock"><div class="aq">${i+1}. ${b.q}</div><p class="atext">${b.t}</p>${srcList(cur.n,[i])}</div>`).join("")}
-      <div class="kill">${L().kill}${d.kill}</div>${srcList(cur.n,["k","d"])}
-    </div>`);
-  $("reveal").disabled=true;
-}
-function setLang(l){
-  lang=l; try{localStorage.setItem("drill.lang",l)}catch{} chrome();
-  if(cur){const t=cur; seen.delete(t.n); show(t);}
-  else stage.innerHTML=`<div class="idle">${L().idle}</div>`;
-}
-$("draw").onclick=draw;
-$("reveal").onclick=reveal;
-$("ru").onclick=()=>setLang("ru");
-$("en").onclick=()=>setLang("en");
-$("reset").onclick=()=>{
-  seen.clear(); cur=null; stopTimer();
-  timer.className="timer"; timer.textContent="0:00";
-  $("reveal").disabled=true;
-  stage.innerHTML=`<div class="idle">${L().resetd}</div>`;
-  renderChips();
-};
-(()=>{let hops=0; addEventListener("hashchange",()=>hops++);
-  try{const ref=document.referrer; if(ref){const u=new URL(ref); if(u.origin===location.origin&&!u.pathname.endsWith("exam-tickets.html")){ $("back").href=ref; $("back").onclick=e=>{e.preventDefault(); history.go(-(hops+1));}; }}}catch{}})();
-chrome(); loadAttempts();
-if(!openFromHash()) stage.innerHTML=`<div class="idle">${L().idle}</div>`;
-window.addEventListener("hashchange",openFromHash);
-</script>
-<script src="ptr.js" defer></script>
-</body>
+
+      <div id="stage"></div>
+
+      <div class="list">
+        <h3 id="allh"></h3>
+        <div id="chips"></div>
+      </div>
+    </div>
+    <footer id="foot"></footer>
+
+    <script src="tickets.js"></script>
+    <script src="sources.js"></script>
+    <script src="js/exam.js"></script>
+    <script src="ptr.js" defer></script>
+  </body>
 </html>

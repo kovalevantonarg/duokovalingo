@@ -1,0 +1,24 @@
+/* Shared design tokens for every page. Page stylesheets add their own aliases on top. */
+:root {
+  /* surfaces, darkest to lightest */
+  --bg: #0b1220;
+  --panel2: #0e1526;
+  --panel: #121a2c;
+  --line: #22304a;
+
+  /* text */
+  --fg: #f3efe6;
+  --dim: #98a3ba;
+  --dim2: #6f7b95;
+  --dim3: #4b5b78;
+
+  /* brand and status colours */
+  --accent: #ff7a59; /* coral: primary buttons, active states, progress */
+  --red: #ff6b6b;
+  --green: #58d68d;
+  --amber: #ffc14d;
+
+  /* type */
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --display: "Unbounded", "Golos Text", sans-serif;
+}
