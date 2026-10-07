@@ -1776,6 +1776,10 @@ body.inround .tabs {
   letter-spacing: 0;
   color: var(--fg);
 }
+.v-app .login .priv {
+  font-size: 13px;
+  color: var(--dim2);
+}
 .v-app .login .err {
   color: var(--crit);
   font-size: 14px;

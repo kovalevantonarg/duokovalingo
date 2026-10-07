@@ -9,5 +9,5 @@ export function loginScreen() {
   document.body.classList.add("inround");
   app.innerHTML = `<div class="v-app"><div class="login"><a class="wm">duokovalingo</a><p class="sub">${ui().loginLead}</p>
     <a class="btn line full big gbtn" href="/api/google">${icon.google}${ui().google}</a>
-    <div class="err">${err ? esc(ui().loginFailed + (err === "access_denied" ? "" : ` (${err})`)) : ""}</div></div></div>`;
+    <div class="err">${err ? esc(ui().loginFailed + (err === "access_denied" ? "" : ` (${err})`)) : ""}</div><a class="priv" href="/privacy">${ui().privacy}</a></div></div>`;
 }

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>duokovalingo · privacy</title>
+    <link rel="stylesheet" href="css/theme.css" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.6 "Golos Text",
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      h1 {
+        font-size: 26px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 28px 0 6px;
+      }
+      p,
+      li {
+        color: var(--dim);
+      }
+      a {
+        color: var(--accent);
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 40px 0;
+      }
+      small {
+        color: var(--dim2);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="/">← duokovalingo</a></p>
+
+      <h1>Политика конфиденциальности</h1>
+      <small>Обновлено 7 октября 2026</small>
+      <p>
+        duokovalingo — некоммерческое приложение для подготовки к собеседованиям. Его делает Антон Ковалёв.
+      </p>
+      <h2>Какие данные хранятся</h2>
+      <ul>
+        <li>
+          Из Google-аккаунта: идентификатор аккаунта, адрес почты и имя. Больше приложение у Google ничего не
+          запрашивает.
+        </li>
+        <li>Прогресс по билетам: статусы, даты занятий, отметки «сомневаюсь».</li>
+        <li>Ответы, которые ты отправляешь на проверку, и их оценки.</li>
+        <li>Если включишь напоминания: адрес push-подписки браузера.</li>
+      </ul>
+      <h2>Где и зачем</h2>
+      <p>
+        Данные хранятся в базе Supabase и нужны только для работы приложения: показать твой прогресс на любом
+        устройстве и напомнить о повторении. Чтобы оценить ответ, его текст вместе с эталоном отправляется в
+        API Anthropic (модель Claude). Данные не продаются, не передаются для рекламы и не используются ни для
+        чего другого.
+      </p>
+      <h2>Удаление</h2>
+      <p>
+        Напиши на <a href="mailto:kovalevantondev@gmail.com">kovalevantondev@gmail.com</a>, и аккаунт со всем
+        прогрессом и ответами будет удалён. Доступ приложения к Google-аккаунту можно отозвать в
+        <a href="https://myaccount.google.com/permissions" rel="noopener">настройках Google</a>.
+      </p>
+
+      <hr />
+
+      <h1>Privacy policy</h1>
+      <small>Updated 7 October 2026</small>
+      <p>duokovalingo is a non-commercial interview-prep app made by Anton Kovalev.</p>
+      <h2>What is stored</h2>
+      <ul>
+        <li>
+          From your Google account: account id, email address and name. Nothing else is requested from Google.
+        </li>
+        <li>Your progress on the tickets: statuses, practice dates, "not sure" flags.</li>
+        <li>Answers you submit for grading, and their grades.</li>
+        <li>If you turn on reminders: your browser's push subscription address.</li>
+      </ul>
+      <h2>Where and why</h2>
+      <p>
+        The data is stored in a Supabase database and used only to run the app: to show your progress on any
+        device and to remind you to review. To grade an answer, its text and the reference answer are sent to
+        the Anthropic API (Claude). The data is not sold, not shared for advertising and not used for anything
+        else.
+      </p>
+      <h2>Deletion</h2>
+      <p>
+        Email <a href="mailto:kovalevantondev@gmail.com">kovalevantondev@gmail.com</a> and your account,
+        progress and answers will be deleted. You can revoke the app's access to your Google account in your
+        <a href="https://myaccount.google.com/permissions" rel="noopener">Google settings</a>.
+      </p>
+    </main>
+  </body>
+</html>
