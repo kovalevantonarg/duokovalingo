@@ -56,7 +56,7 @@ export function header(back) {
 }
 
 /**
- * Render a tab screen: header + content in the given scope class (v-app, v-exam, v-learn, v-map).
+ * Render a tab screen: header + content in the given scope class (v-app, v-exam, v-learn).
  * Returns the content element.
  */
 export function frame(html, { back, scope = "v-app", cls = "page" } = {}) {

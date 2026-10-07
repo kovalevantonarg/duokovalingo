@@ -1,6 +1,6 @@
 // Entry point of the app (index.html): global listeners, the tab bar, offline support, boot.
 import { go, route, upgradeOldLink } from "./router.js";
-import { tipHide, tipShow } from "./screens/activity.js";
+import { tipHide, tipShow } from "./tip.js";
 import { state } from "./state.js";
 import { flushPending, loadAttempts, loadState } from "./store.js";
 import { drawTabs } from "./ui.js";
