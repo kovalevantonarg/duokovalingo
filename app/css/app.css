@@ -1764,26 +1764,17 @@ body.inround .tabs {
 .v-app .login .wm {
   font-size: clamp(22px, 7vw, 30px);
 }
-.v-app .login form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
+.v-app .login .sub {
+  max-width: 340px;
+  text-align: center;
+  margin: 0;
+}
+.v-app .login .gbtn {
   max-width: 360px;
-}
-.v-app .login input {
-  height: 52px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: var(--panel);
+  gap: 10px;
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--fg);
-  font: inherit;
-  font-size: 18px;
-  padding: 0 16px;
-  outline: none;
-}
-.v-app .login input:focus {
-  border-color: var(--accent);
 }
 .v-app .login .err {
   color: var(--crit);

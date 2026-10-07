@@ -1,14 +1,11 @@
 // @ts-check
 /**
- * Progress storage in Supabase. The tables live in the private `drill` schema; the function talks to them only
- * through security-definer RPCs that check DRILL_DB_KEY (see supabase/migrations/).
+ * Progress storage in Supabase, one row per user. The tables live in the private `drill` schema; the function
+ * talks to them only through security-definer RPCs that check DRILL_DB_KEY (see supabase/migrations/).
  *
  * Writes use optimistic concurrency: read the progress with its version, change it, write it back only if the
  * version is unchanged, otherwise read again and retry. Two devices saving at the same moment can't overwrite
  * each other's attempts.
- *
- * Until the migration is applied the old RPCs (drill_load / drill_save, exams inside the progress row) are used,
- * so deploying this code before running the SQL doesn't break anything.
  */
 
 const empty = () => ({ items: [], history: [] });
@@ -23,82 +20,61 @@ export function createStore({ url, anonKey, dbKey, fetch: doFetch = globalThis.f
       body: JSON.stringify({ p_key: dbKey, ...args }),
     });
     const text = await r.text();
-    if (!r.ok) throw Object.assign(new Error(`rpc ${fn} ${r.status}: ${text.slice(0, 200)}`), { status: r.status, body: text });
+    if (!r.ok)
+      throw Object.assign(new Error(`rpc ${fn} ${r.status}: ${text.slice(0, 200)}`), {
+        status: r.status,
+        body: text,
+      });
     return text ? JSON.parse(text) : null;
   }
-  /** PostgREST answers 404 / PGRST202 when a function doesn't exist (migration not applied yet). */
-  const isMissing = (e) => e.status === 404 || /PGRST202|Could not find the function/.test(e.body || "");
-  /** null until we know; then true = versioned RPCs exist, false = old RPCs only */
-  let migrated = null;
 
-  async function read() {
-    if (migrated !== false) {
-      try {
-        const r = await rpc("drill_state_get");
-        migrated = true;
-        return { db: r.data ?? empty(), version: r.version };
-      } catch (e) {
-        if (!isMissing(e)) throw e;
-        migrated = false;
+  /** Create or refresh a user at sign-in. `owner` takes over the single-user progress on first sign-in. */
+  const login = (id, email, name, owner) =>
+    rpc("drill_user_login", { p_id: id, p_email: email, p_name: name, p_owner: !!owner });
+
+  /** Count one AI call for today; false when the user is over `limit`. */
+  const useAi = async (user, day, limit) =>
+    (await rpc("drill_ai_use", { p_user: user, p_day: day, p_limit: limit })) !== null;
+
+  /** [{ user, data }] for every user with push subscriptions. */
+  const withPush = () => rpc("drill_progress_with_push");
+
+  /** Storage scoped to one user. @param {string} user */
+  function forUser(user) {
+    async function read() {
+      const r = await rpc("drill_progress_get", { p_user: user });
+      return { db: r.data ?? empty(), version: r.version };
+    }
+
+    /**
+     * Read, apply `change`, write back; retry from a fresh read if another write happened in between.
+     * `change` mutates db and returns false to skip writing (nothing to change / invalid input).
+     * @param {(db: any) => unknown} change
+     */
+    async function update(change, tries = 4) {
+      for (let i = 0; i < tries; i++) {
+        const { db, version } = await read();
+        const result = change(db);
+        if (result === false) return { db, changed: false, result };
+        const v = await rpc("drill_progress_put", { p_user: user, p_data: db, p_version: version });
+        if (v !== null) return { db, changed: true, result };
       }
+      throw new Error("progress was saved from another device at the same moment, try again");
     }
-    return { db: (await rpc("drill_load")) ?? empty(), version: null };
+
+    /** Store one graded exam attempt. */
+    const addExam = (exam) => rpc("drill_user_exam_add", { p_user: user, p_exam: exam });
+
+    /**
+     * Exam attempts, oldest first. With a ticket number: that ticket's attempts with answer and verdict text;
+     * without: every attempt, without the texts (enough for scores).
+     * @param {number | null} [ticket]
+     */
+    const exams = (ticket = null) =>
+      rpc("drill_user_exams", { p_user: user, p_ticket: ticket, p_full: ticket !== null });
+
+    return { read, update, addExam, exams };
   }
 
-  /** @returns {Promise<boolean>} false when someone else wrote since `version` was read */
-  async function write(db, version) {
-    if (version === null) {
-      await rpc("drill_save", { p_data: db });
-      return true;
-    }
-    return (await rpc("drill_state_put", { p_data: db, p_version: version })) !== null;
-  }
-
-  /**
-   * Read, apply `change`, write back; retry from a fresh read if another write happened in between.
-   * `change` mutates db and returns false to skip writing (nothing to change / invalid input).
-   * @param {(db: any) => unknown} change
-   */
-  async function update(change, tries = 4) {
-    for (let i = 0; i < tries; i++) {
-      const { db, version } = await read();
-      const result = change(db);
-      if (result === false) return { db, changed: false, result };
-      if (await write(db, version)) return { db, changed: true, result };
-    }
-    throw new Error("progress was saved from another device at the same moment, try again");
-  }
-
-  /** Store one graded exam attempt. Before the migration it goes into the progress row, as before. */
-  async function addExam(exam) {
-    if (migrated === null) await read();
-    if (migrated) return void (await rpc("drill_exam_add", { p_exam: exam }));
-    await update((db) => {
-      db.exams = Array.isArray(db.exams) ? db.exams : [];
-      db.exams.push(exam);
-      if (db.exams.length > 400) db.exams.splice(0, db.exams.length - 400);
-    });
-  }
-
-  /**
-   * Exam attempts, oldest first. With a ticket number: that ticket's attempts with answer and verdict text;
-   * without: every attempt, without the texts (enough for scores on the chips).
-   * @param {number | null} [ticket]
-   */
-  async function exams(ticket = null) {
-    if (migrated === null) await read();
-    if (migrated) return rpc("drill_exams", { p_ticket: ticket, p_full: ticket !== null });
-    const { db } = await read();
-    const all = Array.isArray(db.exams) ? db.exams : [];
-    return ticket === null ? all.map(({ answer, verdict, ...e }) => e) : all.filter((e) => e.n === ticket);
-  }
-
-  /** After the migration: move attempts an older deploy left inside the progress row into the exams table. */
-  async function moveLeftoverExams(db) {
-    if (!migrated || !Array.isArray(db.exams) || !db.exams.length) return;
-    for (const e of db.exams) await rpc("drill_exam_add", { p_exam: e });
-    await update((d) => (Array.isArray(d.exams) ? void delete d.exams : false));
-  }
-
-  return { rpc, read, update, addExam, exams, moveLeftoverExams };
+  return { rpc, login, useAi, withPush, forUser };
 }

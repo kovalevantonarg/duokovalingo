@@ -90,11 +90,7 @@ export const STRINGS = {
     hintMove: "двигать",
     wk: "нед.",
     ofw: "из",
-    pw: "Пароль",
-    enter: "Войти",
-    wrongpw: "Не тот пароль",
     logout: "Выйти",
-    noserver: "Сервер не настроен",
   },
   en: {
     today: "Today",
@@ -180,11 +176,7 @@ export const STRINGS = {
     hintMove: "move",
     wk: "wk",
     ofw: "of",
-    pw: "Password",
-    enter: "Sign in",
-    wrongpw: "Wrong password",
     logout: "Sign out",
-    noserver: "Server not configured",
   },
 };
 /** Section labels for the item list (same in both languages). */
@@ -205,6 +197,11 @@ export const SECTION_LABEL = {
 // app shell, Today, tickets, sessions, interview mode, progress, settings
 const MORE = {
   ru: {
+    google: "Войти через Google",
+    loginLead: "Билеты для подготовки к собеседованиям на AI- и фронтенд-инженера. Прогресс у каждого свой.",
+    loginFailed: "Не получилось войти",
+    signedIn: "Вход:",
+    aiLimit: (n) => `На сегодня объяснения ИИ закончились (${n} в день).`,
     tabs: { home: "Сегодня", tickets: "Билеты", learn: "Разборы", progress: "Прогресс" },
     settings: "Настройки",
     language: "Язык",
@@ -275,6 +272,11 @@ const MORE = {
     ivDone: "Разбор собеседования",
   },
   en: {
+    google: "Sign in with Google",
+    loginLead: "Tickets for AI and frontend engineering interviews. Everyone's progress is their own.",
+    loginFailed: "Couldn't sign in",
+    signedIn: "Signed in as",
+    aiLimit: (n) => `You've used today's AI explanations (${n} a day).`,
     tabs: { home: "Today", tickets: "Tickets", learn: "Lessons", progress: "Progress" },
     settings: "Settings",
     language: "Language",

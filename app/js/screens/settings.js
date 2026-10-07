@@ -5,7 +5,7 @@ import { beep, soundOn, toggleSound } from "../sound.js";
 import { emptyDb } from "../../lib/srs.js";
 import { persist, state } from "../state.js";
 import { setLang, ui } from "../ui.js";
-import { $ } from "../util.js";
+import { $, esc } from "../util.js";
 import { loginScreen } from "./login.js";
 
 /** Open a bottom sheet with `html`; `wire(el)` attaches handlers. Closes on the backdrop, Esc or swipe down. */
@@ -127,7 +127,7 @@ export function openSettings() {
     ${state.db.push && pushable() ? row(ui().reminders, ui().remindersd, toggle("pushT", false)) : ""}
     ${"serviceWorker" in navigator ? row(ui().offlineLessons, ui().offlineLessonsd, `<button class="btn line" id="offl">${localStorage.getItem("learn.offline") ? ui().saved : ui().save}</button>`) : ""}
     <div class="sfoot">${state.live ? ui().synced : `${icon.warn}${ui().offlineShort}${state.pending.length ? ` · ${state.pending.length} ${ui().pending}` : ""}`}</div>
-    ${state.db.auth ? `<button class="btn line full" id="lo">${icon.out}${ui().logout}</button>` : ""}`;
+    ${state.db.auth ? `<div class="sfoot">${ui().signedIn} <b>${esc(state.db.user?.email || "")}</b></div><button class="btn line full" id="lo">${icon.out}${ui().logout}</button>` : ""}`;
   openSheet(html, (sh) => {
     sh.querySelectorAll("[data-l]").forEach(
       (b) =>

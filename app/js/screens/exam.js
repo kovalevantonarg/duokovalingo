@@ -35,7 +35,7 @@ const UI = {
     nokey:
       "Проверка выключена: на сервере нет ANTHROPIC_API_KEY. Добавь ключ в переменные окружения проекта на Vercel и передеплой.",
     fail: "Не удалось проверить: ",
-    login: "Нужно войти в приложение (главная страница), тогда проверка заработает и здесь.",
+    login: "Сессия закончилась: обнови страницу и войди через Google.",
     src: "Источники",
     fixedN: "исправлено",
     was: "Было: ",
@@ -50,6 +50,8 @@ const UI = {
     },
     ph: "Пиши или диктуй ответ на этот вопрос. Своими словами, не подглядывая.",
     q: "Вопрос",
+    limit: (n) =>
+      `На сегодня проверки ИИ закончились (${n} в день). Завтра будут снова; эталон можно открыть и сейчас.`,
     next: "Дальше",
     prev: "Назад",
     dict: "Диктовать",
@@ -94,7 +96,7 @@ const UI = {
     nokey:
       "Checking is off: the server has no ANTHROPIC_API_KEY. Add it to the project's environment variables on Vercel and redeploy.",
     fail: "Could not check: ",
-    login: "Log in on the home page first; then checking works here too.",
+    login: "Your session ended: reload and sign in with Google.",
     src: "Sources",
     fixedN: "corrected",
     was: "Was: ",
@@ -109,6 +111,8 @@ const UI = {
     },
     ph: "Type or dictate your answer to this question. Your own words, no peeking.",
     q: "Question",
+    limit: (n) =>
+      `You've used today's AI checks (${n} a day). More tomorrow; the reference is open right now.`,
     next: "Next",
     prev: "Back",
     dict: "Dictate",
@@ -200,7 +204,9 @@ export async function checkAnswer(t, text, { lang = state.lang, kind, qs, ref } 
           ? UI[lang].nokey
           : j.error === "too_short"
             ? UI[lang].short
-            : UI[lang].fail + (j.error || r.status);
+            : j.error === "limit"
+              ? UI[lang].limit(j.limit)
+              : UI[lang].fail + (j.error || r.status);
     return { error: msg };
   } catch (e) {
     return { error: UI[lang].fail + e.message };

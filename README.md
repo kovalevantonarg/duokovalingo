@@ -2,7 +2,7 @@
 
 A drill app for AI-engineering and frontend interviews: 50 exam tickets (LLM, RAG, agents, system design, JS/TS, React, browser) with spaced repetition per ticket, a daily session, quick games built from the tickets, a from-zero lesson per ticket with sources (read aloud if you like), an interview mode, and an answer checker that grades a typed or dictated answer against the hidden reference.
 
-Live as a password-gated PWA on Vercel (works offline, optional push reminders); progress is stored in Supabase.
+Live as a PWA on Vercel with Google sign-in, progress per user (works offline, optional push reminders); progress is stored in Supabase.
 
 ## Layout
 
@@ -24,4 +24,4 @@ npm test            # unit tests + content consistency check (no dependencies)
 npm run serve       # local app on http://localhost:4040, progress in queue.json
 ```
 
-`queue.json` is local and not committed. `node today.mjs pull` fills it from the deployed app (needs `DRILL_URL` and `DRILL_PASSWORD` in `.env`).
+`queue.json` is local and not committed. `node today.mjs pull` fills it from the deployed app (needs `DRILL_URL` and `DRILL_COOKIE`, the value of the `drill` cookie of a signed-in browser, in `.env`).

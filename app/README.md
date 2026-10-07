@@ -1,6 +1,6 @@
 # duokovalingo — deploy notes
 
-Static SPA + one Vercel function (`api/[route].js`). No build step; the function's one dependency is `web-push`.
+Static SPA + one Vercel function (`api/[route].js`), multi-user with Google sign-in. No build step; the function's one dependency is `web-push`.
 
 ## The app
 
@@ -33,9 +33,10 @@ rounds `#session`, `#interview`, `#play/<n>/<tf|gap|order|voice>`. The old stand
 | `sw.js` | Service worker: app shell network-first, static files and lessons stale-while-revalidate, `/api` never cached; push notifications. |
 | `lib/srs.js` | Spaced-repetition rules and the migration from the old per-item progress. Imported by the API, `today.mjs` and the browser. |
 | `lib/catalog.js` | **Generated** ticket list (number, section, old item ids) for `srs.js`. |
-| `api/[route].js` | Auth and routes: login, logout, state, log, done, flag, exams, check, explain, push, remind. |
+| `api/[route].js` | Routes: google, oauth, logout, state, log, done, flag, exams, check, explain, push, remind. |
+| `api/_auth.js` | Sign-in with Google (authorization-code flow) and the signed session cookie. |
 | `api/_grade.js` | The answer checker: prompt, JSON schema, parser. Shared with `today.mjs`. |
-| `api/_store.js` | Progress storage: versioned read-modify-write with retry, exam attempts in their own table; falls back to the old RPCs until the migration in `supabase/migrations/` has run. |
+| `api/_store.js` | Progress storage, one row per user: versioned read-modify-write with retry, exam attempts per user, the daily AI quota. |
 | `api/_push.js` | Reminder text and push-subscription helpers. |
 | `tickets.js`, `drills.js`, `sources.js` | **Generated** bundles. Source: `content/tickets/NN-slug.json`; rebuild with `node scripts/build-content.mjs`. |
 | `lessons/` | One lesson JSON per ticket, loaded on demand. |
@@ -69,14 +70,28 @@ picks the model (default `claude-sonnet-5-5`).
 | `SUPABASE_ANON_KEY` | publishable key: it can only call the `drill_*` RPC functions; the tables live in the private `drill` schema |
 | `DRILL_DB_KEY` | the key the RPC functions check |
 | `DRILL_SECRET` | HMAC secret for the session cookie |
-| `DRILL_PASSWORD` | the one password |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google sign-in (see below) |
+| `DRILL_OWNER_EMAIL` | your Google email: no AI quota, and your first sign-in takes over the single-user progress |
+| `DRILL_AI_DAILY` | optional: AI checks + explanations per user per day for everyone else (default 20) |
 | `ANTHROPIC_API_KEY` | optional: the answer checker and "Explain differently" |
 | `DRILL_MODEL` | optional, default `claude-sonnet-5-5` |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | optional: push reminders (`npx web-push generate-vapid-keys`; subject like `mailto:you@example.com`). All three or push stays off. |
 | `CRON_SECRET` | needed with push: Vercel Cron sends it to `/api/remind` (daily, `vercel.json`) |
 | `DRILL_TZ` | optional: time zone for "already practiced today" in reminders (default `America/Argentina/Buenos_Aires`) |
 
-## Auth
+## Sign-in (Google)
 
-`POST /api/login {password}` → `drill=<exp>.<hmac>` cookie, HttpOnly, Secure, SameSite=Lax, 90 days. Every
-other route needs it (except `/api/remind`, which checks `CRON_SECRET`). Single user by design.
+Any Google account can sign in; everyone gets their own progress and exam history. `/api/google` sends the
+browser to Google with a one-time `state` (also in a 10-minute cookie); `/api/oauth` checks it, exchanges the
+code for an ID token (issuer, audience, expiry, verified email checked), creates the user and sets
+`drill=<payload>.<hmac>` (HttpOnly, Secure, SameSite=Lax, 90 days). Every other route needs it, except
+`/api/remind` (`CRON_SECRET`). Users are keyed by Google's account id, not the email.
+
+Setup, once: Google Cloud Console → APIs & Services → Credentials → Create OAuth client ID → Web application.
+Authorized redirect URI: `https://<your domain>/api/oauth` (add `http://localhost:4040/api/oauth` only if you
+test the real flow locally). OAuth consent screen: External, scopes `openid`, `email`, `profile` only, and
+publish it to "In production"; in "Testing" only the test users you list can sign in. Then set
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `DRILL_OWNER_EMAIL` on Vercel.
+
+Database: run `supabase/migrations/20261006_versioned_state_and_exams.sql`, then `20261007_users.sql`, in the
+Supabase SQL Editor before deploying this version.

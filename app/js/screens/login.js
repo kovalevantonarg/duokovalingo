@@ -1,31 +1,13 @@
-// Password screen shown when the API answers 401.
-import { route } from "../router.js";
-import { flushPending, loadState } from "../store.js";
+// Sign-in screen, shown when the API answers 401: one button, Google does the rest (api/_auth.js).
+import { icon } from "../icons.js";
 import { app, ui } from "../ui.js";
-import { $ } from "../util.js";
+import { esc } from "../util.js";
 
-export function loginScreen(err) {
+export function loginScreen() {
+  const err = new URLSearchParams(location.search).get("auth_error");
+  if (err) history.replaceState(null, "", "/" + location.hash);
   document.body.classList.add("inround");
-  app.innerHTML = `<div class="v-app"><div class="login"><a class="wm">duokovalingo</a><form id="lf"><input type="password" id="pw" placeholder="${ui().pw}" autocomplete="current-password" autofocus><button class="btn blue full big" type="submit">${ui().enter}</button><div class="err">${err || ""}</div></form></div></div>`;
-  $("#lf").onsubmit = async (e) => {
-    e.preventDefault();
-    const b = $("#lf button");
-    b.disabled = true;
-    try {
-      const r = await fetch("/api/login", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password: $("#pw").value }),
-      });
-      if (r.ok) {
-        await loadState();
-        await flushPending();
-        return route();
-      }
-      const j = await r.json().catch(() => ({}));
-      loginScreen(r.status === 401 ? ui().wrongpw : j.error || ui().noserver);
-    } catch (e) {
-      loginScreen(e.message);
-    }
-  };
+  app.innerHTML = `<div class="v-app"><div class="login"><a class="wm">duokovalingo</a><p class="sub">${ui().loginLead}</p>
+    <a class="btn line full big gbtn" href="/api/google">${icon.google}${ui().google}</a>
+    <div class="err">${err ? esc(ui().loginFailed + (err === "access_denied" ? "" : ` (${err})`)) : ""}</div></div></div>`;
 }

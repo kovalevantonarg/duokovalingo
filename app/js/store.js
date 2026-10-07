@@ -39,7 +39,9 @@ export async function loadState() {
   try {
     const r = await fetch("/api/state", { cache: "no-store" });
     if (r.ok) {
-      setDb(await r.json());
+      const db = await r.json();
+      forgetOtherUser(db.user?.email || "");
+      setDb(db);
       state.live = true;
     } else if (r.status === 401) {
       state.needLogin = true;
@@ -48,6 +50,22 @@ export async function loadState() {
   migrate(state.db);
   // offline: the cached progress plus whatever was recorded since
   if (!state.live && !state.needLogin) for (const p of state.pending) applyLocal(p);
+}
+
+/** Another account signed in on this browser: drop the previous one's offline queue and cached scores. */
+function forgetOtherUser(who) {
+  let was = null;
+  try {
+    was = localStorage.getItem("drill.user");
+  } catch {}
+  if (was === who) return;
+  if (was !== null) {
+    state.pending = [];
+    state.exams = [];
+    persist("drill.pending", []);
+    persist("exam.attempts", []);
+  }
+  persist("drill.user", who);
 }
 
 // offline: record the attempt locally with the same rules the server uses (lib/srs.js)

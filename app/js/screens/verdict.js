@@ -81,7 +81,7 @@ export function wireSheet(q, stmt, next, morePara) {
         const j = await r.json();
         $("#moreBox").insertAdjacentHTML(
           "beforeend",
-          `<div class="ref"><span class="rq">${ui().explain}${j.cached ? `<span class="cache">· cache</span>` : ""}</span><p>${codify(j.text || "✗ " + j.error)}</p></div>`,
+          `<div class="ref"><span class="rq">${ui().explain}${j.cached ? `<span class="cache">· cache</span>` : ""}</span><p>${codify(j.text || "✗ " + (j.error === "limit" ? ui().aiLimit(j.limit) : j.error))}</p></div>`,
         );
       } catch (e) {
         $("#moreBox").insertAdjacentHTML("beforeend", `<div class="ref"><p>✗ ${esc(e.message)}</p></div>`);
