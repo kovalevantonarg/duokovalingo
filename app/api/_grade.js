@@ -1,11 +1,11 @@
 // Shared by api/[route].js (Vercel) and today.mjs (local). Underscore prefix: Vercel does not deploy it as a function.
 // Grade a typed exam answer against the reference. Returns strict JSON so the page can render it.
-/** @param {any} p request body @param {{ owner?: boolean }} [who] the owner gets graded with his own background in mind */
-export function checkPrompt(p, { owner = true } = {}) {
+/** @param {any} p request body */
+export function checkPrompt(p) {
   const ru = p.lang === "ru";
   const k = Math.max(1, Math.min(3, (p.qs || []).length || 3));
   const qn = k === 1 ? "one question" : k === 2 ? "two questions" : "three questions";
-  const sys = `You are a senior interviewer at an AI product startup grading one practice answer from a candidate: ${owner ? "a senior frontend engineer (10 years, TypeScript) moving into AI engineering" : "a software engineer preparing for AI and frontend engineering interviews"}. You have the ${qn}, the candidate's typed answer, and a reference answer the candidate has NOT seen yet.
+  const sys = `You are a senior interviewer at an AI product startup grading one practice answer from a candidate: a software engineer preparing for AI and frontend engineering interviews. You have the ${qn}, the candidate's typed answer, and a reference answer the candidate has NOT seen yet.
 Grade the substance, not the style. Be exact and honest: a polite grade teaches nothing. Write everything in ${ru ? "Russian (technical terms and API names stay in English)" : "English"}.
 Return a JSON object with these keys:
 "score": integer 0-10 (10 = would pass a senior follow-up; 7 = right idea, gaps an interviewer would probe; 4 = partial; 1 = mostly wrong or empty).

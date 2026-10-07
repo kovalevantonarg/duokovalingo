@@ -248,7 +248,7 @@ function serve(port) {
         return json(res, 400, { error: "no ANTHROPIC_API_KEY (env or .env next to today.mjs)" });
       const ck = [b.lang, b.ok, b.stmt].join("|");
       if (cache[ck]) return json(res, 200, { text: cache[ck], cached: true });
-      const sys = `You are explaining one statement from an AI-engineering interview drill to a senior frontend engineer (10 years, TypeScript) who is learning LLM engineering. Answer in ${b.lang === "ru" ? "Russian; technical terms stay in English" : "English"}. 4-7 sentences of connected prose, no bullet points, no headings. Start from the mechanism, not the rule. One concrete analogy or a tiny example if it genuinely helps. If the statement is false, say precisely which part is false and give the true version. Do not repeat the reference text; explain it differently.`;
+      const sys = `You are explaining one statement from an AI-engineering interview drill to a software engineer who is learning LLM engineering. Answer in ${b.lang === "ru" ? "Russian; technical terms stay in English" : "English"}. 4-7 sentences of connected prose, no bullet points, no headings. Start from the mechanism, not the rule. One concrete analogy or a tiny example if it genuinely helps. If the statement is false, say precisely which part is false and give the true version. Do not repeat the reference text; explain it differently.`;
       const user = `Statement: "${b.stmt}"\nThis statement is ${b.ok ? "TRUE" : "FALSE"}.\nTopic: ${b.topic}\nReference answer (facts only, do not quote): ${b.ref}\nCommon trap: ${b.kill}`;
       try {
         const j = await claude({

@@ -255,7 +255,7 @@ export default async function handler(req, res) {
       if (!AKEY) return res.status(400).json({ error: "no_key" });
       if (String(body.answer || "").trim().length < 40) return res.status(400).json({ error: "too_short" });
       if (!(await allowAi(user))) return res.status(429).json({ error: "limit", limit: AI_DAILY });
-      const { sys, user: prompt } = checkPrompt(body, { owner: isOwner(user) });
+      const { sys, user: prompt } = checkPrompt(body);
       const j = await claude(GRADE_BODY(MODEL, sys, prompt));
       if (j.stop_reason === "max_tokens")
         return res.status(502).json({ error: "grader ran out of tokens, try again" });

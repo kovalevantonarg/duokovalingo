@@ -23,7 +23,7 @@
       },
       {
         "q": "Мой эвал",
-        "t": "Золотой набор: вопросы, к каждому — ожидаемый исходный пассаж и факты, которые должны быть в ответе. Прогоняю пайплайн, recall at k считаю автоматически. Для faithfulness — LLM-судья с рубрикой, и выборочно проверяю судью руками, потому что судья тоже ошибается. Гоняю на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением. Набор небольшой, и это нормально: тридцать–пятьдесят хороших вопросов лучше, чем ноль. Именно поэтому я могу показать цифрами, что пайплайн работает, а не просто утверждать это."
+        "t": "Золотой набор: вопросы, к каждому — ожидаемый исходный пассаж и факты, которые должны быть в ответе. Прогоняю пайплайн, recall at k считаю автоматически. Для faithfulness — LLM-судья с рубрикой, и выборочно проверяю судью руками, потому что судья тоже ошибается. Гоняю на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением. Набор небольшой, и это нормально: тридцать–пятьдесят хороших вопросов лучше, чем ноль. Так работоспособность пайплайна показывается цифрами, а не просто утверждается."
       }
     ],
     "kill": "<b>«Работает, я потыкал пару вопросов»</b>. И мерить только end-to-end: ответ плохой, а какая из четырёх стадий виновата — неизвестно."
@@ -46,7 +46,7 @@
       },
       {
         "q": "My eval",
-        "t": "A golden set: questions, and for each one the expected source passage and the facts the answer must contain. I run the pipeline and compute recall at k automatically. For faithfulness, an LLM judge with a rubric, and I spot-check the judge by hand because judges are wrong too. It runs on every commit, so a chunk-size change shows up as a number rather than an impression. The set is small, and that's fine: thirty to fifty good questions beat zero. It's why I can show with numbers that the pipeline works instead of just claiming it."
+        "t": "A golden set: questions, and for each one the expected source passage and the facts the answer must contain. I run the pipeline and compute recall at k automatically. For faithfulness, an LLM judge with a rubric, and I spot-check the judge by hand because judges are wrong too. It runs on every commit, so a chunk-size change shows up as a number rather than an impression. The set is small, and that's fine: thirty to fifty good questions beat zero. That's how you show with numbers that the pipeline works instead of just claiming it."
       }
     ],
     "kill": "<b>\"It works, I tried a few questions.\"</b> And measuring only end-to-end: the answer is bad and which of the four stages is at fault stays unknown."

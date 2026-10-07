@@ -23,7 +23,7 @@
       },
       {
         "q": "Диагностика",
-        "t": "Два симптома. Кусок нашёлся релевантный, но ответ неполный — значит, кусок слишком мелкий или разрезан не там. Куски находятся как-то похожие, но не те — значит, слишком крупные, смысл размылся. Проверяю не чтением, а эвалом: на золотом наборе вопросов смотрю, попадает ли нужный пассаж в top-k. Это изолирует chunking и retrieval от генерации. Меняю размер, прогоняю снова, сравниваю. В моём RAG-проекте размер куска был ручкой, которую я крутил по метрике, а не по ощущению."
+        "t": "Два симптома. Кусок нашёлся релевантный, но ответ неполный — значит, кусок слишком мелкий или разрезан не там. Куски находятся как-то похожие, но не те — значит, слишком крупные, смысл размылся. Проверяю не чтением, а эвалом: на золотом наборе вопросов смотрю, попадает ли нужный пассаж в top-k. Это изолирует chunking и retrieval от генерации. Меняю размер, прогоняю снова, сравниваю. Размер куска для меня — ручка, которую крутят по метрике, а не по ощущению."
       }
     ],
     "kill": "Назвать одно магическое число и остановиться. И <b>«chunking это деталь»</b> — это одна из частых причин плохого RAG, потому что от нарезки зависит, что найдёт поиск, интервьюер это знает."
@@ -46,7 +46,7 @@
       },
       {
         "q": "Diagnosis",
-        "t": "Two symptoms. The retrieved chunk is relevant but the answer is incomplete — chunk too small, or cut in the wrong place. The retrieved chunks are vaguely similar but not the right ones — too big, meaning diluted. I check with an eval, not by reading: on a golden question set, does the gold passage land in the top-k? That isolates chunking and retrieval from generation. Change the size, run again, compare. In my RAG project chunk size was a knob I turned against a metric, not a feeling."
+        "t": "Two symptoms. The retrieved chunk is relevant but the answer is incomplete — chunk too small, or cut in the wrong place. The retrieved chunks are vaguely similar but not the right ones — too big, meaning diluted. I check with an eval, not by reading: on a golden question set, does the gold passage land in the top-k? That isolates chunking and retrieval from generation. Change the size, run again, compare. Chunk size is a knob I turn against a metric, not a feeling."
       }
     ],
     "kill": "Quoting one magic number and stopping. And <b>\"chunking is a detail\"</b> — it's a common cause of bad RAG, because chunking decides what search can find, and the interviewer knows it."

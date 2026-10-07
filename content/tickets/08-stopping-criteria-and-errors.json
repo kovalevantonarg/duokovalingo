@@ -23,7 +23,7 @@
       },
       {
         "q": "Падение",
-        "t": "Учёт расходов обязан отработать в любом случае, иначе не знаешь, во что обошёлся неудачный прогон. У меня отчёт печатает обработчик события exit процесса (там только синхронный код), а обработчики SIGINT и SIGTERM вызывают process.exit, поэтому отчёт печатается и при падении, и при остановке. Не спасут SIGKILL, OOM (убийство процесса из-за нехватки памяти), нативный abort и сигнал без обработчика, например SIGHUP. Инструментация, которая работает только на счастливом пути, бесполезна ровно тогда, когда нужна. Плюс ретраи на транзиентных сетевых ошибках и явный таймаут, чтобы одна икота сети не убивала прогон."
+        "t": "Учёт расходов обязан отработать в любом случае, иначе не знаешь, во что обошёлся неудачный прогон. Отчёт я печатаю из обработчика события exit процесса (там только синхронный код), а обработчики SIGINT и SIGTERM вызывают process.exit, поэтому отчёт печатается и при падении, и при остановке. Не спасут SIGKILL, OOM (убийство процесса из-за нехватки памяти), нативный abort и сигнал без обработчика, например SIGHUP. Инструментация, которая работает только на счастливом пути, бесполезна ровно тогда, когда нужна. Плюс ретраи на транзиентных сетевых ошибках и явный таймаут, чтобы одна икота сети не убивала прогон."
       }
     ],
     "kill": "Забыть про потолок итераций. <b>«Ну оно само остановится»</b> — может, после пары неудачных попыток, но никто этого не гарантирует, а зациклившийся агент жжёт деньги."
@@ -46,7 +46,7 @@
       },
       {
         "q": "Crashes",
-        "t": "Cost accounting has to run either way, otherwise you don't know what the failed run cost. Mine prints from the process exit listener, which runs synchronous code only, and my SIGINT and SIGTERM handlers call process.exit, so the report prints on a crash and on a stop; SIGKILL, an OOM kill, a native abort or a signal I haven't handled still gets past it. Instrumentation that only works on the happy path is useless precisely when you need it. Plus retries on transient network errors and an explicit timeout, so one hiccup doesn't kill the run."
+        "t": "Cost accounting has to run either way, otherwise you don't know what the failed run cost. I print it from the process exit listener, which runs synchronous code only, and make the SIGINT and SIGTERM handlers call process.exit, so the report prints on a crash and on a stop; SIGKILL, an OOM kill, a native abort or a signal I haven't handled still gets past it. Instrumentation that only works on the happy path is useless precisely when you need it. Plus retries on transient network errors and an explicit timeout, so one hiccup doesn't kill the run."
       }
     ],
     "kill": "Forgetting the iteration cap. <b>\"It'll stop on its own\"</b> — it may, after a few failed retries, but nothing guarantees it, and a looping agent burns money."

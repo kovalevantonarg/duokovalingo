@@ -10,7 +10,7 @@
     "qs": [
       "Счёт вырос в три раза за месяц. Как находишь, где?",
       "Лестница рычагов, по соотношению эффекта и усилий.",
-      "Что кэширование не чинит? Пример из своего кода."
+      "Что кэширование не чинит? Приведи конкретный пример."
     ],
     "a": [
       {
@@ -23,7 +23,7 @@
       },
       {
         "q": "Не чинит",
-        "t": "Кэширование чинит пересылку, а не объём. Если в модель летит двадцать тысяч символов сырого HTML, кэш делает дешёвой вторую отправку, но первая и каждая новая страница стоят полную цену. У меня так и вышло: включение кэша снизило счёт в полтора раза, и при этом cache writes стали шестьюдесятью процентами счёта. Следующий шаг был не кэш, а роутинг: дешёвая модель ужимает страницы до того, как их видит дорогая. И ещё: кэшу нужен стабильный префикс — timestamp в начале system prompt ломает его полностью, и это видно только по цифрам."
+        "t": "Кэширование чинит пересылку, а не объём. Если в модель летит двадцать тысяч символов сырого HTML, кэш делает дешёвой вторую отправку, но первая и каждая новая страница стоят полную цену. Типичная картина в агенте, который читает сырые страницы: включение кэша заметно снижает счёт, и после этого большой долей счёта становятся cache writes. Следующий шаг тогда не кэш, а роутинг: дешёвая модель ужимает страницы до того, как их видит дорогая. И ещё: кэшу нужен стабильный префикс — timestamp в начале system prompt ломает его полностью, и это видно только по цифрам."
       }
     ],
     "kill": "<b>«Возьмите модель подешевле»</b> как весь ответ, без измерений. И утверждать, что <b>кэш решает всё</b> — интервьюер спросит про первую отправку."
@@ -33,7 +33,7 @@
     "qs": [
       "The bill tripled this month. How do you find where?",
       "The ladder of levers, in order of impact per effort.",
-      "What can't caching fix? An example from your own code."
+      "What can't caching fix? Give a concrete example."
     ],
     "a": [
       {
@@ -46,7 +46,7 @@
       },
       {
         "q": "Can't fix",
-        "t": "Caching fixes resending, not volume. If twenty thousand characters of raw HTML go into the model, the cache makes the second send cheap, but the first send and every new page still cost full price. That's exactly what happened to me: turning on caching made the bill about one and a half times smaller, and cache writes became sixty percent of the bill. The next step wasn't more caching, it was routing — a cheap model shrinks the pages before the expensive one sees them. One more: caching needs a stable prefix. A timestamp at the top of the system prompt breaks it entirely, and you only see it in the numbers."
+        "t": "Caching fixes resending, not volume. If twenty thousand characters of raw HTML go into the model, the cache makes the second send cheap, but the first send and every new page still cost full price. The typical picture in an agent that reads raw pages: turning on caching cuts the bill noticeably, and then cache writes become a large share of the bill. The next step isn't more caching, it's routing — a cheap model shrinks the pages before the expensive one sees them. One more: caching needs a stable prefix. A timestamp at the top of the system prompt breaks it entirely, and you only see it in the numbers."
       }
     ],
     "kill": "<b>\"Use a cheaper model\"</b> as the whole answer, with no measurement. And claiming <b>caching solves everything</b> — the interviewer will ask about the first send."

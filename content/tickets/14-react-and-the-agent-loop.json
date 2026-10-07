@@ -19,11 +19,11 @@
       },
       {
         "q": "Реализация",
-        "t": "Массив messages, описание инструментов. Вызываю модель. Если stop_reason равен tool_use — беру имя и аргументы, исполняю сам, кладу результат в messages как tool_result и иду на следующую итерацию. Если end_turn — это финальный ответ, выхожу. Другие причины остановки, вроде max_tokens, pause_turn или refusal, обрабатываю явно, а не как ответ. Обязательно: потолок по шагам, бюджет по деньгам, ошибки инструмента возвращаю как строку в tool_result, а не бросаю исключение — модель должна их увидеть и среагировать. Так устроен мой research-агент scout: пять шагов, шесть страниц, и каждый шаг виден в логе."
+        "t": "Массив messages, описание инструментов. Вызываю модель. Если stop_reason равен tool_use — беру имя и аргументы, исполняю сам, кладу результат в messages как tool_result и иду на следующую итерацию. Если end_turn — это финальный ответ, выхожу. Другие причины остановки, вроде max_tokens, pause_turn или refusal, обрабатываю явно, а не как ответ. Обязательно: потолок по шагам, бюджет по деньгам, ошибки инструмента возвращаю как строку в tool_result, а не бросаю исключение — модель должна их увидеть и среагировать. В research-агенте это значит потолок на шаги и страницы, и каждый шаг виден в логе."
       },
       {
         "q": "Где ломается",
-        "t": "Зацикливается на падающем инструменте. Уходит от цели, когда контекст растёт и исходная задача тонет посередине. Раздувает стоимость, потому что каждая итерация пересылает всю историю — у меня одни и те же страницы оплачивались три с лишним раза. Что добавляю: жёсткий потолок шагов и бюджет, сжатие выходов инструментов дешёвой моделью до нужных фактов, prompt caching на статичном префиксе, при длинных задачах — явный план и сжатие наблюдений, чекпоинт для человека там, где действие необратимо, и лог причины остановки — это первое, куда смотришь при разборе."
+        "t": "Зацикливается на падающем инструменте. Уходит от цели, когда контекст растёт и исходная задача тонет посередине. Раздувает стоимость, потому что каждая итерация пересылает всю историю — одни и те же страницы оплачиваются по нескольку раз. Что добавляю: жёсткий потолок шагов и бюджет, сжатие выходов инструментов дешёвой моделью до нужных фактов, prompt caching на статичном префиксе, при длинных задачах — явный план и сжатие наблюдений, чекпоинт для человека там, где действие необратимо, и лог причины остановки — это первое, куда смотришь при разборе."
       }
     ],
     "kill": "<b>«ReAct — это think step by step»</b> — нет, это цикл, в котором инструменты исполняет твой код. И <b>«он сам остановится»</b> — не остановится, если инструмент продолжает падать."
@@ -42,11 +42,11 @@
       },
       {
         "q": "Implementation",
-        "t": "A messages array and tool definitions. Call the model. If stop_reason is tool_use, take the name and arguments, execute them myself, append the result to messages as a tool_result, and go around again. If it's end_turn, that's the final answer, exit. Other stop reasons, like max_tokens, pause_turn or refusal, I handle explicitly, not as answers. Non-negotiable: a step cap, a spending budget, and tool errors returned as strings inside the tool_result rather than thrown — the model has to see them to react. That's exactly how my research agent, scout, works: five steps, six pages, and every step in the log."
+        "t": "A messages array and tool definitions. Call the model. If stop_reason is tool_use, take the name and arguments, execute them myself, append the result to messages as a tool_result, and go around again. If it's end_turn, that's the final answer, exit. Other stop reasons, like max_tokens, pause_turn or refusal, I handle explicitly, not as answers. Non-negotiable: a step cap, a spending budget, and tool errors returned as strings inside the tool_result rather than thrown — the model has to see them to react. In a research agent that means a cap on steps and pages, and every step in the log."
       },
       {
         "q": "Where it breaks",
-        "t": "It loops on a failing tool. It drifts off-goal as the context grows and the original task sinks into the middle. It balloons in cost because every iteration resends the whole history — I had the same pages paid for three-plus times. What I add: a hard step cap and budget, having a cheap model condense tool outputs to the relevant facts, prompt caching on the static prefix, for long tasks an explicit plan and observation compression, a human checkpoint before anything irreversible, and a logged stop reason — it's the first thing you look at in a post-mortem."
+        "t": "It loops on a failing tool. It drifts off-goal as the context grows and the original task sinks into the middle. It balloons in cost because every iteration resends the whole history — the same pages get paid for several times over. What I add: a hard step cap and budget, having a cheap model condense tool outputs to the relevant facts, prompt caching on the static prefix, for long tasks an explicit plan and observation compression, a human checkpoint before anything irreversible, and a logged stop reason — it's the first thing you look at in a post-mortem."
       }
     ],
     "kill": "<b>\"ReAct is think-step-by-step\"</b> — no, it's a loop where your code executes the tools. And <b>\"it'll stop on its own\"</b> — it won't, if the tool keeps failing."

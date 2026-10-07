@@ -19,7 +19,7 @@
       },
       {
         "q": "Роутинг",
-        "t": "Роутинг — это разные модели на разных шагах или для разных классов запросов. В моём scout-агенте Haiku сжимает сырые страницы до того, как их увидит Sonnet: двадцать тысяч символов мусора перестают попадать в дорогую модель. Стоимость — вход и выход по своим ценам, выход за токен в разы дороже, плюс запись и чтение кэша. В агентах обычно доминирует вход, поэтому рычаг — не модель, что пишет ответ, а та, что читает объём. Я это увидел на цифрах: до роутинга у меня шестьдесят процентов счёта были записями в кэш (cache writes): одни и те же сырые страницы снова и снова записывались в кэш."
+        "t": "Роутинг — это разные модели на разных шагах или для разных классов запросов. В research-агенте Haiku сжимает сырые страницы до того, как их увидит Sonnet: двадцать тысяч символов мусора перестают попадать в дорогую модель. Стоимость — вход и выход по своим ценам, выход за токен в разы дороже, плюс запись и чтение кэша. В агентах обычно доминирует вход, поэтому рычаг — не модель, что пишет ответ, а та, что читает объём. Это видно по разбивке счёта: до роутинга самой большой долей счёта часто оказываются записи в кэш (cache writes): одни и те же сырые страницы снова и снова записываются в кэш."
       },
       {
         "q": "Понижение",
@@ -42,7 +42,7 @@
       },
       {
         "q": "Routing",
-        "t": "Routing means different models for different steps or request classes. In my scout agent, Haiku distills raw pages before Sonnet ever sees them: twenty thousand characters of noise stop reaching the expensive model. Cost is input and output tokens at their own prices, output several times dearer per token, plus cache writes and reads. In agents input volume usually dominates, so the lever is the model that reads the bulk, not the one that writes the answer. I saw this in numbers: before routing, sixty percent of my bill was cache writes: the same raw pages kept getting written into the cache again."
+        "t": "Routing means different models for different steps or request classes. In a research agent, Haiku distills raw pages before Sonnet ever sees them: twenty thousand characters of noise stop reaching the expensive model. Cost is input and output tokens at their own prices, output several times dearer per token, plus cache writes and reads. In agents input volume usually dominates, so the lever is the model that reads the bulk, not the one that writes the answer. You see it in the bill breakdown: before routing, cache writes are often the biggest share of the bill: the same raw pages keep getting written into the cache again."
       },
       {
         "q": "Downgrading",

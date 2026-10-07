@@ -10,7 +10,7 @@
     "qs": [
       "Поле поиска фильтрует список из 10 000 строк, и ввод лагает. useTransition или useDeferredValue — и почему?",
       "Страница с вложенными Suspense грузится лесенкой. Что происходит и как это исправить?",
-      "Во время миграции на App Router как вы объясняли команде разницу между SSR и Server Components, и где ставить 'use client'?"
+      "Команда мигрирует на App Router. Как вы объясните ей разницу между SSR и Server Components, и где ставить 'use client'?"
     ],
     "a": [
       {
@@ -23,7 +23,7 @@
       },
       {
         "q": "RSC и SSR",
-        "t": "Они решают разные задачи и работают вместе. SSR (серверный рендеринг) выполняет компоненты на сервере, чтобы получить HTML для первой отрисовки, но потом код этих компонентов всё равно едет в браузер и проходит hydration (оживление готового HTML обработчиками), так что каждый компонент стоит JavaScript. Server Components выполняются только на сервере и никогда не гидрируются. Их результат — сериализованный RSC payload (поток описания дерева), который React на клиенте вливает в дерево. Их код и зависимости не попадают в бандл (итоговый JS для браузера), и они могут читать базу напрямую. 'use client' помечает модуль как вход в клиентский граф: этот компонент и всё, что он импортирует, становится клиентским кодом. Пропсы через эту границу должны быть сериализуемыми: примитивы, обычные объекты, Date, Map, JSX, даже промисы, но не обычные функции и не экземпляры классов. Единственные разрешённые функции — Server Functions с 'use server', на этом и работают Server Actions. При миграции на App Router в Dats.Team правило, которое я продвигал, — держать 'use client' в листьях дерева. А при streaming (потоковой отдаче) loading.js это просто Suspense boundary: оболочка уходит сразу, медленные части догружаются потоком."
+        "t": "Они решают разные задачи и работают вместе. SSR (серверный рендеринг) выполняет компоненты на сервере, чтобы получить HTML для первой отрисовки, но потом код этих компонентов всё равно едет в браузер и проходит hydration (оживление готового HTML обработчиками), так что каждый компонент стоит JavaScript. Server Components выполняются только на сервере и никогда не гидрируются. Их результат — сериализованный RSC payload (поток описания дерева), который React на клиенте вливает в дерево. Их код и зависимости не попадают в бандл (итоговый JS для браузера), и они могут читать базу напрямую. 'use client' помечает модуль как вход в клиентский граф: этот компонент и всё, что он импортирует, становится клиентским кодом. Пропсы через эту границу должны быть сериализуемыми: примитивы, обычные объекты, Date, Map, JSX, даже промисы, но не обычные функции и не экземпляры классов. Единственные разрешённые функции — Server Functions с 'use server', на этом и работают Server Actions. При миграции на App Router правило, которое я продвигаю, — держать 'use client' в листьях дерева. А при streaming (потоковой отдаче) loading.js это просто Suspense boundary: оболочка уходит сразу, медленные части догружаются потоком."
       }
     ],
     "kill": "<b>«Server Components — это просто SSR»</b>: SSR всё равно гидрирует и отправляет JS компонента, а Server Components не гидрируются и присылают сериализованный payload. И <b>передать onClick из Server Component</b> нельзя: обычные функции не сериализуются."
@@ -33,7 +33,7 @@
     "qs": [
       "A search box filters a 10,000-row list and typing feels laggy. Would you reach for useTransition or useDeferredValue, and why?",
       "A page with nested Suspense boundaries loads in a staircase. What's going on and how do you fix it?",
-      "During your App Router migration, how did you explain the difference between SSR and Server Components to the team, and where does 'use client' go?"
+      "Your team is migrating to the App Router. How would you explain the difference between SSR and Server Components, and where does 'use client' go?"
     ],
     "a": [
       {
@@ -46,7 +46,7 @@
       },
       {
         "q": "RSC vs SSR",
-        "t": "They solve different problems and they stack. SSR runs components on the server to produce HTML for the first paint, but that component code still ships to the browser and hydrates, so every component still costs JavaScript. Server Components run only on the server and never hydrate. Their output is a serialized RSC payload, which React on the client merges into the tree. Their code and dependencies never reach the bundle, and they can read the database directly. 'use client' marks a module as the entry into the client graph: that component and everything it imports becomes client code. Props crossing that boundary must be serializable: primitives, plain objects, Dates, Maps, JSX, even promises, but not regular functions or class instances. The only functions allowed are Server Functions marked 'use server', which is how Server Actions work. In the App Router migration at Dats.Team, the rule I pushed was to keep 'use client' at the leaves. And with streaming, loading.js is just a Suspense boundary, so the shell flushes right away and slow parts stream in."
+        "t": "They solve different problems and they stack. SSR runs components on the server to produce HTML for the first paint, but that component code still ships to the browser and hydrates, so every component still costs JavaScript. Server Components run only on the server and never hydrate. Their output is a serialized RSC payload, which React on the client merges into the tree. Their code and dependencies never reach the bundle, and they can read the database directly. 'use client' marks a module as the entry into the client graph: that component and everything it imports becomes client code. Props crossing that boundary must be serializable: primitives, plain objects, Dates, Maps, JSX, even promises, but not regular functions or class instances. The only functions allowed are Server Functions marked 'use server', which is how Server Actions work. In an App Router migration, the rule I push is to keep 'use client' at the leaves. And with streaming, loading.js is just a Suspense boundary, so the shell flushes right away and slow parts stream in."
       }
     ],
     "kill": "<b>\"Server Components are just SSR\"</b> — SSR still hydrates and ships the component's JS; Server Components never hydrate and send a serialized payload. And <b>passing an onClick from a Server Component</b> fails because regular functions don't serialize."

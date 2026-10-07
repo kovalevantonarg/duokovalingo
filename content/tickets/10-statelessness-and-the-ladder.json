@@ -20,7 +20,7 @@
       },
       {
         "q": "Следствия",
-        "t": "Во-первых, каждый ход дороже предыдущего: вход запроса растёт линейно с историей, а значит суммарно по разговору оплаченные токены растут квадратично. Во-вторых, контекстное окно неизбежно кончается, это вопрос времени, а не вероятности. И в-третьих, в агентной петле одни и те же данные оплачиваются многократно — в одном прогоне моего агента ушло шестьдесят девять тысяч входных токенов, хотя уникальных среди них было всего двадцать одна тысяча, то есть за одно и то же я заплатил больше трёх раз."
+        "t": "Во-первых, каждый ход дороже предыдущего: вход запроса растёт линейно с историей, а значит суммарно по разговору оплаченные токены растут квадратично. Во-вторых, контекстное окно неизбежно кончается, это вопрос времени, а не вероятности. И в-третьих, в агентной петле одни и те же данные оплачиваются многократно: прогон агента легко отправляет шестьдесят девять тысяч входных токенов, хотя уникальных среди них всего двадцать одна тысяча, то есть за одно и то же платишь больше трёх раз."
       },
       {
         "q": "Лестница",
@@ -43,7 +43,7 @@
       },
       {
         "q": "Consequences",
-        "t": "First, every turn costs more than the last: each request's input grows linearly with the history, so the total billed over the conversation grows quadratically. Second, the context window inevitably runs out — it's a question of when, not whether. And third, in an agent loop the same data gets paid for many times over. In one run of my agent I sent sixty-nine thousand input tokens that contained only twenty-one thousand unique ones, so I paid for the same pages more than three times."
+        "t": "First, every turn costs more than the last: each request's input grows linearly with the history, so the total billed over the conversation grows quadratically. Second, the context window inevitably runs out — it's a question of when, not whether. And third, in an agent loop the same data gets paid for many times over. An agent run can easily send sixty-nine thousand input tokens that contain only twenty-one thousand unique ones, which means paying for the same pages more than three times."
       },
       {
         "q": "The ladder",

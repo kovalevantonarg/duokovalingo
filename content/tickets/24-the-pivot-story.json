@@ -8,22 +8,22 @@
   "ru": {
     "topic": "История пивота",
     "qs": [
-      "Почему из фронта в AI? Факты, не страсть.",
+      "Почему из [старая область] в [новая область]? Факты, не страсть.",
       "Это не шаг вниз по сеньорности?",
       "Что ты реально зашипил? Конкретно, с цифрами."
     ],
     "a": [
       {
         "q": "Почему",
-        "t": "Если честно — я помню, каким был фронт десять лет назад: каждая задача новая, готовых паттернов нет. Сегодня большая часть фронта — это сборка известного, и именно эту часть автоматизируют AI-инструменты. А работа с LLM сейчас ощущается как фронт в 2016: молодая экосистема, настоящие инженерные проблемы, никакого учебника. Поэтому я не ждал, а начал шипить. RAG-проект живёт на сайте с девятью из девяти на эвале, research-агент в процессе, всё в открытом доступе. Я не убегаю от фронта — я приношу десять лет продуктовой инженерии в ту часть стека, где они сейчас нужнее всего."
+        "t": "Если честно — [наблюдение о старой области: что в ней изменилось, конкретный факт, а не усталость]. А [новая область] сейчас — это [вывод: почему там настоящие инженерные задачи — например, молодая экосистема, никакого учебника]. Поэтому я не ждал, а начал шипить: [проект] живёт по ссылке с [цифра результата], [второй проект] в процессе, всё в открытом доступе. Я не убегаю от [старая область] — я приношу [N] лет [опыт] в ту часть стека, где они сейчас нужнее всего. Цепочка всегда одна: наблюдение, вывод, действие, доказательство."
       },
       {
         "q": "Не вниз?",
-        "t": "Нет, и вот почему. Title, который я ищу, — product engineer, а не junior AI кто-то. В маленьких AI-компаниях фронтовая глубина — это senior-навык: у них продукт для разработчиков, и интерфейс — половина продукта. Я не бросаю десять лет, я приношу их в ту часть стека, которая сейчас в них нуждается больше всего. И месяцы с апреля 2026 года — это не курсы, а рабочие системы с измерениями. Это горизонтальный шаг с расширением, а не спуск."
+        "t": "Нет, и вот почему. Роль, которую я ищу, — [целевая роль], а не junior [новая область] кто-то. В [тип компании] [мой сильный опыт] — это senior-навык: [почему он там нужен — например, интерфейс там половина продукта]. Я не бросаю [N] лет, я приношу их в ту часть стека, которая сейчас в них нуждается больше всего. И последние [срок] — это не курсы, а рабочие системы с измерениями. Это горизонтальный шаг с расширением, а не спуск."
       },
       {
         "q": "Зашипил",
-        "t": "Конкретика: RAG-пайплайн целиком — chunking, embeddings, retrieval, reranking — с эвал-набором, девять из девяти, живёт на сайте. Research-агент на TypeScript и Anthropic SDK: цикл с инструментами, каждое утверждение — со ссылкой на источник, инструментирована стоимость каждого шага. На нём я измерил prompt caching: разница в полтора раза по [метрика: стоимость или задержка], с кэшем против без кэша, A/B внутри одного запуска. Пока это один прогон. Ещё добавил роутинг: дешёвая модель сначала сжимает страницы, а дорогая читает уже сжатые. Всё в открытом доступе. Цифры — потому что интервьюер запомнит одно число, а не три прилагательных."
+        "t": "Конкретика: [проект 1 — что сделано по шагам, например RAG-пайплайн целиком: chunking, embeddings, retrieval, reranking] с [как измерял качество — например, эвал-набор], результат [цифра результата], живёт по ссылке. [Проект 2 и его устройство — например, research-агент на TypeScript и Anthropic SDK: цикл с инструментами, у каждого утверждения ссылка на источник, инструментирована стоимость каждого шага]. На нём я измерил [что — например, prompt caching]: разница в [X] раз по [метрика: стоимость или задержка], [с чем сравнивал — например, с кэшем против без кэша, A/B внутри одного запуска]. Честно называю, сколько было прогонов. Ещё [одно инженерное решение — например, роутинг: дешёвая модель сначала сжимает страницы, а дорогая читает уже сжатые]. Всё в открытом доступе. Цифры — потому что интервьюер запомнит одно число, а не три прилагательных."
       }
     ],
     "kill": "<b>«Passion»</b>, <b>«всегда интересовался»</b>, туман вместо цифр. И извиняющаяся интонация — ты объясняешь решение, а не оправдываешься."
@@ -31,22 +31,22 @@
   "en": {
     "topic": "The pivot story",
     "qs": [
-      "Why move from frontend to AI? Facts, not passion.",
+      "Why move from [old field] to [new field]? Facts, not passion.",
       "Isn't this a step down in seniority?",
       "What have you actually shipped? Be specific, with numbers."
     ],
     "a": [
       {
         "q": "Why",
-        "t": "Honestly? I remember how frontend felt ten years ago — every problem was new, and I was building things that hadn't existed before. Today most frontend work is assembling known patterns, and AI tools are automating exactly that part. Meanwhile, building with LLMs feels like frontend felt in 2016: young ecosystem, real engineering problems, no established playbook. So I didn't wait — I started shipping. My RAG project is live with a nine-out-of-nine eval score, my research agent is in progress, everything is public. I'm not running away from frontend — I'm bringing ten years of product engineering into the part of the stack where it matters most right now."
+        "t": "Honestly? [Observation about the old field: what changed, a concrete fact, not fatigue]. Meanwhile [new field] right now is [conclusion: why the engineering problems there are real — e.g. a young ecosystem, no established playbook]. So I didn't wait — I started shipping: [project] is live behind a link with [result with a number], [second project] is in progress, everything is public. I'm not running away from [old field] — I'm bringing [N] years of [experience] into the part of the stack where it matters most right now. The chain is always the same: observation, conclusion, action, proof."
       },
       {
         "q": "Not a step down",
-        "t": "No, and here's why. The title I'm going for is product engineer, not junior AI anything. At small AI companies frontend depth is a senior skill — the product is for developers, and the interface is half the product. I'm not throwing away ten years, I'm bringing them into the part of the stack that needs them most right now. And the months since April 2026 weren't courses, they were working systems with measurements. That's a lateral move with a wider scope, not a descent."
+        "t": "No, and here's why. The title I'm going for is [target role], not junior [new field] anything. At [company type], [core strength] is a senior skill — [why it's needed there — e.g. the interface is half the product]. I'm not throwing away [N] years, I'm bringing them into the part of the stack that needs them most right now. And the last [time span] weren't courses, they were working systems with measurements. That's a lateral move with a wider scope, not a descent."
       },
       {
         "q": "Shipped",
-        "t": "Specifics: a full RAG pipeline — chunking, embeddings, retrieval, reranking — with an eval set, nine out of nine, live on my site. A research agent in TypeScript on the Anthropic SDK: a tool-use loop, every claim carries a source URL, and the cost of every step is instrumented. On it I measured prompt caching: a one-and-a-half-times difference in [metric: cost or latency], cached versus uncached, as an A/B inside a single run. It's one run so far. I also added routing: a cheap model shrinks pages before the expensive one reads them. All of it is public. Numbers, because the interviewer will remember one number and not three adjectives."
+        "t": "Specifics: [project 1 — what was built, step by step, e.g. a full RAG pipeline: chunking, embeddings, retrieval, reranking] with [how I measured quality — e.g. an eval set], result [result with a number], live behind a link. [Project 2 and how it works — e.g. a research agent in TypeScript on the Anthropic SDK: a tool-use loop, every claim carries a source URL, and the cost of every step is instrumented]. On it I measured [what — e.g. prompt caching]: a [X]-times difference in [metric: cost or latency], [compared against what — e.g. cached versus uncached, as an A/B inside a single run]. I say plainly how many runs there were. Also [one engineering decision — e.g. routing: a cheap model shrinks pages before the expensive one reads them]. All of it is public. Numbers, because the interviewer will remember one number and not three adjectives."
       }
     ],
     "kill": "<b>Passion</b>, <b>always been interested</b>, fog instead of figures. And an apologetic tone — you're explaining a decision, not defending one."
@@ -54,24 +54,24 @@
   "drills": {
     "lies": {
       "ru": [
-        "Лучший ответ на «почему AI» — про страсть и давний интерес.",
-        "Переход из фронта в AI — это шаг вниз, и лучше это признать сразу."
+        "Лучший ответ на «почему ты меняешь направление» — про страсть и давний интерес.",
+        "Смена направления — это шаг вниз по сеньорности, и лучше это признать сразу."
       ],
       "en": [
-        "The best answer to 'why AI' is about passion and long-standing interest.",
-        "Moving from frontend to AI is a step down, and it's best to admit that up front."
+        "The best answer to 'why are you changing direction' is about passion and long-standing interest.",
+        "Changing direction is a step down in seniority, and it's best to admit that up front."
       ]
     },
     "cloze": {
       "ru": [
-        "Работа с LLM сейчас выглядит как фронт в [[2016]]: молодая экосистема, нет учебника.",
-        "RAG-проект живёт на сайте с эвалом [[9/9|девять из девяти]].",
-        "На research-агенте я измерил prompt caching: [[1.5|полтора]] раза на одном прогоне."
+        "Цепочка ответа «почему»: наблюдение, вывод, [[действие]], доказательство.",
+        "Рамка: я не убегаю от старой области, я [[приношу|переношу]] опыт туда, где он нужнее.",
+        "Интервьюер запомнит одно [[число|цифру]], а не три прилагательных."
       ],
       "en": [
-        "Building with LLMs feels like frontend in [[2016]]: young ecosystem, no playbook.",
-        "The RAG project is live with a [[9/9|nine out of nine]] eval score.",
-        "On the research agent I measured prompt caching at [[1.5|one and a half]] times on a single run."
+        "The chain of a 'why' answer: observation, conclusion, [[action]], proof.",
+        "The frame: I'm not running away from the old field, I'm [[bringing|taking]] my experience where it's needed more.",
+        "The interviewer will remember one [[number|figure]], not three adjectives."
       ]
     }
   },
@@ -81,7 +81,7 @@
         2
       ],
       "s": "ok",
-      "c": "Research agent built on the Anthropic TypeScript SDK (tool-use loop)",
+      "c": "A research agent with a tool-use loop can be built on the Anthropic TypeScript SDK",
       "e": "Official TypeScript SDK @anthropic-ai/sdk exists",
       "u": [
         "https://github.com/anthropics/anthropic-sdk-typescript"

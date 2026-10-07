@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "90 секунд",
-        "t": "Я senior frontend-инженер, около десяти лет, строил продуктовые интерфейсы. Сейчас я в Dats.Team, где вёл миграцию на Next.js App Router и интернационализацию больше чем на пятьдесят стран. С апреля 2026 года я публично строю AI-продукты. Собрал полный RAG-пайплайн — chunking, эмбеддинги, retrieval, reranking — с эвал-сьютом, он живёт на сайте. Сейчас строю research-агента на TypeScript и Anthropic SDK: по имени компании собирает структурированное досье со ссылками на источники. Ищу роль product engineer в небольшом AI-стартапе — там, где моя фронтовая глубина и AI-работа нужны с первого дня одновременно."
+        "t": "Я [уровень] [роль], [N] лет в [область] — [чем занимаюсь одной фразой]. Сейчас я в [компания], где вёл [проект с масштабом — например, миграцию большого Next.js-приложения на App Router] и получил [цифра результата]. Последние [срок] я строю [что строю сейчас — например, RAG-пайплайн с эвал-сьютом или research-агента на Anthropic SDK, который собирает досье со ссылками на источники], всё можно открыть по ссылке. Ищу роль [целевая роль] в [тип компании] — там, где [мой сильный опыт] и [новое направление] нужны с первого дня одновременно. Порядок блоков не меняется: сейчас, сильный факт, что строю, запрос."
       },
       {
         "q": "30 секунд",
-        "t": "Senior frontend, десять лет продуктовых интерфейсов. С апреля 2026 года строю AI-продукты публично: RAG с эвалами на сайте, сейчас research-агент на Anthropic SDK. Ищу product engineer в AI-стартапе. Всё. Рекрутер услышал уровень, доказательство и куда тебя ставить — больше ему на этом этапе не нужно."
+        "t": "[Уровень] [роль], [N] лет в [область]. Последние [срок] строю [что строю сейчас] — есть ссылка и [цифра результата]. Ищу [целевая роль] в [тип компании]. Всё. Рекрутер услышал уровень, доказательство и куда тебя ставить — больше ему на этом этапе не нужно."
       },
       {
         "q": "Запреты",
-        "t": "Никогда: «career switcher», «learning AI», «transitioning», «trying to get into». Это язык человека, который просит поверить на слово. Ты senior-инженер, который строит AI-продукты — это факт, у него есть ссылки. И заканчиваешь не хронологией, а запросом: какую роль ищешь и почему именно такую. Тогда интервьюер знает, что с тобой делать. Ответ без посадки — «…ну вот, как-то так» — стирает всё, что было до него."
+        "t": "Никогда: «career switcher», «learning [новое направление]», «transitioning», «trying to get into». Это язык человека, который просит поверить на слово. Ты [уровень] [роль], который строит [что строю сейчас] — это факт, у него есть ссылки. И заканчиваешь не хронологией, а запросом: какую роль ищешь и почему именно такую. Тогда интервьюер знает, что с тобой делать. Ответ без посадки — «…ну вот, как-то так» — стирает всё, что было до него."
       }
     ],
-    "kill": "Хронология с 2016 года. И любое слово из списка «switcher / learning / transitioning» — после него весь остальной ответ слушают как оправдание."
+    "kill": "Хронология с первого места работы. И любое слово из списка «switcher / learning / transitioning» — после него весь остальной ответ слушают как оправдание."
   },
   "en": {
     "topic": "Tell me about yourself",
@@ -38,18 +38,18 @@
     "a": [
       {
         "q": "90 seconds",
-        "t": "I'm a senior frontend engineer with about ten years of experience — I've spent my career shipping product UIs. Right now I'm at Dats.Team, where I led a migration to the Next.js App Router and built internationalization for more than fifty countries. Since April 2026 I've been building AI products in public. I shipped a full RAG pipeline — chunking, embeddings, retrieval, reranking — with an eval suite, and it's live on my site. Now I'm building a research agent in TypeScript on the Anthropic SDK: it takes a company name and produces a structured, fully-cited dossier. I'm looking for a product engineer role at a small AI startup — a place where my frontend depth and my AI engineering work are both useful from day one."
+        "t": "I'm a [level] [role] with [N] years in [field] — [what I do, in one phrase]. Right now I'm at [company], where I led [project with scale — e.g. migrating a large Next.js app to the App Router] and got [result with a number]. For the last [time span] I've been building [what I'm building now — e.g. a RAG pipeline with an eval suite, or a research agent on the Anthropic SDK that produces a cited dossier], and all of it can be opened via a link. I'm looking for a [target role] role at [company type] — a place where my [core strength] and [new direction] are both useful from day one. The order of the blocks never changes: now, strong fact, what I'm building, the ask."
       },
       {
         "q": "30 seconds",
-        "t": "Senior frontend engineer, ten years of shipping product UIs. Since April 2026 I've been building AI products in public — a RAG pipeline with evals that's live on my site, and now a research agent on the Anthropic SDK. I'm looking for a product engineer role at an AI startup. That's it. The recruiter heard the level, the proof, and where to place you — nothing else is needed at this stage."
+        "t": "[Level] [role], [N] years in [field]. For the last [time span] I've been building [what I'm building now] — there's a link and [result with a number]. I'm looking for a [target role] role at [company type]. That's it. The recruiter heard the level, the proof, and where to place you — nothing else is needed at this stage."
       },
       {
         "q": "Never",
-        "t": "Never: career switcher, learning AI, transitioning, trying to get into. That's the language of someone asking to be taken on faith. You're a senior engineer who builds AI products — it's a fact, and it has links. And you land on the ask, not on chronology: which role you want and why that one. Then the interviewer knows what to do with you. An answer with no landing — so, yeah, that's me — erases everything before it."
+        "t": "Never: career switcher, learning [new direction], transitioning, trying to get into. That's the language of someone asking to be taken on faith. You're a [level] [role] who builds [what I'm building now] — it's a fact, and it has links. And you land on the ask, not on chronology: which role you want and why that one. Then the interviewer knows what to do with you. An answer with no landing — so, yeah, that's me — erases everything before it."
       }
     ],
-    "kill": "A chronology starting in 2016. And any word from the switcher / learning / transitioning list — after it, the rest of the answer is heard as an apology."
+    "kill": "A chronology starting from your first job. And any word from the switcher / learning / transitioning list — after it, the rest of the answer is heard as an apology."
   },
   "drills": {
     "lies": {

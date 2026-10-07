@@ -49,7 +49,7 @@
         "t": "The architecture changed. In an agent every step resends the entire conversation including every page you fetched, so total input over the task grows roughly with the square of the step count and quickly overtakes output. And the takeaway isn't that input is expensive or that output is expensive — it's that the cost profile is decided by architecture, not by the model. Which is why you measure it instead of assuming, and re-measure after every architectural change."
       }
     ],
-    "kill": "<b>\"We'll optimise the prompt\"</b> — in a single call that's theatre. I cut 26 input tokens and paid more, because the answer grew by 19."
+    "kill": "<b>\"We'll optimise the prompt\"</b> — in a single call that's theatre: cut 26 input tokens and you pay more if the answer grows by 19."
   },
   "drills": {
     "lies": {
@@ -192,7 +192,7 @@
       ],
       "s": "ok",
       "c": "Cutting 26 input tokens while output grew by 19 raises cost",
-      "e": "At a 5x output price, +19 output ≈ 95 input-token equivalents > 26 saved; the arithmetic holds (Anton's own measurement).",
+      "e": "At a 5x output price, +19 output ≈ 95 input-token equivalents > 26 saved; the arithmetic holds (illustrative example).",
       "u": [
         "https://platform.claude.com/docs/en/about-claude/pricing"
       ]

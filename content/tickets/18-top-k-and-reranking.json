@@ -19,7 +19,7 @@
       },
       {
         "q": "Реранкер",
-        "t": "Первая стадия — embedding search — быстрая и приближённая: запрос и документ кодируются по отдельности и никак не взаимодействуют. Реранкер — это cross-encoder: он читает запрос и каждого кандидата вместе и оценивает релевантность точно. Прогнать его по всему корпусу нельзя, слишком дорого. Поэтому схема: достать пул пошире, примерно до ста пятидесяти, переранжировать и оставить верхние, от трёх до двадцати по бюджету контекста; в исследовании Anthropic про contextual retrieval из ста пятидесяти оставляли двадцать. Cohere или Voyage по API, либо локальный cross-encoder. У меня в пайплайне он стоит после retrieval, и это была одна из настроек, которые я подбирал по результатам эвала."
+        "t": "Первая стадия — embedding search — быстрая и приближённая: запрос и документ кодируются по отдельности и никак не взаимодействуют. Реранкер — это cross-encoder: он читает запрос и каждого кандидата вместе и оценивает релевантность точно. Прогнать его по всему корпусу нельзя, слишком дорого. Поэтому схема: достать пул пошире, примерно до ста пятидесяти, переранжировать и оставить верхние, от трёх до двадцати по бюджету контекста; в исследовании Anthropic про contextual retrieval из ста пятидесяти оставляли двадцать. Cohere или Voyage по API, либо локальный cross-encoder. В пайплайне он стоит после retrieval, и это одна из настроек, которые я подбираю по результатам эвала."
       },
       {
         "q": "Цена",
@@ -42,7 +42,7 @@
       },
       {
         "q": "Reranker",
-        "t": "The first stage — embedding search — is fast and approximate: query and document are encoded separately and never interact. A reranker is a cross-encoder: it reads the query and each candidate together and scores relevance precisely. You can't run it over the whole corpus, far too expensive. So the pattern is: retrieve a wider pool, up to a hundred fifty or so, rerank, keep the top three to twenty by context budget; in Anthropic's contextual retrieval study they went from a hundred fifty to twenty. Cohere or Voyage over an API, or a local cross-encoder. In my pipeline it sits after retrieval, and it was one of the knobs I tuned against the eval."
+        "t": "The first stage — embedding search — is fast and approximate: query and document are encoded separately and never interact. A reranker is a cross-encoder: it reads the query and each candidate together and scores relevance precisely. You can't run it over the whole corpus, far too expensive. So the pattern is: retrieve a wider pool, up to a hundred fifty or so, rerank, keep the top three to twenty by context budget; in Anthropic's contextual retrieval study they went from a hundred fifty to twenty. Cohere or Voyage over an API, or a local cross-encoder. In the pipeline it sits after retrieval, and it's one of the knobs I tune against the eval."
       },
       {
         "q": "Cost",
