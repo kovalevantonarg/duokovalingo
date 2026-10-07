@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  checkState,
   cookie,
   googleAuthUrl,
   idTokenClaims,
   newState,
   readSession,
   sessionToken,
+  stateError,
 } from "../app/api/_auth.js";
 
 const S = "secret";
@@ -26,14 +26,28 @@ test("session cookie round trip, forgery and expiry", () => {
   assert.equal(cookie("a=1; b=2", "b"), "2");
 });
 
-test("oauth state: matches its cookie, expires, can't be forged", () => {
+test("oauth state: signed, bound to its own cookie, expires", () => {
   const st = newState(S, now);
-  assert.equal(checkState(st.cookie, st.nonce, S, now), true);
-  assert.equal(checkState(st.cookie, "other", S, now), false);
-  assert.equal(checkState(st.cookie, st.nonce, S, now + 11 * 60e3), false);
-  assert.equal(checkState(st.cookie.replace(/.$/, "x"), st.nonce, S, now), false);
+  const ck = `${st.cookieName}=1`;
+  assert.equal(stateError(st.state, ck, S, now), null);
+  assert.equal(stateError(st.state, `other=1; ${ck}`, S, now), null);
+  assert.equal(stateError(st.state, "", S, now), "state_cookie");
+  assert.equal(stateError(st.state, ck, S, now + 16 * 60e3), "state_expired");
+  assert.equal(
+    stateError(
+      st.state.replace(/.$/, (c) => (c === "A" ? "B" : "A")),
+      ck,
+      S,
+      now,
+    ),
+    "state_invalid",
+  );
+  assert.equal(stateError("", ck, S, now), "state_invalid");
+  // a second sign-in started meanwhile doesn't break the first one
+  const st2 = newState(S, now);
+  assert.equal(stateError(st.state, `${ck}; ${st2.cookieName}=1`, S, now), null);
   assert.match(
-    googleAuthUrl({ clientId: "cid", redirectUri: "https://x/api/oauth", state: st.nonce }),
+    googleAuthUrl({ clientId: "cid", redirectUri: "https://x/api/oauth", state: st.state }),
     /scope=openid\+email\+profile/,
   );
 });

@@ -11,14 +11,14 @@ import { applyHit, migrate, setDoubt } from "../lib/srs.js";
 import { createStore } from "./_store.js";
 import { addSub, cleanSub, dayIn, reminder, removeSubs } from "./_push.js";
 import {
-  checkState,
-  cookie,
   googleAuthUrl,
   googleUser,
   newState,
   readSession,
   sessionToken,
   SESSION_DAYS,
+  stateCookie,
+  stateError,
 } from "./_auth.js";
 import { timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
@@ -152,11 +152,18 @@ export default async function handler(req, res) {
         return res.status(500).json({
           error: "server not configured: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / DRILL_SECRET / Supabase",
         });
+      // start on the same host Google will return to, or the state cookie would belong to another host
+      const home = origin(req);
+      const host = req.headers["x-forwarded-host"] || req.headers.host;
+      if (host && new URL(home).host !== host) {
+        res.setHeader("location", home + "/api/google");
+        return res.status(302).end();
+      }
       const st = newState(SECRET);
-      res.setHeader("set-cookie", cookieLine("drill_oauth", st.cookie, 600, "/api"));
+      res.setHeader("set-cookie", cookieLine(st.cookieName, "1", 900, "/api"));
       res.setHeader(
         "location",
-        googleAuthUrl({ clientId: GID, redirectUri: origin(req) + "/api/oauth", state: st.nonce }),
+        googleAuthUrl({ clientId: GID, redirectUri: home + "/api/oauth", state: st.state }),
       );
       return res.status(302).end();
     }
@@ -166,8 +173,9 @@ export default async function handler(req, res) {
         return res.status(302).end();
       };
       if (req.query.error) return fail(String(req.query.error));
-      if (!checkState(cookie(req.headers.cookie, "drill_oauth"), String(req.query.state || ""), SECRET))
-        return fail("state");
+      const state = String(req.query.state || "");
+      const bad = stateError(state, req.headers.cookie, SECRET);
+      if (bad) return fail(bad);
       let user;
       try {
         user = await googleUser({
@@ -182,7 +190,7 @@ export default async function handler(req, res) {
       await store.login(user.id, user.email, user.name, isOwner(user));
       res.setHeader("set-cookie", [
         cookieLine("drill", sessionToken(user, SECRET), SESSION_DAYS * 86400),
-        cookieLine("drill_oauth", "", 0, "/api"),
+        cookieLine(stateCookie(state.split(".")[0]), "", 0, "/api"),
       ]);
       res.setHeader("location", "/");
       return res.status(302).end();

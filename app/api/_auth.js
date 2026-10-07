@@ -43,20 +43,25 @@ export function readSession(cookieHeader, secret, now = Date.now()) {
   }
 }
 
-/** One-time `state` for the Google round trip: the nonce goes in the URL, the signed nonce in a short cookie. */
+/**
+ * One-time `state` for the Google round trip. The state itself is signed (nonce.exp.sig), and the browser that
+ * started the sign-in holds a cookie named after its nonce, so a second click or a second tab can't clobber it.
+ */
 export function newState(secret, now = Date.now()) {
-  const nonce = randomBytes(16).toString("base64url");
-  const exp = now + 10 * 60e3;
-  return { nonce, cookie: `${nonce}.${exp}.${hmac(secret, `st:${nonce}:${exp}`)}` };
+  const nonce = randomBytes(12).toString("hex");
+  const exp = now + 15 * 60e3;
+  return { state: `${nonce}.${exp}.${hmac(secret, `st:${nonce}:${exp}`)}`, cookieName: stateCookie(nonce) };
 }
-export function checkState(cookieValue, stateParam, secret, now = Date.now()) {
-  const [nonce, exp, sig] = String(cookieValue || "").split(".");
-  return (
-    !!nonce &&
-    Number(exp) > now &&
-    safeEq(sig, hmac(secret, `st:${nonce}:${exp}`)) &&
-    safeEq(nonce, stateParam || "")
-  );
+export const stateCookie = (nonce) => `drill_st_${nonce}`;
+
+/** null when the state checks out, otherwise why not: "state_invalid", "state_expired", "state_cookie". */
+export function stateError(stateParam, cookieHeader, secret, now = Date.now()) {
+  const [nonce, exp, sig] = String(stateParam || "").split(".");
+  if (!nonce || !/^[0-9a-f]+$/.test(nonce) || !sig || !safeEq(sig, hmac(secret, `st:${nonce}:${exp}`)))
+    return "state_invalid";
+  if (!(Number(exp) > now)) return "state_expired";
+  if (cookie(cookieHeader, stateCookie(nonce)) !== "1") return "state_cookie";
+  return null;
 }
 
 export function googleAuthUrl({ clientId, redirectUri, state }) {

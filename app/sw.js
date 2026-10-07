@@ -1,6 +1,6 @@
 // duokovalingo service worker: offline shell, runtime caching, push reminders. No build step, no precache list.
 // Bump SHELL to refresh the app shell; RUNTIME keeps its name so lessons saved for offline survive updates.
-const SHELL = "drill-shell-v1";
+const SHELL = "drill-shell-v2";
 const RUNTIME = "drill-runtime";
 const FONTS = "drill-fonts";
 const KEEP = [SHELL, RUNTIME, FONTS];
@@ -44,7 +44,19 @@ async function page(req) {
   }
 }
 
-// static files: answer from cache at once, refresh it in the background
+// app code (js, css, generated bundles): the network when online, so a deploy shows up on the next load; cache offline
+async function networkFirst(req) {
+  const cache = await caches.open(RUNTIME);
+  try {
+    const res = await fetch(req, { cache: "no-cache" });
+    if (res.ok) cache.put(req, res.clone());
+    return res;
+  } catch {
+    return (await cache.match(req)) || Response.error();
+  }
+}
+
+// lessons and images: answer from cache at once, refresh it in the background
 async function staleWhileRevalidate(e, req) {
   const cache = await caches.open(RUNTIME);
   const hit = await cache.match(req);
@@ -77,6 +89,7 @@ self.addEventListener("fetch", (e) => {
     return e.respondWith(cacheFirst(req));
   if (url.origin !== location.origin || url.pathname.startsWith("/api/")) return; // API: network only
   if (req.mode === "navigate") return e.respondWith(page(req));
+  if (/\.(js|css)$/.test(url.pathname)) return e.respondWith(networkFirst(req));
   e.respondWith(staleWhileRevalidate(e, req));
 });
 
