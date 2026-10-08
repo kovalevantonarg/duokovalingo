@@ -39,8 +39,7 @@ export function runGap(qs, onDone, acc) {
       return onDone(acc);
     }
     const q = qs[i];
-    let res = null,
-      moreOpen = false;
+    let res = null;
     const typed = [];
     const show = (answers, redraw) => {
       const { all, per, misses } = res;
@@ -84,13 +83,6 @@ export function runGap(qs, onDone, acc) {
           q.s.replace(/\[\[(.+?)\]\]/g, (_, a) => a.replace(/\|/g, " ")),
         ),
       );
-      const m = $("#more"),
-        open = m.onclick;
-      m.onclick = () => {
-        moreOpen = true;
-        open();
-      };
-      if (moreOpen || (!all && !redraw)) m.click();
     };
     const check = (answers) => {
       if (res) return;

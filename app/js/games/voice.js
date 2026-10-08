@@ -3,7 +3,7 @@
 import { icon } from "../icons.js";
 import { momTiles } from "../screens/verdict.js";
 import { beep } from "../sound.js";
-import { canDictate, dictate, speak, stopSpeaking } from "../speech.js";
+import { canDictate, canSpeak, dictate, speak, stopSpeaking } from "../speech.js";
 import { state } from "../state.js";
 import { mergeAttempts, post, streak, tk, xpToday } from "../store.js";
 import { exitRound, kbd, roundFrame, rtop, scoreCls, ui, wireQuit } from "../ui.js";
@@ -30,7 +30,7 @@ export function playVoice(n, { onDone, step } = {}) {
   const render = () => {
     const d = t[state.lang];
     roundFrame(`<div class="round">${rtop(Math.round((qi / 3) * 100))}<div class="body" style="gap:10px"><span class="qn">${step ? `${ui().ticket} ${step} · ` : ""}${ui().question} ${qi + 1} / 3</span><p class="q">${codify(d.qs[qi])}</p>
-      <div class="vrow" style="margin-top:14px"><button class="btn line" id="ask">${icon.speaker}${ui().ask}</button><button class="btn blue" id="rec">${icon.mic}${ui().rec}</button><button class="btn red" id="stp" style="display:none">${icon.stop}${ui().stop}</button><span class="sp"></span><span class="timer" id="tm">0:00</span></div>
+      <div class="vrow" style="margin-top:14px">${canSpeak ? `<button class="btn line" id="ask">${icon.speaker}${ui().ask}</button>` : ""}<button class="btn blue" id="rec">${icon.mic}${ui().rec}</button><button class="btn red" id="stp" style="display:none">${icon.stop}${ui().stop}</button><span class="sp"></span><span class="timer" id="tm">0:00</span></div>
       ${canDictate ? "" : `<div class="banner" style="margin-top:4px">${icon.warn}<span>${ui().norec}</span></div>`}
       <div class="tr" id="tr"><span class="lab">${ui().said}</span>${esc(said[qi]) || `<span class="interim">…</span>`}</div></div>
       <div class="act" style="flex-direction:row;align-items:center"><div class="hint" style="justify-content:flex-start"><span>${kbd("Space")} ${ui().hintSpeak}</span><span>${kbd("Enter")} ${ui().hintNextQ}</span></div><span class="sp"></span><button class="btn ghost" id="nxq">${qi < 2 ? ui().next : ui().reveal} ${icon.arrow}</button></div></div>`);
@@ -64,7 +64,7 @@ export function playVoice(n, { onDone, step } = {}) {
       $("#tr").innerHTML =
         `<span class="lab">${ui().said}</span>${esc(said[qi]) || `<span class="interim">—</span>`}`;
     };
-    $("#ask").onclick = () => speak(t[state.lang].qs[qi]);
+    if (canSpeak) $("#ask").onclick = () => speak(t[state.lang].qs[qi]);
     $("#rec").onclick = startRec;
     $("#stp").onclick = stopRec;
     $("#nxq").onclick = () => {

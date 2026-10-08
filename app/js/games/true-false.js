@@ -41,7 +41,7 @@ export function buildTF(ns, n = 10) {
 
 export function tfScreen(title, q, i, n) {
   return `<div class="round">${rtop(Math.round((i / n) * 100))}<div class="body swipe" id="sw"><span class="tag">${esc(q.t[state.lang].topic)}</span><p class="stmt">${codify(q.s)}</p><span class="swl">${ui().false}</span><span class="swr">${ui().true}</span></div>
-  <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←", 1).replace('class="kbd dk"', 'class="kbd dk" style="left:14px"')}${ui().false}</button><button class="ans" id="t">${ui().true}${kbd("→", 1).replace('class="kbd dk"', 'class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span class="touch">${ui().hintSwipe}</span><span>${kbd("Enter")} ${ui().hintNext}</span><span>${kbd("M")} ${ui().hintMore}</span><span>${kbd("Esc")} ${ui().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`;
+  <div class="act"><div class="pair"><button class="ans" id="f">${kbd("←", 1).replace('class="kbd dk"', 'class="kbd dk" style="left:14px"')}${ui().false}</button><button class="ans" id="t">${ui().true}${kbd("→", 1).replace('class="kbd dk"', 'class="kbd dk" style="right:14px"')}</button></div><div class="hint"><span class="touch">${ui().hintSwipe}</span><span>${kbd("Enter")} ${ui().hintNext}</span><span>${kbd("Esc")} ${ui().hintQuit}</span></div></div><div id="sheetSlot"></div></div>`;
 }
 
 export function runTF(qs, onDone, title, acc) {
@@ -53,8 +53,7 @@ export function runTF(qs, onDone, title, acc) {
       return onDone(acc);
     }
     const q = qs[i];
-    let ans = null,
-      moreOpen = false;
+    let ans = null;
     const show = (v, redraw) => {
       const ok = v === q.ok;
       const picked = $(v ? "#t" : "#f"),
@@ -77,13 +76,6 @@ export function runTF(qs, onDone, title, acc) {
         i++;
         step();
       });
-      const m = $("#more"),
-        open = m.onclick;
-      m.onclick = () => {
-        moreOpen = true;
-        open();
-      };
-      if (moreOpen || (!ok && !redraw && !q.W)) m.click();
     };
     const answer = (v) => {
       if (ans !== null) return;

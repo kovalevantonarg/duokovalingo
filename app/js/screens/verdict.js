@@ -41,23 +41,22 @@ export function bestPara(t, text) {
 
 export function sheet({ ok, title, sub, text, q, btn, btnLabel }) {
   return `<div class="sheet ${ok ? "ok" : "bad"}" id="sheet"><div style="display:flex;flex-direction:column;gap:10px"><div class="h"><span class="mark">${ok ? icon.check : icon.xs}</span><span>${title}</span>${sub ? `<span class="sep">·</span><span>${sub}</span>` : ""}</div>${text ? `<p class="vp">${text}</p>` : ""}</div>
-    <div class="links"><button id="more">${ui().more}</button>${state.db.explain && state.live && q ? `<button id="expl">${icon.spark}${ui().explain}</button>` : ""}${q ? `<a href="#t/${q.t.n}" style="margin-left:auto">${ui().ticket} ${q.t.n} →</a>` : ""}</div><div id="moreBox" style="display:contents"></div>
+    <div id="moreBox" style="display:contents"></div>
+    <div class="links">${state.db.explain && state.live && q ? `<button id="expl">${icon.spark}${ui().explain}</button>` : ""}${q ? `<a href="#t/${q.t.n}" style="margin-left:auto">${ui().ticket} ${q.t.n} →</a>` : ""}</div>
     <button class="btn ${btn} full big" id="nx" style="margin-top:6px">${btnLabel} ${kbd("Enter", 1)}</button></div>`;
 }
 
 export function wireSheet(q, stmt, next, morePara) {
   $("#nx").onclick = next;
   setTimeout(() => $("#nx") && $("#nx").scrollIntoView({ block: "nearest", behavior: "smooth" }), 120);
-  const m = $("#more");
-  m.onclick = () => {
+  // the reference paragraph behind the question is always shown; "Explain differently" sits under it
+  if (q) {
     const p = morePara || bestPara(q.t, stmt);
     $("#moreBox").insertAdjacentHTML(
       "beforeend",
       `<div class="ref"><span class="rq">${esc(p.q)} · ${esc(q.t[state.lang].topic)}</span><p>${codify(p.t)}</p></div>`,
     );
-    m.disabled = true;
-    m.classList.add("on");
-  };
+  }
   const ex = $("#expl");
   if (ex)
     ex.onclick = async () => {
@@ -94,8 +93,6 @@ export function wireSheet(q, stmt, next, morePara) {
     if (e.key === "Enter") {
       e.preventDefault();
       next();
-    } else if (e.key === "m" || e.key === "M" || e.key === "ь") {
-      if (!m.disabled) m.click();
     } else if (e.key === "Escape") exitRound();
   };
 }

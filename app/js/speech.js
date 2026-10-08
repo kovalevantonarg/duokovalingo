@@ -4,7 +4,10 @@ import { state } from "./state.js";
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 /** Can this browser turn speech into text? (Chrome, Edge, Safari; not Firefox.) */
 export const canDictate = !!SR;
-export const canSpeak = "speechSynthesis" in window;
+// Reading aloud is switched off for now: system voices sound too robotic. Set TTS_ON to true to bring back the
+// "Listen" button in lessons, "Read aloud" in rounds, the interviewer's voice and the voice picker in settings.
+const TTS_ON = false;
+export const canSpeak = TTS_ON && "speechSynthesis" in window;
 const tag = () => (state.lang === "ru" ? "ru-RU" : "en-US");
 
 // ---- voice choice: system voices differ a lot; the "natural"/"enhanced" ones sound far less robotic ----
