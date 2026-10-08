@@ -15,15 +15,15 @@
     "a": [
       {
         "q": "Техническая",
-        "t": "В [компания] у нас было [система и её масштаб — например, большое Next.js-приложение на старом Pages Router, которое нужно было локализовать для многих стран]. Я владел [за что отвечал лично — например, миграцией на App Router и слоем интернационализации]. Я [ключевое решение и почему — например, спланировал инкрементальную миграцию, чтобы продукт продолжал шипиться (выходить в релизы): маршрут за маршрутом, next-intl для переводов, SWR для клиентского кэша, плюс оптимизации сборки, чтобы десятки локалей не взорвали build]. В итоге [цифра результата — например, мигрировали без заморозки фич, все локали из одной кодовой базы]. [Посадка: как этот навык переносится на целевую роль — например, инкрементальная миграция под живым трафиком учит шипить маленькими шагами, мерить, двигаться дальше]. Ситуация и задача — по предложению, основное время — на действие."
+        "t": "В [компания] у нас было [система и её масштаб, например большое Next.js-приложение на старом Pages Router, которое нужно было локализовать для многих стран]. Я отвечал за [твоя личная зона ответственности, например миграцию на App Router и слой интернационализации]. Я [ключевое решение и почему, например: спланировал инкрементальную миграцию, чтобы продукт продолжал выходить в релизы: маршрут за маршрутом, next-intl для переводов, SWR для клиентского кэша, плюс оптимизации сборки, чтобы десятки локалей не взорвали build]. В итоге [цифра результата, например: мигрировали без заморозки фич, все локали из одной кодовой базы]. [Посадка: как этот навык переносится на целевую роль, например: инкрементальная миграция под живым трафиком учит выпускать маленькими шагами, мерить и двигаться дальше]. На ситуацию и задачу по предложению, основное время на действие."
       },
       {
         "q": "Провал",
-        "t": "Скелет истории провала; все скобки заполни реальными фактами из своих записей, прежде чем произносить это вслух: «Я [что сделал не так — например, задеплоил оптимизацию бандла, не измерив её на реальном трафике заранее] — после релиза [как проявилось — например, регрессия по загрузке у пользователей на медленных сетях], и прошло [X дней], прежде чем я поймал её через [как поймал]. Причина: [корневая причина в первом лице — например, я оптимизировал под свою локальную сеть и синтетический бенчмарк, а не под p95 реальных юзеров]. Сразу [что сделал немедленно — например, откатил и добавил алерт на [метрика] в проде]. Навсегда изменил: [процесс, проверка или метрика — например, ни один perf-релиз не уходит без A/B на реальном трафике и без порогового алерта на p95, а не на среднее] — именно это поймало бы проблему до жалоб юзеров, а не после». Три бита обязательны: что пошло не так и почему — «я допустил», не «случилось»; что сделал немедленно; что изменил навсегда — процесс, проверка, метрика. Без третьего это история про везение, а не про провал. Пока скобки не заполнены, это скелет, а не история."
+        "t": "Скелет истории провала; все скобки заполни реальными фактами из своих записей, прежде чем произносить это вслух: «Я [что сделал не так, например: задеплоил оптимизацию бандла, не измерив её заранее на реальном трафике]. После релиза [как проявилось, например: регрессия по загрузке у пользователей на медленных сетях], и прошло [X дней], прежде чем я поймал её через [как поймал]. Причина: [корневая причина в первом лице, например: я оптимизировал под свою локальную сеть и синтетический бенчмарк, а не под p95 реальных пользователей]. Сразу [что сделал немедленно, например: откатил и добавил алерт на [метрика] в проде]. Навсегда изменил: [процесс, проверка или метрика, например: ни один perf-релиз не уходит без A/B на реальном трафике и без порогового алерта на p95, а не на среднее]. Именно это поймало бы проблему до жалоб пользователей, а не после». Обязательны три части: что пошло не так и почему (в формулировке «я допустил», а не «случилось»), что сделал немедленно и что изменил навсегда: процесс, проверку или метрику. Без третьей части это история про везение, а не про провал. Пока скобки не заполнены, это скелет, а не история."
       },
       {
         "q": "Форма",
-        "t": "Ситуации и задаче — по одному-два предложения, а больше всего времени уходит на действие: что именно сделал я. Ситуация без предыстории компании — интервьюер не знает вашей оргструктуры и не хочет. «Я», а не «мы»: интервьюер оценивает тебя, а «мы» прячет твой вклад. В результате обязана быть цифра или наблюдаемый факт — иначе результат не отличить от намерения. Заканчиваешь предложением-посадкой: что это значит для роли, на которую ты претендуешь. Репетировать вслух, с таймером, пока не станет скучно. Скучно — значит готово."
+        "t": "На ситуацию и задачу уходит по одному-два предложения, а больше всего времени на действие: что именно сделал я. Ситуацию рассказываю без предыстории компании: интервьюер не знает вашей оргструктуры, и она ему не нужна. «Я», а не «мы»: интервьюер оценивает тебя, а «мы» прячет твой вклад. В результате обязана быть цифра или наблюдаемый факт, иначе результат не отличить от намерения. Заканчиваешь предложением-посадкой: что это значит для роли, на которую ты претендуешь. Репетирую вслух с таймером, пока история не начнёт звучать привычно. Тогда она готова."
       }
     ],
     "kill": "История без цифры в результате. И «мы сделали» вместо «я сделал» — интервьюер записывает: вклад неясен."
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "Technical",
-        "t": "At [company] we had [the system and its scale — e.g. a large Next.js app on the old Pages Router that needed localizing for many countries]. I owned [what I was personally responsible for — e.g. the migration to the App Router and the internationalization layer]. I [key decision and why — e.g. planned an incremental migration so the product kept shipping: route by route, with next-intl for translations, SWR for client caching, and build-time optimizations so dozens of locales didn't explode the build]. In the end [result with a number — e.g. we migrated without freezing feature work, all locales from one codebase]. [Landing: how this skill carries into the target role — e.g. incremental migration under live traffic teaches you to ship small, measure, keep moving]. Situation and task get a sentence each, most of the time goes to the action."
+        "t": "At [company] we had [the system and its scale, e.g. a large Next.js app on the old Pages Router that needed localizing for many countries]. I owned [what I was personally responsible for, e.g. the migration to the App Router and the internationalization layer]. I [key decision and why, e.g. planned an incremental migration so the product kept shipping: route by route, with next-intl for translations, SWR for client caching, and build-time optimizations so dozens of locales didn't explode the build]. In the end [result with a number, e.g. we migrated without freezing feature work, all locales from one codebase]. [Landing: how this skill carries into the target role, e.g. incremental migration under live traffic teaches you to ship small, measure and keep moving]. Situation and task get a sentence each, and most of the time goes to the action."
       },
       {
         "q": "Failure",
-        "t": "A failure-story skeleton; fill every bracket with real facts from your own notes before saying it out loud: \"I [what I did wrong — e.g. shipped a bundle optimization without measuring it against real traffic first] — after release [how it showed up — e.g. a load-time regression for users on slow networks], and it took [X days] before I caught it through [how I caught it]. The root cause: [root cause in the first person — e.g. I'd optimized against my own local network and a synthetic benchmark, not against real users' p95]. I immediately [what I did right away — e.g. rolled it back and added an alert on [metric] in production]. What changed permanently: [a process, check or metric — e.g. no perf release ships without an A/B against real traffic and a p95 threshold alert, not an average one] — that's what would've caught the problem before user complaints, not after.\" Three beats are mandatory: what went wrong and why — I let it happen, not it happened; what I did immediately; what I changed permanently — a process, a check, a metric. Without the third part it's a story about luck, not a failure story. Until the brackets are filled, this is a skeleton, not a story."
+        "t": "A failure-story skeleton; fill every bracket with real facts from your own notes before saying it out loud: \"I [what I did wrong, e.g. shipped a bundle optimization without measuring it against real traffic first]. After release [how it showed up, e.g. a load-time regression for users on slow networks], and it took [X days] before I caught it through [how I caught it]. The root cause: [root cause in the first person, e.g. I'd optimized against my own local network and a synthetic benchmark, not against real users' p95]. I immediately [what I did right away, e.g. rolled it back and added an alert on [metric] in production]. What changed permanently: [a process, check or metric, e.g. no perf release ships without an A/B against real traffic and a p95 threshold alert, not an average one]. That's what would've caught the problem before user complaints, not after.\" Three parts are mandatory: what went wrong and why (phrased as \"I let it happen\", not \"it happened\"), what I did immediately, and what I changed permanently: a process, a check or a metric. Without the third part it's a story about luck, not a failure story. Until the brackets are filled, this is a skeleton, not a story."
       },
       {
         "q": "Form",
-        "t": "Situation and task get a sentence or two each, and most of the time goes to the action — what I specifically did. Situation without company backstory — the interviewer doesn't know your org chart and doesn't want to. I, not we: they're evaluating you, and we hides your contribution. The result must contain a number or an observable fact — otherwise a result is indistinguishable from an intention. End on a landing sentence: what this means for the role you're interviewing for. Rehearse out loud with a timer until it's boring. Boring means ready."
+        "t": "Situation and task get a sentence or two each, and most of the time goes to the action: what I specifically did. Tell the situation without company backstory: the interviewer doesn't know your org chart and doesn't need to. I, not we: they're evaluating you, and we hides your contribution. The result must contain a number or an observable fact, otherwise a result is indistinguishable from an intention. End on a landing sentence: what this means for the role you're interviewing for. Rehearse out loud with a timer until the story feels routine. Then it's ready."
       }
     ],
-    "kill": "A story with no number in the result. And we did instead of I did — the interviewer writes down: contribution unclear."
+    "kill": "A story with no number in the result. And \"we did\" instead of \"I did\": the interviewer writes down \"contribution unclear\"."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "В STAR-истории важнее всего подробно описать ситуацию и контекст компании.",
-        "«Мы сделали» звучит скромнее и лучше воспринимается."
+        {
+          "s": "STAR-история заканчивается фразой о том, что этот опыт значит для роли, на которую ты претендуешь.",
+          "ok": true,
+          "why": "Последняя фраза связывает историю с вакансией. Например, миграция под живым трафиком учит выпускать маленькими шагами и мерить."
+        },
+        {
+          "s": "В истории провала причину лучше описывать безлично, через «так получилось», чтобы не выглядеть виноватым.",
+          "ok": false,
+          "why": "Вопрос о провале проверяет, признаёшь ли ты ошибку сам. Причину называют в первом лице: «я допустил», а не «случилось»."
+        },
+        {
+          "s": "В STAR-истории говорят «я», а не «мы», потому что интервьюер оценивает личный вклад кандидата.",
+          "ok": true,
+          "why": "«Мы» прячет, что сделал именно ты. Интервьюеру нечего оценить, и он записывает: вклад неясен."
+        },
+        {
+          "s": "STAR-истории лучше не репетировать вслух заранее, чтобы на интервью они звучали естественно.",
+          "ok": false,
+          "why": "Без репетиции с таймером история расползается за 90 секунд. Её проговаривают вслух, пока она не станет привычной."
+        },
+        {
+          "s": "История провала обязательно включает три части: что пошло не так и почему, что сделал сразу и что изменил навсегда.",
+          "ok": true,
+          "why": "Это постмортем в миниатюре. Третья часть показывает, что ошибка не повторится."
+        },
+        {
+          "s": "Если история провала заканчивается быстрым откатом и исправлением, рассказ о долгосрочных изменениях можно опустить.",
+          "ok": false,
+          "why": "Без изменения процесса, проверки или метрики это история про везение. Интервьюер слышит, что в следующий раз будет так же."
+        },
+        {
+          "s": "В STAR-истории важнее всего подробно описать ситуацию и контекст компании, чтобы интервьюер понял масштаб.",
+          "ok": false,
+          "why": "Интервьюер не знает вашей оргструктуры, и она ему не нужна. Масштаб укладывается в одно предложение, а время уходит на действие."
+        },
+        {
+          "s": "Результат STAR-истории должен содержать цифру или наблюдаемый факт, иначе его не отличить от намерения.",
+          "ok": true,
+          "why": "Цифру или факт можно проверить. Без них «улучшили производительность» звучит как план, а не как результат."
+        },
+        {
+          "s": "Одна STAR-история на интервью рассчитана примерно на 90 секунд.",
+          "ok": true,
+          "why": "При скорости речи около 150 слов в минуту это примерно 225 слов. Больше интервьюер уже не удерживает в голове."
+        },
+        {
+          "s": "Для STAR-истории о провале подойдёт обобщённый пример без реальных фактов, если структура рассказа соблюдена.",
+          "ok": false,
+          "why": "Шаблон — только скелет. Пока скобки не заполнены реальными фактами из своих записей, это не история, и уточняющие вопросы это покажут."
+        },
+        {
+          "s": "В STAR-истории на ситуацию и задачу уходит по одному-два предложения, а основное время на действие.",
+          "ok": true,
+          "why": "Действие показывает, что сделал лично ты и почему. По пропорции MIT на него приходится около 60% времени."
+        },
+        {
+          "s": "Формулировка «мы сделали» в STAR-истории звучит скромнее и поэтому лучше воспринимается интервьюером.",
+          "ok": false,
+          "why": "Интервьюер оценивает тебя, а не команду. «Мы» не даёт понять, какие решения принимал ты."
+        }
       ],
       "en": [
-        "In a STAR story the most important part is describing the situation and company context in detail.",
-        "'We did' sounds humbler and lands better."
+        {
+          "s": "A STAR story ends with a sentence on what this experience means for the role you're applying for.",
+          "ok": true,
+          "why": "The last sentence ties the story to the job. For example, a migration under live traffic teaches you to ship in small steps and measure."
+        },
+        {
+          "s": "In a failure story it's better to describe the cause impersonally, as 'it happened', so you don't look guilty.",
+          "ok": false,
+          "why": "The failure question checks whether you own the mistake. You state the cause in the first person: 'I let it happen', not 'it happened'."
+        },
+        {
+          "s": "In a STAR story you say 'I', not 'we', because the interviewer is assessing the candidate's personal contribution.",
+          "ok": true,
+          "why": "'We' hides what you did yourself. The interviewer has nothing to score and writes down: contribution unclear."
+        },
+        {
+          "s": "It's better not to rehearse STAR stories out loud beforehand, so they sound natural in the interview.",
+          "ok": false,
+          "why": "Without rehearsing against a timer, a story runs past 90 seconds. You say it out loud until it feels routine."
+        },
+        {
+          "s": "A failure story must include three parts: what went wrong and why, what you did right away, and what you changed permanently.",
+          "ok": true,
+          "why": "It's a postmortem in miniature. The third part shows the mistake won't happen again."
+        },
+        {
+          "s": "If a failure story ends with a quick rollback and fix, you can leave out the long-term changes.",
+          "ok": false,
+          "why": "Without a changed process, check or metric, it's a story about luck. The interviewer hears that next time will go the same way."
+        },
+        {
+          "s": "The most important part of a STAR story is a detailed description of the situation and company context, so the interviewer sees the scale.",
+          "ok": false,
+          "why": "The interviewer doesn't know your org chart and doesn't need to. Scale fits in one sentence; the time goes to the action."
+        },
+        {
+          "s": "The result of a STAR story must contain a number or an observable fact, otherwise it can't be told apart from an intention.",
+          "ok": true,
+          "why": "A number or a fact can be checked. Without one, 'we improved performance' sounds like a plan, not a result."
+        },
+        {
+          "s": "A single STAR story in an interview is meant to take about 90 seconds.",
+          "ok": true,
+          "why": "At about 150 words per minute that's roughly 225 words. Beyond that the interviewer stops keeping track."
+        },
+        {
+          "s": "For a STAR failure story, a generic example with no real facts is fine as long as the structure is right.",
+          "ok": false,
+          "why": "The template is only a skeleton. Until the brackets hold real facts from your own notes it isn't a story, and follow-up questions will show that."
+        },
+        {
+          "s": "In a STAR story the situation and task get one or two sentences each, and most of the time goes to the action.",
+          "ok": true,
+          "why": "The action shows what you personally did and why. In MIT's proportions it takes about 60% of the time."
+        },
+        {
+          "s": "Saying 'we did' in a STAR story sounds humbler and so lands better with the interviewer.",
+          "ok": false,
+          "why": "The interviewer is evaluating you, not the team. 'We' makes it impossible to tell which decisions were yours."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Ситуации и задаче — по [[1-2|одному-два|1–2]] предложения; больше всего времени — на [[действие|action]].",
-        "В результате обязана быть [[цифра|число]] или наблюдаемый факт.",
-        "История провала: что пошло не так → что сделал → что изменил [[навсегда|permanently]]."
+        "В STAR-истории на ситуацию и задачу уходит по [[1-2|одному-два|1–2]] предложения, а больше всего времени на [[действие|action]].",
+        "В результате STAR-истории обязана быть [[цифра|число]] или наблюдаемый факт.",
+        "История провала заканчивается тем, что ты изменил [[навсегда|permanently]]: процесс, проверку или метрику."
       ],
       "en": [
-        "Situation and task get [[1-2|one or two|1–2]] sentences each; most of the time goes to the [[action]].",
-        "The result must contain a [[number]] or an observable fact.",
-        "A failure story: what went wrong → what I did → what I changed [[permanently]]."
+        "In a STAR story the situation and task get [[1-2|one or two|1–2]] sentences each, and most of the time goes to the [[action]].",
+        "The result of a STAR story must contain a [[number]] or an observable fact.",
+        "A failure story ends with what you changed [[permanently]]: a process, a check or a metric."
       ]
     }
   },

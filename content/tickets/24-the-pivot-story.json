@@ -10,23 +10,23 @@
     "qs": [
       "Почему из [старая область] в [новая область]? Факты, не страсть.",
       "Это не шаг вниз по сеньорности?",
-      "Что ты реально зашипил? Конкретно, с цифрами."
+      "Что ты реально сделал и выпустил? Конкретно, с цифрами."
     ],
     "a": [
       {
         "q": "Почему",
-        "t": "Если честно — [наблюдение о старой области: что в ней изменилось, конкретный факт, а не усталость]. А [новая область] сейчас — это [вывод: почему там настоящие инженерные задачи — например, молодая экосистема, никакого учебника]. Поэтому я не ждал, а начал шипить: [проект] живёт по ссылке с [цифра результата], [второй проект] в процессе, всё в открытом доступе. Я не убегаю от [старая область] — я приношу [N] лет [опыт] в ту часть стека, где они сейчас нужнее всего. Цепочка всегда одна: наблюдение, вывод, действие, доказательство."
+        "t": "Если честно, [наблюдение о старой области: что в ней изменилось, конкретный факт, а не усталость]. А [новая область] сейчас — это [вывод: почему там настоящие инженерные задачи, например молодая экосистема и нет готового учебника]. Поэтому я не ждал, а начал делать проекты: [проект] живёт по ссылке с [цифра результата], [второй проект] в процессе, всё в открытом доступе. Я не убегаю от [старая область], а приношу [N] лет [опыт] в ту часть стека, где они сейчас нужнее всего. Цепочка всегда одна: наблюдение, вывод, действие, доказательство."
       },
       {
         "q": "Не вниз?",
-        "t": "Нет, и вот почему. Роль, которую я ищу, — [целевая роль], а не junior [новая область] кто-то. В [тип компании] [мой сильный опыт] — это senior-навык: [почему он там нужен — например, интерфейс там половина продукта]. Я не бросаю [N] лет, я приношу их в ту часть стека, которая сейчас в них нуждается больше всего. И последние [срок] — это не курсы, а рабочие системы с измерениями. Это горизонтальный шаг с расширением, а не спуск."
+        "t": "Нет, и вот почему. Я ищу роль [целевая роль], а не позицию junior в [новая область]. В [тип компании] [мой сильный опыт] — это senior-навык: [почему он там нужен, например, интерфейс там половина продукта]. Я не бросаю [N] лет, я приношу их в ту часть стека, которая сейчас в них нуждается больше всего. И последние [срок] я делал не курсы, а рабочие системы с измерениями. Это горизонтальный шаг с расширением, а не спуск."
       },
       {
-        "q": "Зашипил",
-        "t": "Конкретика: [проект 1 — что сделано по шагам, например RAG-пайплайн целиком: chunking, embeddings, retrieval, reranking] с [как измерял качество — например, эвал-набор], результат [цифра результата], живёт по ссылке. [Проект 2 и его устройство — например, research-агент на TypeScript и Anthropic SDK: цикл с инструментами, у каждого утверждения ссылка на источник, инструментирована стоимость каждого шага]. На нём я измерил [что — например, prompt caching]: разница в [X] раз по [метрика: стоимость или задержка], [с чем сравнивал — например, с кэшем против без кэша, A/B внутри одного запуска]. Честно называю, сколько было прогонов. Ещё [одно инженерное решение — например, роутинг: дешёвая модель сначала сжимает страницы, а дорогая читает уже сжатые]. Всё в открытом доступе. Цифры — потому что интервьюер запомнит одно число, а не три прилагательных."
+        "q": "Что сделано",
+        "t": "Конкретика: [проект 1: что сделано по шагам, например RAG-пайплайн целиком: chunking, embeddings, retrieval, reranking] с [как измерял качество, например эвал-набор], результат [цифра результата], живёт по ссылке. [Проект 2 и его устройство, например research-агент на TypeScript и Anthropic SDK: цикл с инструментами, у каждого утверждения ссылка на источник, инструментирована стоимость каждого шага]. На нём я измерил [что именно, например prompt caching]: разница в [X] раз по [метрика: стоимость или задержка], [с чем сравнивал, например с кэшем и без кэша, A/B внутри одного запуска]. Честно называю, сколько было прогонов. Ещё [одно инженерное решение, например роутинг: дешёвая модель сначала сжимает страницы, а дорогая читает уже сжатые]. Всё в открытом доступе. Цифры нужны потому, что интервьюер запомнит одно число, а не три прилагательных."
       }
     ],
-    "kill": "<b>«Passion»</b>, <b>«всегда интересовался»</b>, туман вместо цифр. И извиняющаяся интонация — ты объясняешь решение, а не оправдываешься."
+    "kill": "<b>«Passion»</b>, <b>«всегда интересовался»</b>, туман вместо цифр. И извиняющаяся интонация: ты объясняешь решение, а не оправдываешься."
   },
   "en": {
     "topic": "The pivot story",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "Why",
-        "t": "Honestly? [Observation about the old field: what changed, a concrete fact, not fatigue]. Meanwhile [new field] right now is [conclusion: why the engineering problems there are real — e.g. a young ecosystem, no established playbook]. So I didn't wait — I started shipping: [project] is live behind a link with [result with a number], [second project] is in progress, everything is public. I'm not running away from [old field] — I'm bringing [N] years of [experience] into the part of the stack where it matters most right now. The chain is always the same: observation, conclusion, action, proof."
+        "t": "Honestly? [Observation about the old field: what changed, a concrete fact, not fatigue]. Meanwhile [new field] right now is [conclusion: why the engineering problems there are real, e.g. a young ecosystem with no established playbook]. So I didn't wait; I started shipping: [project] is live behind a link with [result with a number], [second project] is in progress, everything is public. I'm not running away from [old field]; I'm bringing [N] years of [experience] into the part of the stack where it matters most right now. The chain is always the same: observation, conclusion, action, proof."
       },
       {
         "q": "Not a step down",
-        "t": "No, and here's why. The title I'm going for is [target role], not junior [new field] anything. At [company type], [core strength] is a senior skill — [why it's needed there — e.g. the interface is half the product]. I'm not throwing away [N] years, I'm bringing them into the part of the stack that needs them most right now. And the last [time span] weren't courses, they were working systems with measurements. That's a lateral move with a wider scope, not a descent."
+        "t": "No, and here's why. The title I'm going for is [target role], not junior [new field] anything. At [company type], [core strength] is a senior skill: [why it's needed there, e.g. the interface is half the product]. I'm not throwing away [N] years, I'm bringing them into the part of the stack that needs them most right now. And the last [time span] weren't courses, they were working systems with measurements. That's a lateral move with a wider scope, not a descent."
       },
       {
         "q": "Shipped",
-        "t": "Specifics: [project 1 — what was built, step by step, e.g. a full RAG pipeline: chunking, embeddings, retrieval, reranking] with [how I measured quality — e.g. an eval set], result [result with a number], live behind a link. [Project 2 and how it works — e.g. a research agent in TypeScript on the Anthropic SDK: a tool-use loop, every claim carries a source URL, and the cost of every step is instrumented]. On it I measured [what — e.g. prompt caching]: a [X]-times difference in [metric: cost or latency], [compared against what — e.g. cached versus uncached, as an A/B inside a single run]. I say plainly how many runs there were. Also [one engineering decision — e.g. routing: a cheap model shrinks pages before the expensive one reads them]. All of it is public. Numbers, because the interviewer will remember one number and not three adjectives."
+        "t": "Specifics: [project 1: what was built, step by step, e.g. a full RAG pipeline: chunking, embeddings, retrieval, reranking] with [how I measured quality, e.g. an eval set], result [result with a number], live behind a link. [Project 2 and how it works, e.g. a research agent in TypeScript on the Anthropic SDK: a tool-use loop, every claim carries a source URL, and the cost of every step is instrumented]. On it I measured [what exactly, e.g. prompt caching]: a [X]-times difference in [metric: cost or latency], [compared against what, e.g. cached versus uncached, as an A/B inside a single run]. I say plainly how many runs there were. Also [one engineering decision, e.g. routing: a cheap model shrinks pages before the expensive one reads them]. All of it is public. Numbers, because the interviewer will remember one number and not three adjectives."
       }
     ],
-    "kill": "<b>Passion</b>, <b>always been interested</b>, fog instead of figures. And an apologetic tone — you're explaining a decision, not defending one."
+    "kill": "<b>Passion</b>, <b>always been interested</b>, fog instead of figures. And an apologetic tone: you're explaining a decision, not defending one."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Лучший ответ на «почему ты меняешь направление» — про страсть и давний интерес.",
-        "Смена направления — это шаг вниз по сеньорности, и лучше это признать сразу."
+        {
+          "s": "Описание проекта в истории пивота включает устройство системы, способ измерения качества и результат с цифрой.",
+          "ok": true,
+          "why": "Например, RAG-пайплайн по шагам, эвал-набор для качества и итоговое число. Так видно, что система работает и что ты её измерял."
+        },
+        {
+          "s": "В истории пивота подчёркивают, что прежний опыт переносится в новую область, а не выбрасывается.",
+          "ok": true,
+          "why": "Так снимается опасение, что тебя придётся учить с нуля. Годы опыта становятся преимуществом в новой роли."
+        },
+        {
+          "s": "В истории пивота проекты достаточно описать на словах, ссылки на код и демо интервьюеру обычно не нужны.",
+          "ok": false,
+          "why": "Ссылка позволяет проверить сказанное, и поэтому весит больше слов. Проекты должны жить по ссылке и быть в открытом доступе."
+        },
+        {
+          "s": "В истории пивота проекты лучше описывать словами вроде «масштабный» и «сложный», а цифры оставить для резюме.",
+          "ok": false,
+          "why": "Интервьюер запомнит одно число, а не три прилагательных. Цифры называют вслух: метрику, разницу в разах и с чем сравнивал."
+        },
+        {
+          "s": "В истории пивота наблюдение о старой области должно быть конкретным фактом о том, что изменилось, а не рассказом об усталости.",
+          "ok": true,
+          "why": "Факт показывает, что смена направления — решение. Усталость звучит как бегство."
+        },
+        {
+          "s": "Курсы и сертификаты по новой области убеждают интервьюера сильнее, чем рабочие проекты с измерениями.",
+          "ok": false,
+          "why": "Курсы показывают только, что ты учился. Рабочая система со ссылкой и цифрами доказывает, что ты умеешь делать."
+        },
+        {
+          "s": "Смену направления лучше сразу признать шагом вниз по сеньорности, чтобы снять это опасение у интервьюера.",
+          "ok": false,
+          "why": "Правильная рамка — горизонтальный шаг с расширением. Ты ищешь роль своего уровня, где прежний опыт остаётся senior-навыком."
+        },
+        {
+          "s": "Лучший ответ на вопрос о смене направления — рассказ о страсти и давнем интересе к новой области.",
+          "ok": false,
+          "why": "Страсть ничем не подтверждается и звучит как туман. Интервьюер ждёт фактов: что изменилось, какой вывод ты сделал и что уже построил."
+        },
+        {
+          "s": "На вопрос о шаге вниз отвечают, что ищут роль своего уровня, где прежний опыт остаётся сильной стороной.",
+          "ok": true,
+          "why": "Например, во многих AI-продуктах интерфейс — половина продукта, и опыт фронтенда там senior-навык."
+        },
+        {
+          "s": "Рассказывая о результате проекта в истории пивота, стоит честно назвать, на скольких прогонах получена цифра.",
+          "ok": true,
+          "why": "Интервьюер почти наверняка спросит, как получено число. Честный ответ про число прогонов защищает цифру лучше, чем уверенный тон."
+        },
+        {
+          "s": "Извиняющаяся интонация в истории пивота показывает скромность и помогает расположить интервьюера.",
+          "ok": false,
+          "why": "Извинения звучат так, будто ты оправдываешься. Ты объясняешь решение и спокойно приводишь факты."
+        },
+        {
+          "s": "Ответ на вопрос о смене направления строится цепочкой: наблюдение, вывод, действие и доказательство.",
+          "ok": true,
+          "why": "Наблюдение объясняет причину, вывод показывает, почему новая область, а действие и доказательство показывают, что ты уже что-то сделал."
+        }
       ],
       "en": [
-        "The best answer to 'why are you changing direction' is about passion and long-standing interest.",
-        "Changing direction is a step down in seniority, and it's best to admit that up front."
+        {
+          "s": "Describing a project in a pivot story covers how the system works, how quality was measured, and a result with a number.",
+          "ok": true,
+          "why": "For example, a RAG pipeline step by step, an eval set for quality, and the final number. That shows the system works and that you measured it."
+        },
+        {
+          "s": "A pivot story stresses that your existing experience carries over to the new field rather than being thrown away.",
+          "ok": true,
+          "why": "That removes the worry that you'll need to be taught from scratch. Your years of experience become an advantage in the new role."
+        },
+        {
+          "s": "In a pivot story it's enough to describe projects in words; interviewers usually don't need links to code or demos.",
+          "ok": false,
+          "why": "A link lets the interviewer check what you said, so it carries more weight than words. Projects should be live behind a link and public."
+        },
+        {
+          "s": "In a pivot story it's better to describe projects with words like 'large-scale' and 'complex' and leave numbers for the résumé.",
+          "ok": false,
+          "why": "The interviewer will remember one number, not three adjectives. Say the numbers out loud: the metric, the multiple, and the baseline."
+        },
+        {
+          "s": "In a pivot story, the observation about the old field should be a concrete fact about what changed, not a story about being tired.",
+          "ok": true,
+          "why": "A fact shows the move is a decision. Fatigue sounds like running away."
+        },
+        {
+          "s": "Courses and certificates in the new field convince an interviewer more than working projects with measurements.",
+          "ok": false,
+          "why": "Courses only show that you studied. A working system with a link and numbers proves what you can do."
+        },
+        {
+          "s": "It's best to admit up front that changing direction is a step down in seniority, to defuse the interviewer's concern.",
+          "ok": false,
+          "why": "The right frame is a lateral move with a wider scope. You're looking for a role at your level, where your existing experience is still a senior skill."
+        },
+        {
+          "s": "The best answer to why you're changing direction is a story about passion and long-standing interest in the new field.",
+          "ok": false,
+          "why": "Passion can't be verified and sounds vague. The interviewer wants facts: what changed, what you concluded, and what you've already built."
+        },
+        {
+          "s": "To the step-down question you answer that you're targeting a role at your level, where your existing experience is a strength.",
+          "ok": true,
+          "why": "For example, in many AI products the interface is half the product, so frontend experience is a senior skill there."
+        },
+        {
+          "s": "When you give a project result in a pivot story, say honestly how many runs the number comes from.",
+          "ok": true,
+          "why": "The interviewer will almost certainly ask how you got the number. An honest answer about the run count defends it better than a confident tone."
+        },
+        {
+          "s": "An apologetic tone in a pivot story shows modesty and helps win the interviewer over.",
+          "ok": false,
+          "why": "Apologising sounds like you're defending yourself. You're explaining a decision and calmly giving the facts."
+        },
+        {
+          "s": "The answer to why you're changing direction follows a chain: observation, conclusion, action and proof.",
+          "ok": true,
+          "why": "The observation gives the reason, the conclusion says why the new field, and action plus proof show you've already done something."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Цепочка ответа «почему»: наблюдение, вывод, [[действие]], доказательство.",
-        "Рамка: я не убегаю от старой области, я [[приношу|переношу]] опыт туда, где он нужнее.",
-        "Интервьюер запомнит одно [[число|цифру]], а не три прилагательных."
+        "Ответ на вопрос «почему ты меняешь направление» строится цепочкой: наблюдение, вывод, [[действие|action]], доказательство.",
+        "В истории пивота я не убегаю от старой области, а [[приношу|переношу]] свой опыт туда, где он сейчас нужнее.",
+        "В истории пивота нужны цифры: интервьюер запомнит одно [[число|цифру]], а не три прилагательных."
       ],
       "en": [
-        "The chain of a 'why' answer: observation, conclusion, [[action]], proof.",
-        "The frame: I'm not running away from the old field, I'm [[bringing|taking]] my experience where it's needed more.",
-        "The interviewer will remember one [[number|figure]], not three adjectives."
+        "The answer to 'why are you changing direction' follows a chain: observation, conclusion, [[action]], proof.",
+        "In a pivot story I'm not running away from the old field; I'm [[bringing|taking]] my experience where it's needed more now.",
+        "A pivot story needs numbers: the interviewer will remember one [[number|figure]], not three adjectives."
       ]
     }
   },

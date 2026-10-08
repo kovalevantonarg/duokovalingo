@@ -19,11 +19,11 @@
       },
       {
         "q": "30 секунд",
-        "t": "[Уровень] [роль], [N] лет в [область]. Последние [срок] строю [что строю сейчас] — есть ссылка и [цифра результата]. Ищу [целевая роль] в [тип компании]. Всё. Рекрутер услышал уровень, доказательство и куда тебя ставить — больше ему на этом этапе не нужно."
+        "t": "[Уровень] [роль], [N] лет в [область]. Последние [срок] строю [что строю сейчас] — есть ссылка и [цифра результата]. Ищу [целевая роль] в [тип компании]. Всё. Рекрутер услышал уровень, доказательство и куда тебя ставить, а больше ему на этом этапе не нужно."
       },
       {
         "q": "Запреты",
-        "t": "Никогда: «career switcher», «learning [новое направление]», «transitioning», «trying to get into». Это язык человека, который просит поверить на слово. Ты [уровень] [роль], который строит [что строю сейчас] — это факт, у него есть ссылки. И заканчиваешь не хронологией, а запросом: какую роль ищешь и почему именно такую. Тогда интервьюер знает, что с тобой делать. Ответ без посадки — «…ну вот, как-то так» — стирает всё, что было до него."
+        "t": "Никогда: «career switcher», «learning [новое направление]», «transitioning», «trying to get into». Это язык человека, который просит поверить на слово. Ты [уровень] [роль], который строит [что строю сейчас]. Это факт, и у него есть ссылки. И заканчиваешь не хронологией, а запросом: какую роль ищешь и почему именно такую. Тогда интервьюер знает, что с тобой делать. Ответ без посадки, вроде «…ну вот, как-то так», стирает впечатление от всего, что было до него."
       }
     ],
     "kill": "Хронология с первого места работы. И любое слово из списка «switcher / learning / transitioning» — после него весь остальной ответ слушают как оправдание."
@@ -42,36 +42,152 @@
       },
       {
         "q": "30 seconds",
-        "t": "[Level] [role], [N] years in [field]. For the last [time span] I've been building [what I'm building now] — there's a link and [result with a number]. I'm looking for a [target role] role at [company type]. That's it. The recruiter heard the level, the proof, and where to place you — nothing else is needed at this stage."
+        "t": "[Level] [role], [N] years in [field]. For the last [time span] I've been building [what I'm building now] — there's a link and [result with a number]. I'm looking for a [target role] role at [company type]. That's it. The recruiter heard the level, the proof, and where to place you, and nothing else is needed at this stage."
       },
       {
         "q": "Never",
-        "t": "Never: career switcher, learning [new direction], transitioning, trying to get into. That's the language of someone asking to be taken on faith. You're a [level] [role] who builds [what I'm building now] — it's a fact, and it has links. And you land on the ask, not on chronology: which role you want and why that one. Then the interviewer knows what to do with you. An answer with no landing — so, yeah, that's me — erases everything before it."
+        "t": "Never: career switcher, learning [new direction], transitioning, trying to get into. That's the language of someone asking to be taken on faith. You're a [level] [role] who builds [what I'm building now]. That's a fact, and it has links. And you land on the ask, not on chronology: which role you want and why that one. Then the interviewer knows what to do with you. An answer with no landing, like \"so, yeah, that's me\", erases everything before it."
       }
     ],
     "kill": "A chronology starting from your first job. And any word from the switcher / learning / transitioning list — after it, the rest of the answer is heard as an apology."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Хорошее self-intro начинается с первого места работы и идёт по хронологии.",
-        "Слово «transitioning» звучит честно и располагает интервьюера."
+        {
+          "s": "Версия self-intro для рекрутера должна передать уровень, доказательство и то, на какую роль тебя ставить.",
+          "ok": true,
+          "why": "На этом этапе рекрутер решает, в какую вакансию тебя передать. Остальные детали ему пока не нужны."
+        },
+        {
+          "s": "Self-intro лучше закончить кратким итогом биографии, а целевую роль назвать в конце интервью.",
+          "ok": false,
+          "why": "Заканчивают запросом: какую роль ищешь и почему именно такую. Тогда интервьюер с первой минуты понимает, что с тобой делать."
+        },
+        {
+          "s": "Хороший ответ на tell me about yourself начинается с первого места работы и дальше идёт по хронологии.",
+          "ok": false,
+          "why": "Интервьюер не ждёт биографию. Хронология съедает минуту на то, что никто не запомнит, а начинать надо с того, кто ты сейчас."
+        },
+        {
+          "s": "Концовка self-intro называет целевую роль и объясняет, почему именно она, чтобы интервьюер понимал, что с тобой делать.",
+          "ok": true,
+          "why": "Без запроса интервьюер сам додумывает, куда тебя ставить. С запросом разговор сразу идёт о нужной роли."
+        },
+        {
+          "s": "Слово «transitioning» в self-intro звучит честно и располагает интервьюера к кандидату.",
+          "ok": false,
+          "why": "Такие слова звучат как просьба поверить на слово, и остальной ответ слушают как оправдание. Говорят факт: кто ты и что строишь, со ссылкой."
+        },
+        {
+          "s": "Ответ на tell me about yourself строят в постоянном порядке: кто ты сейчас, сильный факт, что строишь, какую роль ищешь.",
+          "ok": true,
+          "why": "Постоянная структура позволяет уложиться в минуту и ничего не забыть. Интервьюер сразу слышит уровень, доказательство и запрос."
+        },
+        {
+          "s": "Концовка self-intro вроде «ну вот, как-то так» звучит скромно и почти не влияет на впечатление от ответа.",
+          "ok": false,
+          "why": "Ответ без чёткой концовки стирает впечатление от всего, что было сказано до неё. Последней фразой должен быть запрос."
+        },
+        {
+          "s": "Фраза «learning AI» в self-intro звучит как просьба поверить на слово, а проект со ссылкой звучит как факт.",
+          "ok": true,
+          "why": "Проект можно открыть и проверить. Слово «learning» ничего не доказывает и смещает разговор к оправданиям."
+        },
+        {
+          "s": "Полная версия ответа на tell me about yourself рассчитана на 60–90 секунд, а версия для рекрутера на 30 секунд.",
+          "ok": true,
+          "why": "Рекрутеру на первом звонке нужно меньше деталей, поэтому короткая версия оставляет только уровень, доказательство и запрос."
+        },
+        {
+          "s": "Порядок блоков в self-intro стоит менять под каждую компанию, начиная с самого интересного ей проекта.",
+          "ok": false,
+          "why": "Порядок блоков не меняется: сейчас, сильный факт, что строишь, запрос. Под компанию подстраивают содержание блоков, а не их порядок."
+        },
+        {
+          "s": "В self-intro текущую работу подкрепляют одним проектом с масштабом и цифрой результата.",
+          "ok": true,
+          "why": "Например, миграция большого Next.js-приложения на App Router и измеримый результат. Один конкретный факт запоминается лучше списка обязанностей."
+        },
+        {
+          "s": "В версии self-intro для рекрутера стоит перечислить все технологии и проекты, чтобы он ничего не упустил.",
+          "ok": false,
+          "why": "За 30 секунд список технологий не запоминается. Рекрутеру нужны уровень, одно доказательство и целевая роль."
+        }
       ],
       "en": [
-        "A good self-intro starts with your first job and goes chronologically.",
-        "The word 'transitioning' sounds honest and wins the interviewer over."
+        {
+          "s": "The recruiter version of a self-intro has to convey your level, your proof and which role to place you in.",
+          "ok": true,
+          "why": "At this stage the recruiter decides which opening to pass you to. Other details don't matter to them yet."
+        },
+        {
+          "s": "It's better to end a self-intro with a short summary of your background and name the target role at the end of the interview.",
+          "ok": false,
+          "why": "You end on the ask: which role you want and why that one. Then from the first minute the interviewer knows what to do with you."
+        },
+        {
+          "s": "A good tell-me-about-yourself answer starts with your first job and then goes in chronological order.",
+          "ok": false,
+          "why": "The interviewer isn't asking for a biography. Chronology spends the minute on things nobody remembers; you start with who you are now."
+        },
+        {
+          "s": "The end of a self-intro names the target role and why that one, so the interviewer knows what to do with you.",
+          "ok": true,
+          "why": "Without the ask the interviewer guesses where to place you. With it, the conversation goes straight to the right role."
+        },
+        {
+          "s": "Saying 'transitioning' in a self-intro sounds honest and wins the interviewer over.",
+          "ok": false,
+          "why": "Words like that sound like asking to be taken on faith, and the rest of the answer is heard as an apology. State the fact: who you are and what you build, with a link."
+        },
+        {
+          "s": "A tell-me-about-yourself answer follows a fixed order: who you are now, a strong fact, what you're building, the role you want.",
+          "ok": true,
+          "why": "A fixed structure keeps you within a minute and stops you forgetting anything. The interviewer hears level, proof and ask right away."
+        },
+        {
+          "s": "Ending a self-intro with something like 'so, yeah, that's me' sounds modest and barely affects the impression.",
+          "ok": false,
+          "why": "An answer with no clear landing erases the impression of everything said before it. The last line should be the ask."
+        },
+        {
+          "s": "Saying 'learning AI' in a self-intro sounds like asking to be taken on faith, while a project with a link sounds like a fact.",
+          "ok": true,
+          "why": "A project can be opened and checked. The word 'learning' proves nothing and pushes the conversation toward excuses."
+        },
+        {
+          "s": "The full tell-me-about-yourself answer is meant for 60–90 seconds, and the recruiter version for 30 seconds.",
+          "ok": true,
+          "why": "A recruiter on a first call needs fewer details, so the short version keeps only level, proof and the ask."
+        },
+        {
+          "s": "You should reorder the blocks of your self-intro for each company, starting with the project most relevant to them.",
+          "ok": false,
+          "why": "The order of the blocks stays fixed: now, strong fact, what you're building, the ask. You adapt the content of the blocks to the company, not their order."
+        },
+        {
+          "s": "In a self-intro you back up your current job with one project that has scale and a result with a number.",
+          "ok": true,
+          "why": "For example, migrating a large Next.js app to the App Router with a measurable result. One concrete fact sticks better than a list of duties."
+        },
+        {
+          "s": "In the recruiter version of a self-intro you should list all your technologies and projects so nothing gets missed.",
+          "ok": false,
+          "why": "A list of technologies doesn't stick in 30 seconds. The recruiter needs your level, one piece of proof and the target role."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "По порядку: кто я сейчас, что [[строю|делаю]] в этом году, что [[ищу|хочу]].",
-        "Никогда: career switcher, learning AI, [[transitioning]].",
-        "Заканчиваю не хронологией, а [[запросом|ask|посадкой]]: какую роль ищу и почему."
+        "В ответе на tell me about yourself порядок такой: кто я сейчас, что [[строю|делаю]] в этом году и что [[ищу|хочу]].",
+        "В self-intro не говорят career switcher, learning AI и [[transitioning]], потому что это звучит как просьба поверить на слово.",
+        "Self-intro заканчивают не хронологией, а [[запросом|ask|посадкой]]: какую роль ищешь и почему."
       ],
       "en": [
-        "In order: who I am now, what I've [[built|been building]] this year, what I'm [[looking for|after]].",
-        "Never: career switcher, learning AI, [[transitioning]].",
-        "I end on the [[ask|landing]], not on chronology: which role and why."
+        "In a tell-me-about-yourself answer the order is: who I am now, what I've [[built|been building]] this year, and what I'm [[looking for|after]].",
+        "In a self-intro you never say career switcher, learning AI or [[transitioning]], because it sounds like asking to be taken on faith.",
+        "A self-intro ends on the [[ask|landing]], not on chronology: which role you want and why."
       ]
     }
   },

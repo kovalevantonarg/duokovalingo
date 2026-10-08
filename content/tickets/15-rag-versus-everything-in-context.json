@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Не нужен",
-        "t": "Если корпус помещается в контекст с запасом — скажем, десятки тысяч токенов, — меняется редко и цена за вызов приемлема, я просто кладу его целиком и включаю prompt caching. Никакого индекса, никаких промахов ретривера, никакой инфраструктуры. Половина проектов, которые называют себя RAG, — это хендбук на тридцать страниц, который влезает. Первый вопрос всегда: а сколько это в токенах? Если человек не измерил, он не выбирал архитектуру, он повторял модное слово."
+        "t": "Если корпус помещается в контекст с запасом (скажем, десятки тысяч токенов), меняется редко и цена за вызов приемлема, я просто кладу его целиком и включаю prompt caching. Никакого индекса, никаких промахов ретривера, никакой инфраструктуры. Половина проектов, которые называют себя RAG, — это хендбук на тридцать страниц, который влезает. Первый вопрос всегда: а сколько это в токенах? Если человек не измерил, он не выбирал архитектуру, он повторял модное слово."
       },
       {
         "q": "Нужен",
@@ -23,10 +23,10 @@
       },
       {
         "q": "Умер?",
-        "t": "Нет, сдвинулся баланс. Длинный контекст убирает причину «не помещается», но не убирает цену, задержку, свежесть и права доступа. И качество внимания на длинных входах всё ещё проседает, когда нужная игла лежит среди похожих. Реалистичный паттерн сейчас — ретривер сужает до кандидатов, а большое окно позволяет отдавать куски крупнее и резать документы менее агрессивно. Правильный ответ на «RAG или контекст» — эвал на своих данных, а не вера."
+        "t": "Нет, сдвинулся баланс. Длинный контекст убирает причину «не помещается», но не убирает цену, задержку, свежесть и права доступа. И качество внимания на длинных входах всё ещё проседает, когда нужная игла лежит среди похожих. Реалистичный паттерн сейчас — ретривер сужает до кандидатов, а большое окно позволяет отдавать куски крупнее и резать документы менее агрессивно. Выбор «RAG или контекст» решает эвал на своих данных, а не мнение."
       }
     ],
-    "kill": "<b>«RAG, потому что так делают»</b>. Первый вопрос интервьюера будет: сколько токенов в вашем корпусе? Если ответа нет — дальше можно не слушать."
+    "kill": "<b>«RAG, потому что так делают»</b>. Первый вопрос интервьюера будет: сколько токенов в вашем корпусе? Если ответа нет, остальное уже не важно."
   },
   "en": {
     "topic": "RAG versus everything in context",
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Not needed",
-        "t": "If the corpus fits in context with room to spare — say tens of thousands of tokens — changes rarely, and the cost per call is acceptable, I put the whole thing in and turn on prompt caching. No index, no retriever misses, no infrastructure. Half the projects that call themselves RAG are a thirty-page handbook that fits. The first question is always: how many tokens is it? If someone hasn't measured, they didn't choose an architecture, they repeated a buzzword."
+        "t": "If the corpus fits in context with room to spare (say, tens of thousands of tokens), changes rarely, and the cost per call is acceptable, I put the whole thing in and turn on prompt caching. No index, no retriever misses, no infrastructure. Half the projects that call themselves RAG are a thirty-page handbook that fits. The first question is always: how many tokens is it? If someone hasn't measured, they didn't choose an architecture, they repeated a buzzword."
       },
       {
         "q": "Needed",
@@ -46,32 +46,148 @@
       },
       {
         "q": "Dead?",
-        "t": "No, the balance moved. Long context removes the doesn't-fit reason, but not cost, latency, freshness or permissions. And attention quality still degrades on long inputs when the needle sits among look-alikes. The realistic pattern now is retrieval narrowing to candidates, with the big window letting you pass larger chunks and split documents less aggressively. The right answer to RAG versus context is an eval on your own data, not a belief."
+        "t": "No, the balance moved. Long context removes the doesn't-fit reason, but not cost, latency, freshness or permissions. And attention quality still degrades on long inputs when the needle sits among look-alikes. The realistic pattern now is retrieval narrowing to candidates, with the big window letting you pass larger chunks and split documents less aggressively. RAG versus context gets decided by an eval on your own data, not by opinion."
       }
     ],
     "kill": "<b>\"RAG because that's what you do.\"</b> The interviewer's next question will be: how many tokens is your corpus? No answer, and the rest doesn't matter."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Если корпус помещается в контекст, RAG в принципе не может повысить точность.",
-        "Окна в миллион токенов делают RAG ненужным."
+        {
+          "s": "Модели хуже используют информацию из середины длинного контекста, поэтому релевантная выборка часто даёт более точный ответ.",
+          "ok": true,
+          "why": "Точность обычно выше, когда нужный факт стоит в начале или в конце входа. Короткая выборка убирает эту проблему."
+        },
+        {
+          "s": "Права доступа к документам достаточно описать в системном промпте, и модель сама не покажет пользователю чужие документы.",
+          "ok": false,
+          "why": "Модель не является механизмом контроля доступа. Честно фильтровать документы можно только до модели, в RAG это делает ретривер."
+        },
+        {
+          "s": "Отправлять 200 тысяч токенов на запрос при 2 тысячах релевантных значит платить примерно в десять раз больше даже с кэшем.",
+          "ok": true,
+          "why": "Токенов в сто раз больше, а кэш снижает цену чтения до десятой части. Плюс растёт задержка."
+        },
+        {
+          "s": "У моделей с окном в миллион токенов точность ответа не зависит от длины входа и числа похожих фрагментов рядом с нужным.",
+          "ok": false,
+          "why": "Качество внимания по-прежнему проседает на длинных входах, особенно когда нужный факт лежит среди похожих. Документация называет это context rot."
+        },
+        {
+          "s": "Хендбук на тридцать страниц занимает порядка десятка тысяч токенов и обычно помещается в контекст без всякого RAG.",
+          "ok": true,
+          "why": "Пятьсот страниц дают около 200 тысяч токенов, значит тридцать страниц около 12 тысяч. Многие проекты «на RAG» на деле такого размера."
+        },
+        {
+          "s": "Окна в миллион токенов делают RAG ненужным, потому что теперь любой корпус можно передать модели целиком.",
+          "ok": false,
+          "why": "Длинное окно снимает только причину «не помещается». Цена, задержка, свежесть данных и права доступа никуда не деваются."
+        },
+        {
+          "s": "Выбор между RAG и передачей всего корпуса определяется размером окна модели, отдельный эвал на своих данных не нужен.",
+          "ok": false,
+          "why": "Размер окна говорит только о том, поместится ли корпус. Точность, цену и задержку обоих вариантов показывает эвал на своих вопросах."
+        },
+        {
+          "s": "При частых обновлениях документов RAG удобнее: достаточно переиндексировать один изменённый документ, а не пересобирать весь промпт.",
+          "ok": true,
+          "why": "Индекс обновляется по документам. Промпт с полным корпусом пришлось бы пересобирать, а его кэш при этом сбрасывается."
+        },
+        {
+          "s": "Если корпус занимает десятки тысяч токенов и меняется редко, его можно положить в промпт целиком и включить prompt caching.",
+          "ok": true,
+          "why": "Так не нужны индекс и инфраструктура поиска, и не бывает промахов ретривера. Кэш снижает цену и задержку повторных запросов."
+        },
+        {
+          "s": "Если корпус помещается в контекст, RAG не может дать более точный ответ, чем передача модели всего корпуса.",
+          "ok": false,
+          "why": "Модель хуже использует середину длинного контекста и путается среди похожих фрагментов. Релевантная выборка может отвечать точнее полного корпуса."
+        },
+        {
+          "s": "Prompt caching делает отправку большого корпуса в каждом запросе почти бесплатной, поэтому по цене RAG уже не выигрывает.",
+          "ok": false,
+          "why": "Чтение из кэша стоит около десятой части цены входа. При 200 тысячах токенов против 2 тысяч релевантных это всё равно примерно десятикратный перерасход."
+        },
+        {
+          "s": "С большим окном ретривер по-прежнему сужает выборку до кандидатов, но куски можно отдавать крупнее и резать документы менее агрессивно.",
+          "ok": true,
+          "why": "Длинный контекст и RAG не исключают друг друга. Большое окно просто даёт модели больше окружения вокруг найденного."
+        }
       ],
       "en": [
-        "If the corpus fits in context, RAG can't possibly improve accuracy.",
-        "Million-token windows make RAG unnecessary."
+        {
+          "s": "Models make poorer use of information in the middle of a long context, so a relevant selection often gives a more accurate answer.",
+          "ok": true,
+          "why": "Accuracy is usually higher when the needed fact is at the start or the end of the input. A short selection avoids the problem."
+        },
+        {
+          "s": "It's enough to describe document permissions in the system prompt, and the model won't show users documents they can't access.",
+          "ok": false,
+          "why": "A model is not an access-control mechanism. The only honest place to filter documents is before the model; in RAG the retriever does it."
+        },
+        {
+          "s": "Sending 200 thousand tokens per request when 2 thousand are relevant costs about ten times more, even with caching.",
+          "ok": true,
+          "why": "That's a hundred times the tokens, and caching cuts the read price to a tenth. Latency grows too."
+        },
+        {
+          "s": "For models with a million-token window, answer accuracy doesn't depend on input length or on look-alike passages near the needed one.",
+          "ok": false,
+          "why": "Attention quality still degrades on long inputs, especially when the needed fact sits among look-alikes. The docs call this context rot."
+        },
+        {
+          "s": "A thirty-page handbook is roughly ten thousand tokens and usually fits in context without any RAG.",
+          "ok": true,
+          "why": "Five hundred pages is about 200 thousand tokens, so thirty pages is about 12 thousand. Many \"RAG\" projects are actually this size."
+        },
+        {
+          "s": "Million-token context windows make RAG unnecessary, because any corpus can now be passed to the model whole.",
+          "ok": false,
+          "why": "A long window removes only the doesn't-fit reason. Cost, latency, data freshness and access control are still there."
+        },
+        {
+          "s": "Choosing between RAG and passing the whole corpus comes down to the model's window size; a separate eval on your own data isn't needed.",
+          "ok": false,
+          "why": "Window size only tells you whether the corpus fits. An eval on your own questions shows the accuracy, cost and latency of both options."
+        },
+        {
+          "s": "When documents change often, RAG is easier: you re-index the one changed document instead of rebuilding the whole prompt.",
+          "ok": true,
+          "why": "An index updates per document. A full-corpus prompt would have to be rebuilt, which also invalidates its cache."
+        },
+        {
+          "s": "If a corpus is tens of thousands of tokens and rarely changes, you can put it in the prompt whole and turn on prompt caching.",
+          "ok": true,
+          "why": "That removes the index and search infrastructure, and there are no retriever misses. Caching cuts the cost and latency of repeat requests."
+        },
+        {
+          "s": "If the corpus fits in context, RAG can't give a more accurate answer than passing the model the whole corpus.",
+          "ok": false,
+          "why": "The model makes poor use of the middle of a long context and gets confused by look-alike passages. A relevant selection can answer more accurately."
+        },
+        {
+          "s": "Prompt caching makes sending a large corpus with every request almost free, so RAG no longer wins on cost.",
+          "ok": false,
+          "why": "Cache reads cost about a tenth of the input price. With 200 thousand tokens against 2 thousand relevant ones, that's still about ten times the cost."
+        },
+        {
+          "s": "With a large window the retriever still narrows to candidates, but you can pass larger chunks and split documents less aggressively.",
+          "ok": true,
+          "why": "Long context and RAG are not either-or. The big window just gives the model more surrounding text around what was found."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Первый вопрос всегда: сколько корпус в [[токенах|tokens]]?",
-        "Пять причин для RAG: не помещается, [[цена|стоимость|cost]], свежесть, точность, [[права доступа|permissions]].",
-        "Модель теряет [[середину|middle]] длинного контекста — релевантная выборка отвечает точнее полной свалки."
+        "Прежде чем выбирать между RAG и контекстом, измеряют размер корпуса в [[токенах|tokens]].",
+        "Кроме размера корпуса, RAG оправдывают [[цена|стоимость|cost]], свежесть данных, точность и [[права доступа|permissions|access control]].",
+        "Модель хуже использует [[середину|middle]] длинного контекста, поэтому релевантная выборка отвечает точнее, чем весь корпус целиком."
       ],
       "en": [
-        "The first question is always: how many [[tokens]] is the corpus?",
-        "Five reasons for RAG: doesn't fit, [[cost]], freshness, precision, [[access control|permissions]].",
-        "The model loses the [[middle]] of a long context — a relevant selection beats a full dump."
+        "Before choosing between RAG and full context, you measure the corpus size in [[tokens]].",
+        "Besides corpus size, RAG is justified by [[cost]], data freshness, precision and [[access control|permissions]].",
+        "The model makes poor use of the [[middle]] of a long context, so a relevant selection answers more accurately than the whole corpus."
       ]
     }
   },

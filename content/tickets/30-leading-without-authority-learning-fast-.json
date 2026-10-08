@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Влияние без власти",
-        "t": "Скелет: «Я не был владельцем [система], но видел проблему [что]. Я собрал прототип [что] и показал [цифра] на [где]. [Кто] возражал, что [возражение]. Я [как учёл возражение]. Решение приняли, и через [срок] [метрика или предотвращённый инцидент] это подтвердил». Структура: решение, которое ты продвигал, хотя не был formal owner; как убеждал — через прототип/proof of concept, а не через мнение; как реагировал на сопротивление — слушал возражение по существу, а не продавливал. Result — приняли ли решение и что доказало его правоту: метрика или инцидент, который оно предотвратило."
+        "t": "Скелет: «Я не был владельцем [система], но видел проблему [что]. Я собрал прототип [что] и показал [цифра] на [где]. [Кто] возражал, что [возражение]. Я [как учёл возражение]. Решение приняли, и через [срок] [метрика или предотвращённый инцидент] это подтвердил». Структура такая. Решение, которое ты продвигал, хотя не был formal owner. Как убеждал: через прототип/proof of concept, а не через мнение. Как реагировал на сопротивление: слушал возражение по существу, а не продавливал. Result: приняли ли решение и что доказало его правоту (метрика или инцидент, который оно предотвратило)."
       },
       {
         "q": "Быстрое обучение",
-        "t": "Скелет: «Мне нужно было за [срок] освоить [технология или область] для [задача]. Я [как учился — например, сразу собрал первый проект на новой технологии]. Первым реально сломалось [что], и я нашёл причину через [как диагностировал]. Из прошлого опыта напрямую перенеслось [что перенеслось из прошлого опыта — например, отладка, чтение чужого кода, декомпозиция большой задачи], а с нуля пришлось учить [что]. Результат: [что работает и цифра]». Важен механизм, а не просто факт: как ты реально учился — не курсы пассивно, а строил и ломал; первая реальная поломка и её диагностика — ядро истории; что перенеслось, а что учил с нуля. Если ты меняешь направление, лучший материал — сама смена: честный ответ и питч перехода — одно и то же, не разводи их на два разных рассказа."
+        "t": "Скелет: «Мне нужно было за [срок] освоить [технология или область] для [задача]. Я [как учился — например, сразу собрал первый проект на новой технологии]. Первым реально сломалось [что], и я нашёл причину через [как диагностировал]. Из прошлого опыта напрямую перенеслось [что перенеслось из прошлого опыта — например, отладка, чтение чужого кода, декомпозиция большой задачи], а с нуля пришлось учить [что]. Результат: [что работает и цифра]». Важен механизм, а не просто факт. Как ты реально учился: не курсы пассивно, а строил и ломал. Ядро истории — первая реальная поломка и её диагностика. И что перенеслось, а что пришлось учить с нуля. Если ты меняешь направление, лучший материал у тебя и есть сама смена, ведь честный ответ и питч перехода — одно и то же. Не разводи их на два разных рассказа."
       },
       {
         "q": "Почему сейчас",
-        "t": "Ответ не про недовольство текущим местом, а про то, что ты нашёл направление, которое хочешь строить дальше, и текущая роль не даёт расти в него в нужном темпе. Не говоришь плохо о работодателе — это красный флаг для любого интервьюера, независимо от того, насколько ты прав. Формула: что ты ценишь в текущем месте (искренне, не для галочки) → что именно там не растёт в направлении, которое тебе теперь важно → почему именно сейчас, а не раньше или позже. Скелет: «Я ценю в [текущая компания] [что]. Но [что не растёт], а моё направление теперь [новое направление]. Раньше было рано: нужно было сначала [доказательство — проект или результат]. Теперь оно есть, и следующий шаг требует полноценной работы, поэтому сейчас»."
+        "t": "Недовольство текущим местом в ответ не входит. Ты объясняешь, что нашёл направление, которое хочешь строить дальше, а текущая роль не даёт расти в него в нужном темпе. Плохо о работодателе не говори: для любого интервьюера это красный флаг, даже если ты прав. Формула: что ты ценишь в текущем месте (искренне, не для галочки) → что именно там не растёт в направлении, которое тебе теперь важно → почему именно сейчас, а не раньше или позже. Скелет: «Я ценю в [текущая компания] [что]. Но [что не растёт], а моё направление теперь [новое направление]. Раньше было рано: нужно было сначала [доказательство — проект или результат]. Теперь оно есть, и следующий шаг требует полноценной работы, поэтому сейчас»."
       }
     ],
-    "kill": "Плохие слова о текущем работодателе — сигнал, что через год ты так же будешь говорить об этом месте. И «влияние без власти» без реального доказательства (метрика/инцидент) — тогда это просто «я предложил», а не «меня послушали»."
+    "kill": "Плохие слова о текущем работодателе интервьюер читает как сигнал, что через год ты так же будешь говорить об этом месте. А «влияние без власти» без доказательства (метрики или инцидента) сводится к «я предложил», и непонятно, послушали ли тебя."
   },
   "en": {
     "topic": "Leading without authority, learning fast, why now",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "Influence without authority",
-        "t": "Skeleton: \"I wasn't the owner of [system], but I saw a problem with [what]. I built a prototype of [what] and showed [number] on [where]. [Who] objected that [objection]. I [how I addressed the objection]. The decision was adopted, and after [time] [metric or prevented incident] confirmed it.\" Structure: a decision you pushed even though you weren't the formal owner; how you convinced people — through a prototype/proof of concept, not an opinion; how you handled pushback — actually listened to the substance of the objection instead of just pushing harder. Result — did it get adopted, and what proved it right: a metric or an incident it prevented."
+        "t": "Skeleton: \"I wasn't the owner of [system], but I saw a problem with [what]. I built a prototype of [what] and showed [number] on [where]. [Who] objected that [objection]. I [how I addressed the objection]. The decision was adopted, and after [time] [metric or prevented incident] confirmed it.\" Structure: a decision you pushed even though you weren't the formal owner. How you convinced people: through a prototype/proof of concept, not an opinion. How you handled pushback: you listened to the substance of the objection instead of just pushing harder. Result: did it get adopted, and what proved it right (a metric or an incident it prevented)."
       },
       {
         "q": "Learning fast",
-        "t": "Skeleton: \"I needed to learn [technology or area] in [time span] for [task]. I [how I learned — e.g. built a first project on the new technology right away]. The first thing that genuinely broke was [what], and I found the cause by [how I diagnosed it]. What carried over directly from my past experience was [what carried over from past experience — e.g. debugging, reading unfamiliar code, breaking a big problem into steps], and what I had to learn from zero was [what]. The result: [what works, and a number].\" The mechanism matters, not just the fact: how you actually learned — not passive courses, building and breaking things; the first real breakage and its diagnosis is the core of the story; what carried over versus what you learned from zero. If you're changing direction, the best material is the change itself: the honest answer and the career change pitch are the same thing — don't split them into two different stories."
+        "t": "Skeleton: \"I needed to learn [technology or area] in [time span] for [task]. I [how I learned — e.g. built a first project on the new technology right away]. The first thing that genuinely broke was [what], and I found the cause by [how I diagnosed it]. What carried over directly from my past experience was [what carried over from past experience — e.g. debugging, reading unfamiliar code, breaking a big problem into steps], and what I had to learn from zero was [what]. The result: [what works, and a number].\" The mechanism matters, not just the fact. How you actually learned: not passive courses, building and breaking things. The core of the story is the first real breakage and its diagnosis. And what carried over versus what you learned from zero. If you're changing direction, the best material is the change itself, because the honest answer and the career change pitch are the same thing. Don't split them into two different stories."
       },
       {
         "q": "Why now",
-        "t": "The answer isn't about dissatisfaction with your current place, it's about having found a direction you want to build toward, and the current role not letting you grow into it fast enough. Don't speak badly of the employer — that's a red flag for any interviewer regardless of how justified it is. Formula: what you genuinely value about the current place (sincerely, not a token line) → what specifically doesn't let you grow in the direction that matters to you now → why now specifically, not earlier or later. Skeleton: \"I value [what] at [current company]. But [what doesn't grow], and my direction now is [new direction]. Earlier was too early: I first needed [proof — a project or a result]. Now it exists, and the next step needs real work, so now.\""
+        "t": "Dissatisfaction with your current place stays out of the answer. You explain that you've found a direction you want to build toward, and the current role doesn't let you grow into it fast enough. Don't speak badly of the employer: that's a red flag for any interviewer, however justified you are. Formula: what you genuinely value about the current place (sincerely, not a token line) → what specifically doesn't let you grow in the direction that matters to you now → why now specifically, not earlier or later. Skeleton: \"I value [what] at [current company]. But [what doesn't grow], and my direction now is [new direction]. Earlier was too early: I first needed [proof — a project or a result]. Now it exists, and the next step needs real work, so now.\""
       }
     ],
-    "kill": "Speaking badly of your current employer — signals you'll talk about this place the same way in a year. And 'influence without authority' with no real proof (a metric/incident) is just 'I suggested it', not 'they listened'."
+    "kill": "Speaking badly of your current employer signals that you'll talk about this place the same way in a year. And 'influence without authority' with no proof (a metric or an incident) is just 'I suggested it', with no sign that anyone listened."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Лучший способ показать лидерство без власти — говорить громче своего мнения на митингах.",
-        "«Почему уходишь сейчас» лучше отвечать через недовольство текущим местом — это честно."
+        {
+          "s": "Влияние без власти лучше всего показывает то, что ты настойчиво отстаивал своё мнение на встречах, пока команда не согласилась.",
+          "ok": false,
+          "why": "Сильная история показывает доказательство через прототип и то, как ты учёл возражение по существу. Продавливание на встречах читается как слабость."
+        },
+        {
+          "s": "В истории о влиянии без формальной власти команду убеждают прототипом или proof of concept, а не своим мнением.",
+          "ok": true,
+          "why": "Прототип с цифрой на реальных данных снимает спор о вкусах. Мнение человека без формальной роли легко отклонить."
+        },
+        {
+          "s": "Историю о влиянии без власти завершают результатом: метрикой или инцидентом, который принятое решение предотвратило.",
+          "ok": true,
+          "why": "Result отвечает, приняли ли решение и что доказало его правоту. Без этого история заканчивается на «я предложил»."
+        },
+        {
+          "s": "Для истории о влиянии без власти достаточно показать, что ты предложил хорошее решение, даже если его правоту ничего не подтвердило.",
+          "ok": false,
+          "why": "Без доказательства в виде метрики или предотвращённого инцидента история сводится к «я предложил». Интервьюер не видит, что тебя послушали."
+        },
+        {
+          "s": "В истории о быстром обучении сильнее всего звучит список пройденных курсов и полученных сертификатов.",
+          "ok": false,
+          "why": "Интервьюеру важен механизм: ты строил и ломал, а не проходил курсы пассивно. Курсы без собранного проекта механизма не показывают."
+        },
+        {
+          "s": "Ядро истории о быстром обучении — первая реальная поломка и то, как ты диагностировал её причину.",
+          "ok": true,
+          "why": "Поломка и диагностика показывают, что ты работал с технологией руками. Это проверяемая деталь, которую трудно выдумать."
+        },
+        {
+          "s": "В истории о быстром обучении стоит отдельно назвать, что перенеслось из прошлого опыта, а что пришлось учить с нуля.",
+          "ok": true,
+          "why": "Перенос, например отладка или чтение чужого кода, объясняет скорость обучения. Без него «быстро выучил» звучит как везение."
+        },
+        {
+          "s": "При смене направления честный ответ о причинах ухода и питч перехода лучше рассказывать как две отдельные истории.",
+          "ok": false,
+          "why": "Это одно и то же: лучший материал при смене направления и есть сама смена. Две разные версии одного решения звучат несогласованно."
+        },
+        {
+          "s": "Ответ на вопрос «почему уходишь сейчас» начинают с того, что ты искренне ценишь в текущем месте.",
+          "ok": true,
+          "why": "Это показывает, что ты уходишь к чему-то, а не бежишь от проблем. Дальше идёт то, что там не растёт, и почему именно сейчас."
+        },
+        {
+          "s": "Критика текущего работодателя в ответе «почему уходишь» допустима, если она объективно справедлива и подкреплена фактами.",
+          "ok": false,
+          "why": "Для интервьюера это красный флаг, даже если ты прав. Он слышит сигнал, что через год ты так же будешь говорить о его компании."
+        },
+        {
+          "s": "В ответе «почему уходишь сейчас» не нужно объяснять, почему ты не ушёл раньше, интервьюеру важно только новое направление.",
+          "ok": false,
+          "why": "Формула включает «почему именно сейчас, а не раньше или позже». Например, раньше было рано, потому что не было проекта или результата, а теперь он есть."
+        },
+        {
+          "s": "Ответ «почему уходишь» строят вокруг направления, в которое текущая роль не даёт расти в нужном темпе.",
+          "ok": true,
+          "why": "Причина ухода звучит как движение к цели, а не как жалоба. Недовольство текущим местом в такой ответ не входит."
+        }
       ],
       "en": [
-        "The best way to show leadership without authority is being the loudest voice with an opinion in meetings.",
-        "The honest way to answer 'why leaving now' is through dissatisfaction with your current place."
+        {
+          "s": "Influence without authority is best shown by how persistently you argued your opinion in meetings until the team agreed.",
+          "ok": false,
+          "why": "A strong story shows proof via a prototype and how you dealt with the substance of the objection. Pushing hard in meetings reads as a weakness."
+        },
+        {
+          "s": "In a story about influence without formal authority, you win the team over with a prototype or proof of concept, not your opinion.",
+          "ok": true,
+          "why": "A prototype with a number on real data ends the argument about taste. An opinion from someone without a formal role is easy to dismiss."
+        },
+        {
+          "s": "A story about influence without authority ends with the result: a metric or an incident the adopted decision prevented.",
+          "ok": true,
+          "why": "The Result says whether the decision was adopted and what proved it right. Without it, the story stops at 'I suggested it'."
+        },
+        {
+          "s": "For a story about influence without authority, it's enough to show you proposed a good solution, even if nothing confirmed it was right.",
+          "ok": false,
+          "why": "Without proof such as a metric or a prevented incident, the story is just 'I suggested it'. The interviewer can't see that anyone listened."
+        },
+        {
+          "s": "In a story about learning fast, the strongest part is the list of courses you completed and certificates you earned.",
+          "ok": false,
+          "why": "The interviewer wants the mechanism: you built and broke things instead of passively taking courses. Courses without a built project show no mechanism."
+        },
+        {
+          "s": "The core of a story about learning fast is the first real breakage and how you diagnosed its cause.",
+          "ok": true,
+          "why": "The breakage and its diagnosis show you worked with the technology hands-on. It's a checkable detail that's hard to invent."
+        },
+        {
+          "s": "In a story about learning fast, name separately what carried over from past experience and what you had to learn from zero.",
+          "ok": true,
+          "why": "What carried over, such as debugging or reading unfamiliar code, explains the speed. Without it, 'learned it fast' sounds like luck."
+        },
+        {
+          "s": "When changing direction, the honest answer about why you're leaving and the career change pitch work better as two separate stories.",
+          "ok": false,
+          "why": "They are the same thing: when you change direction, the change itself is the best material. Two versions of one decision sound inconsistent."
+        },
+        {
+          "s": "An answer to 'why are you leaving now' starts with what you genuinely value about your current place.",
+          "ok": true,
+          "why": "It shows you're moving toward something, not running from problems. Next comes what doesn't grow there and why now specifically."
+        },
+        {
+          "s": "Criticising your current employer in a 'why are you leaving' answer is acceptable if it's objectively fair and backed by facts.",
+          "ok": false,
+          "why": "To the interviewer it's a red flag even if you're right. They hear that in a year you'll talk about their company the same way."
+        },
+        {
+          "s": "In a 'why are you leaving now' answer you can skip why you didn't leave earlier; the interviewer only cares about the new direction.",
+          "ok": false,
+          "why": "The formula includes 'why now, not earlier or later'. For example, earlier was too soon because there was no project or result yet, and now there is."
+        },
+        {
+          "s": "The 'why are you leaving' answer is built around a direction the current role doesn't let you grow into fast enough.",
+          "ok": true,
+          "why": "The reason sounds like moving toward a goal, not a complaint. Dissatisfaction with your current place stays out of it."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "Правоту решения, продвинутого без формальной власти, доказывают [[метрика]] или [[инцидент]], который оно предотвратило, а не «я предложил».",
-        "«Почему уходишь» — формула: ценишь → [[что не даёт расти|не растёт в нужном направлении]] → почему именно сейчас.",
-        "Быстрое обучение: важен [[механизм|как учился]], а не просто факт."
+        "В ответе «почему уходишь» после того, что ты ценишь, идёт [[что не даёт расти|не растёт в нужном направлении]], а затем почему именно сейчас.",
+        "В истории о быстром обучении интервьюеру важен [[механизм|как учился]], а не просто факт, что ты выучил."
       ],
       "en": [
         "A decision pushed without formal authority is proven right by a [[metric]] or an [[incident]] it prevented, not by 'I suggested it'.",
-        "'Why leaving' formula: what you value → [[what doesn't let you grow|the growth cap]] → why now specifically.",
-        "Learning fast: the [[mechanism|how you learned]] matters, not just the fact."
+        "In the 'why leaving' answer, what you value comes first, then [[what doesn't let you grow|the growth cap]], then why now specifically.",
+        "In a learning-fast story, the interviewer cares about the [[mechanism|how you learned]], not just the fact that you learned."
       ]
     }
   },

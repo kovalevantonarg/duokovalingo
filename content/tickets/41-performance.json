@@ -52,14 +52,130 @@
     "kill": "<b>\"I wrap everything in useMemo and useCallback to be safe\"</b> — each one costs a comparison and memory, and buys nothing unless the calculation is genuinely expensive or the result feeds a memo child or a hook dependency."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Если обернуть потребителя context в memo, он не будет перерендериваться при изменении value.",
-        "React Compiler работает только с React 19."
+        {
+          "s": "React DevTools Profiler записывает каждый commit и может показать, почему компонент отрендерился: state, props или рендер родителя.",
+          "ok": true,
+          "why": "Сначала замер, потом оптимизация. Часто виноват один большой компонент или дорогое вычисление, а не сам React."
+        },
+        {
+          "s": "memo на дочернем компоненте пропускает рендер, даже если родитель каждый раз передаёт ему новую inline-стрелку.",
+          "ok": false,
+          "why": "memo сравнивает props поверхностно, а новая функция — это новая ссылка, и сравнение проваливается. Нужны стабильные ссылки от родителя."
+        },
+        {
+          "s": "useMemo и useCallback стоят сравнения зависимостей и памяти на каждом рендере, поэтому без конкретной причины они не окупаются.",
+          "ok": true,
+          "why": "Они окупаются, когда вычисление дорогое или результат идёт в memo-компонент или в зависимости хука."
+        },
+        {
+          "s": "Если обернуть потребителя context в memo, он перестанет перерендериваться при изменении value провайдера.",
+          "ok": false,
+          "why": "Потребитель context перерендеривается, когда новый value не равен старому по Object.is, и memo это не останавливает."
+        },
+        {
+          "s": "React Compiler работает только в проектах на React 19 и не поддерживает версии 17 и 18.",
+          "ok": false,
+          "why": "Лучше всего он работает с React 19, но 17 и 18 поддерживает через react-compiler-runtime. Условие одно: код соблюдает правила React."
+        },
+        {
+          "s": "React Compiler — это Babel-плагин, который мемоизирует компоненты и значения автоматически на этапе сборки.",
+          "ok": true,
+          "why": "Он снимает с разработчика ручные memo, useMemo и useCallback. Версия 1.0 вышла в октябре 2025 года."
+        },
+        {
+          "s": "Если провайдер создаёт value как новый объектный литерал на каждом рендере, любой рендер родителя доходит до всех потребителей context.",
+          "ok": true,
+          "why": "Новый объект не равен старому по Object.is, даже с теми же полями. Лечится через useMemo по реальным полям."
+        },
+        {
+          "s": "Разделение одного context на несколько не уменьшает число перерендеров, потому что все контексты обновляются вместе.",
+          "ok": false,
+          "why": "Каждый context оповещает только своих потребителей. Если вынести корзину в отдельный context, её изменения не трогают компоненты, которые читают только тему."
+        },
+        {
+          "s": "Zustand построен на useSyncExternalStore, и компонент с селектором рендерится, только когда меняется выбранный им кусок состояния.",
+          "ok": true,
+          "why": "Поэтому быстро меняющееся состояние, из которого многие читают маленькие кусочки, держат в сторе с селекторами, а не в context."
+        },
+        {
+          "s": "При стриминге ответа в чате каждый новый токен лучше сразу записывать в state, чтобы текст появлялся без задержки.",
+          "ok": false,
+          "why": "Токены приходят чаще, чем кадры. Куски копят в ref и сбрасывают в state раз за кадр анимации, иначе рендеров больше, чем кадров."
+        },
+        {
+          "s": "В стримящемся чате старые memo-строки пропускают рендер, если при обновлении заменяется только объект последнего сообщения.",
+          "ok": true,
+          "why": "Остальные сообщения сохраняют прежние ссылки, поэтому поверхностное сравнение у их строк проходит, и рендерится только последняя строка."
+        },
+        {
+          "s": "Виртуализация длинной переписки не влияет на поиск по странице, потому что браузер ищет и по строкам за пределами экрана.",
+          "ok": false,
+          "why": "Виртуализация убирает из DOM строки вне видимой области, и встроенный поиск браузера их не находит. Ещё приходится измерять высоту строк и решать прилипание скролла к низу."
+        }
       ],
       "en": [
-        "Wrapping a context consumer in memo stops it from re-rendering when the context value changes.",
-        "React Compiler only works with React 19."
+        {
+          "s": "The React DevTools Profiler records each commit and can show why a component rendered: state, props or a parent render.",
+          "ok": true,
+          "why": "Measure first, optimize second. The culprit is often one big component or one expensive calculation, not React itself."
+        },
+        {
+          "s": "memo on a child component skips the render even when the parent passes it a new inline arrow function every time.",
+          "ok": false,
+          "why": "memo compares props shallowly, and a new function is a new reference, so the comparison fails. The parent has to pass stable references."
+        },
+        {
+          "s": "useMemo and useCallback cost a dependency comparison and memory on every render, so without a concrete reason they don't pay off.",
+          "ok": true,
+          "why": "They pay off when the calculation is expensive or the result feeds a memo child or a hook dependency."
+        },
+        {
+          "s": "Wrapping a context consumer in memo stops it from re-rendering when the provider's value changes.",
+          "ok": false,
+          "why": "A context consumer re-renders when the new value isn't equal to the old one under Object.is, and memo doesn't stop that."
+        },
+        {
+          "s": "React Compiler works only in React 19 projects and doesn't support React 17 or 18.",
+          "ok": false,
+          "why": "It works best with React 19, but it supports 17 and 18 through react-compiler-runtime. The one requirement is code that follows the rules of React."
+        },
+        {
+          "s": "React Compiler is a Babel plugin that memoizes components and values automatically at build time.",
+          "ok": true,
+          "why": "It takes manual memo, useMemo and useCallback off the developer's plate. Version 1.0 shipped in October 2025."
+        },
+        {
+          "s": "If a provider builds its value as a new object literal on every render, any parent render reaches all context consumers.",
+          "ok": true,
+          "why": "A new object isn't equal to the old one under Object.is, even with the same fields. The fix is useMemo keyed on the actual fields."
+        },
+        {
+          "s": "Splitting one context into several doesn't reduce re-renders, because all the contexts update together.",
+          "ok": false,
+          "why": "Each context notifies only its own consumers. Move the cart into its own context and cart changes stop touching components that only read the theme."
+        },
+        {
+          "s": "Zustand is built on useSyncExternalStore, and a component with a selector re-renders only when its selected slice changes.",
+          "ok": true,
+          "why": "That's why fast-changing state that many components read small slices of goes into a store with selectors, not into context."
+        },
+        {
+          "s": "When streaming a chat reply, each new token is best written to state immediately so the text appears without delay.",
+          "ok": false,
+          "why": "Tokens arrive faster than frames. You buffer chunks in a ref and flush to state once per animation frame, or you render more often than you paint."
+        },
+        {
+          "s": "In a streaming chat, old memo rows skip rendering if each update replaces only the last message object.",
+          "ok": true,
+          "why": "The other messages keep their references, so the shallow compare passes for their rows and only the last row renders."
+        },
+        {
+          "s": "Virtualizing a long transcript doesn't affect find-in-page, because the browser also searches rows outside the viewport.",
+          "ok": false,
+          "why": "Virtualization removes rows outside the viewport from the DOM, so the browser's find-in-page can't see them. You also have to measure row heights and handle stick-to-bottom scrolling."
+        }
       ]
     },
     "cloze": {

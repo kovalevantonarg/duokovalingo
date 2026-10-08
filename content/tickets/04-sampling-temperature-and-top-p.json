@@ -23,7 +23,7 @@
       },
       {
         "q": "top_p и депрекация",
-        "t": "top_p сортирует токены по вероятности, набирает их сверху, пока сумма не достигнет p, а остальное отрезает и перенормирует. Главное его свойство — адаптивность: когда модель уверена, в наборе останется один токен, когда не уверена — сорок. А top_k всегда берёт ровно k, независимо от того, насколько модель уверена, и потому либо тащит мусор, либо режет хвост произвольно. Обычный совет вендоров — крутить temperature или top_p, но не оба, а top_k у Anthropic помечен как параметр только для продвинутых сценариев. И отдельно: на моделях, выпущенных после Opus 4.6 (начиная с Opus 4.7), temperature/top_p/top_k вообще deprecated — non-default значение теперь 400 error, официальная рекомендация Anthropic — steering через prompting, а не через sampling-параметры. Отдельный параметр effort действительно есть, но это не замена temperature. Он живёт в output_config и управляет тем, сколько токенов Claude тратит в целом: глубиной thinking, а также длиной текста и tool calls, даже при выключенном thinking. Случайностью вывода он не управляет, это два разных рычага."
+        "t": "top_p сортирует токены по вероятности, набирает их сверху, пока сумма не достигнет p, а остальное отрезает и перенормирует. Главное его свойство в том, что набор адаптивный: когда модель уверена, в нём остаётся один токен, когда не уверена, может остаться сорок. А top_k всегда берёт ровно k, независимо от того, насколько модель уверена, и потому либо тащит мусор, либо режет хвост произвольно. Обычный совет вендоров — крутить temperature или top_p, но не оба, а top_k у Anthropic помечен как параметр только для продвинутых сценариев. И отдельно: на моделях после Opus 4.6 (начиная с Opus 4.7) temperature, top_p и top_k deprecated, non-default значение возвращает ошибку 400, и Anthropic рекомендует управлять поведением через промпт, а не через параметры сэмплинга. Отдельный параметр effort действительно есть, но это не замена temperature. Он живёт в output_config и управляет тем, сколько токенов Claude тратит в целом: глубиной thinking, а также длиной текста и tool calls, даже при выключенном thinking. Случайностью вывода он не управляет, это два разных рычага."
       }
     ],
     "kill": "<b>«temp 0 = детерминизм»</b> и <b>«выше температура = умнее»</b>. Первое неверно из-за батчинга и порядка float-редукции; второе не добавляет знаний, а на фактической задаче лишнее разнообразие даёт ошибки."
@@ -46,20 +46,136 @@
       },
       {
         "q": "top_p and deprecation",
-        "t": "top_p sorts tokens by probability, takes them from the top until the accumulated mass reaches p, then cuts the rest and renormalises. Its key property is that it adapts: when the model is confident the set collapses to one token, when it's unsure it might keep forty. top_k always takes exactly k regardless of confidence, so it either drags in noise or truncates the tail arbitrarily. The usual vendor advice is to tune temperature or top_p, not both, and Anthropic marks top_k as advanced use only. And separately: on models released after Opus 4.6 (starting with Opus 4.7), temperature/top_p/top_k are deprecated entirely — a non-default value now returns a 400, and Anthropic's actual guidance is to steer via prompting, not sampling params. There is a real effort field, but it's not temperature's replacement. It lives under output_config and controls how many tokens Claude spends overall: thinking depth, but also the length of text and tool calls, even with thinking off. It doesn't touch output randomness, so these are two different knobs."
+        "t": "top_p sorts tokens by probability, takes them from the top until the accumulated mass reaches p, then cuts the rest and renormalises. Its key property is that it adapts: when the model is confident the set collapses to one token, when it's unsure it might keep forty. top_k always takes exactly k regardless of confidence, so it either drags in noise or truncates the tail arbitrarily. The usual vendor advice is to tune temperature or top_p, not both, and Anthropic marks top_k as advanced use only. And separately: on models released after Opus 4.6 (starting with Opus 4.7), temperature, top_p and top_k are deprecated, a non-default value returns a 400, and Anthropic's guidance is to steer through the prompt instead of sampling params. There is a real effort field, but it's not temperature's replacement. It lives under output_config and controls how many tokens Claude spends overall: thinking depth, but also the length of text and tool calls, even with thinking off. It doesn't touch output randomness, so these are two different knobs."
       }
     ],
     "kill": "<b>\"temp 0 means deterministic\"</b> and <b>\"higher temperature makes the model smarter\"</b>. The first is wrong because of batching and float reduction order; the second adds no knowledge, and on a factual task the extra diversity produces errors."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "temperature = 0 гарантирует одинаковый ответ на одинаковый запрос.",
-        "Высокая temperature добавляет модели знаний."
+        {
+          "s": "Temperature делит логиты на своё значение перед softmax, и больше этот параметр ничего не делает.",
+          "ok": true,
+          "why": "Распределение к этому моменту уже посчитано. Temperature только меняет его форму перед выбором токена."
+        },
+        {
+          "s": "Temperature меньше единицы выравнивает распределение и даёт маловероятным токенам больше шансов быть выбранными.",
+          "ok": false,
+          "why": "Деление на число меньше единицы раздвигает логиты, и распределение становится резче. Выравнивает его temperature больше единицы."
+        },
+        {
+          "s": "Temperature 0 реализуется как greedy decoding: на каждом шаге берётся самый вероятный токен.",
+          "ok": true,
+          "why": "Случайного выбора при этом нет: из распределения каждый раз берётся токен с наибольшей вероятностью."
+        },
+        {
+          "s": "Высокая temperature добавляет модели знаний, поэтому на фактических задачах её стоит поднимать.",
+          "ok": false,
+          "why": "Temperature действует после расчёта распределения и знаний не добавляет. На фактической задаче лишнее разнообразие в основном даёт ошибки."
+        },
+        {
+          "s": "Temperature 0 гарантирует одинаковый ответ на одинаковый запрос независимо от нагрузки на сервер.",
+          "ok": false,
+          "why": "Ответ почти детерминирован, но не гарантирован: батчинг с чужими запросами меняет порядок float-редукции, и почти равные кандидаты могут поменяться местами."
+        },
+        {
+          "s": "Один и тот же запрос при temperature 0 может дать разный ответ, потому что сервер батчит его с чужими запросами.",
+          "ok": true,
+          "why": "Kernel'ы не batch-invariant: другой размер батча меняет порядок суммирования float, а с ним и численный результат."
+        },
+        {
+          "s": "Расхождение ответов при temperature 0 вызывает случайный порядок потоков GPU, который меняется от запуска к запуску.",
+          "ok": false,
+          "why": "Один и тот же батч даёт одинаковый результат от запуска к запуску. Главная причина — другой размер батча, который меняет порядок редукции."
+        },
+        {
+          "s": "Генерация авторегрессивна, поэтому один разошедшийся токен меняет весь дальнейший текст ответа.",
+          "ok": true,
+          "why": "Каждый следующий токен зависит от предыдущих, и маленькая разница в одном месте тянется до конца ответа."
+        },
+        {
+          "s": "top_p берёт самые вероятные токены, пока их суммарная вероятность не достигнет p, а остальные отрезает и перенормирует набор.",
+          "ok": true,
+          "why": "Размер набора получается адаптивным: при уверенной модели остаётся один токен, при неуверенной может остаться сорок."
+        },
+        {
+          "s": "top_k подстраивается под уверенность модели и при высокой уверенности оставляет в наборе меньше токенов.",
+          "ok": false,
+          "why": "top_k берёт ровно k токенов при любой уверенности, поэтому либо тащит мусор, либо режет хвост произвольно. Адаптивный набор даёт top_p."
+        },
+        {
+          "s": "Параметр effort в output_config заменяет temperature на новых моделях Claude и управляет случайностью вывода.",
+          "ok": false,
+          "why": "effort управляет тем, сколько токенов Claude тратит: глубиной thinking, длиной текста и tool calls. Случайность вывода он не трогает."
+        },
+        {
+          "s": "На моделях Claude начиная с Opus 4.7 non-default значение temperature, top_p или top_k возвращает ошибку 400.",
+          "ok": true,
+          "why": "Эти параметры там deprecated. Anthropic рекомендует управлять поведением модели через промпт."
+        }
       ],
       "en": [
-        "temperature = 0 guarantees the same answer for the same request.",
-        "Higher temperature gives the model more knowledge."
+        {
+          "s": "Temperature divides the logits by its value before the softmax, and that is all the parameter does.",
+          "ok": true,
+          "why": "By then the distribution has already been computed. Temperature only reshapes it before a token is picked."
+        },
+        {
+          "s": "A temperature below one flattens the distribution and gives unlikely tokens a better chance of being picked.",
+          "ok": false,
+          "why": "Dividing by a number below one pushes the logits apart and sharpens the distribution. A temperature above one flattens it."
+        },
+        {
+          "s": "Temperature 0 is implemented as greedy decoding: at every step the most likely token is taken.",
+          "ok": true,
+          "why": "There's no random sampling at all: the token with the highest probability is taken every time."
+        },
+        {
+          "s": "A higher temperature gives the model more knowledge, so it's worth raising on factual tasks.",
+          "ok": false,
+          "why": "Temperature acts after the distribution is computed and adds no knowledge. On a factual task the extra diversity mostly adds errors."
+        },
+        {
+          "s": "Temperature 0 guarantees the same answer to the same request regardless of server load.",
+          "ok": false,
+          "why": "Output is near-deterministic, not guaranteed: batching with other requests changes the float reduction order, and nearly tied candidates can swap."
+        },
+        {
+          "s": "The same request at temperature 0 can produce different answers because the server batches it with other people's requests.",
+          "ok": true,
+          "why": "The kernels aren't batch-invariant: a different batch size changes the order of float additions and therefore the numeric result."
+        },
+        {
+          "s": "Different answers at temperature 0 are caused by random GPU thread ordering that changes from run to run.",
+          "ok": false,
+          "why": "The same batch gives the same result run to run. The main cause is a different batch size, which changes the reduction order."
+        },
+        {
+          "s": "Generation is autoregressive, so a single diverged token changes the entire rest of the answer.",
+          "ok": true,
+          "why": "Every next token depends on the previous ones, so a tiny difference in one place carries through to the end."
+        },
+        {
+          "s": "top_p takes the most likely tokens until their combined probability reaches p, cuts the rest and renormalises the set.",
+          "ok": true,
+          "why": "The set size adapts: when the model is confident one token remains, when it's unsure forty might."
+        },
+        {
+          "s": "top_k adapts to the model's confidence and keeps fewer tokens in the set when the model is confident.",
+          "ok": false,
+          "why": "top_k takes exactly k tokens whatever the confidence, so it either drags in noise or cuts the tail arbitrarily. top_p is the adaptive one."
+        },
+        {
+          "s": "The effort parameter in output_config replaces temperature on the newest Claude models and controls output randomness.",
+          "ok": false,
+          "why": "effort controls how many tokens Claude spends: thinking depth, text length and tool calls. It doesn't touch output randomness."
+        },
+        {
+          "s": "On Claude models starting with Opus 4.7, a non-default temperature, top_p or top_k value returns a 400 error.",
+          "ok": true,
+          "why": "Those parameters are deprecated there. Anthropic recommends steering the model through the prompt instead."
+        }
       ]
     },
     "cloze": {

@@ -23,7 +23,7 @@
       },
       {
         "q": "Кириллица",
-        "t": "Словарь строился на корпусе с преобладанием английского, поэтому эффективные склейки достались ему, а кириллица режется мельче. Насколько мельче — зависит от токенайзера: в эпоху GPT-2 разница пятикратная и больше, у cl100k примерно двукратная, а у больших словарей вроде o200k около полутора раз и меньше. Это продуктовое решение, а не курьёз: надбавка бьёт и по цене, и по контекстному окну. Перед бюджетированием русской фичи я меряю реальный текст счётчиком вендора, у Claude это count_tokens."
+        "t": "Словарь строился на корпусе с преобладанием английского, поэтому эффективные склейки достались ему, а кириллица режется мельче. Насколько мельче — зависит от токенайзера: в эпоху GPT-2 разница пятикратная и больше, у cl100k примерно двукратная, а у больших словарей вроде o200k около полутора раз и меньше. Для продукта это важно: надбавка бьёт и по цене, и по контекстному окну. Перед бюджетированием русской фичи я меряю реальный текст счётчиком вендора, у Claude это count_tokens."
       }
     ],
     "kill": "<b>«Token is a symbol»</b> — русское «символ» это character, английское symbol значит другое. Говори <b>subword unit</b>. И не путай «4 символа» с «4 слова» — это ошибка в пять раз."
@@ -46,20 +46,136 @@
       },
       {
         "q": "Non-English",
-        "t": "The vocabulary was built on an English-heavy corpus, so English got the efficient merges and Cyrillic usually gets split finer. How much finer depends on the tokenizer: GPT-2-era ones were five times worse or more, cl100k roughly double, and modern large vocabularies like o200k are around one and a half times or less. It's a product decision, not trivia: the premium hits both cost and context. So before budgeting a Russian feature I measure real text with the vendor's token counter, count_tokens on Claude."
+        "t": "The vocabulary was built on an English-heavy corpus, so English got the efficient merges and Cyrillic usually gets split finer. How much finer depends on the tokenizer: GPT-2-era ones were five times worse or more, cl100k roughly double, and modern large vocabularies like o200k are around one and a half times or less. It matters for the product: the premium hits both cost and context. So before budgeting a Russian feature I measure real text with the vendor's token counter, count_tokens on Claude."
       }
     ],
     "kill": "<b>\"A token is a symbol\"</b> — Russian <i>символ</i> means <i>character</i>; English \"symbol\" doesn't. Say <b>subword unit</b>. And never say \"4 words per token\" — that's a 5x error."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Токен — это один символ текста.",
-        "В одном токене примерно четыре слова."
+        {
+          "s": "Токен — это subword unit: кусок текста из фиксированного словаря модели, который может быть словом, частью слова или символом.",
+          "ok": true,
+          "why": "Частые слова лежат в словаре целиком, редкие собираются из нескольких кусков."
+        },
+        {
+          "s": "Токен языковой модели соответствует одному символу текста, поэтому число токенов примерно равно длине строки в символах.",
+          "ok": false,
+          "why": "Один токен английского в среднем покрывает около четырёх символов. Отдельным символом токен бывает только для редких кусков текста."
+        },
+        {
+          "s": "По эвристике OpenAI один токен английского текста — это примерно четыре символа или около трёх четвертей слова.",
+          "ok": true,
+          "why": "Это одно и то же соотношение в двух единицах. Для Claude Anthropic называет около 3,5 символа на токен."
+        },
+        {
+          "s": "По эвристике OpenAI один токен английского текста в среднем покрывает около четырёх слов.",
+          "ok": false,
+          "why": "Токен покрывает около трёх четвертей слова, так что «четыре слова» — ошибка примерно в пять раз. Четыре — это символы."
+        },
+        {
+          "s": "Токенизация применяется только к промпту, а ответ модель генерирует сразу словами, без токенов.",
+          "ok": false,
+          "why": "Токены есть с обеих сторон: промпт токенизируется на входе, а модель порождает токены на выходе, и выходные тоже оплачиваются."
+        },
+        {
+          "s": "Модель получает на вход последовательность целых чисел, и каждое число — индекс записи в словаре токенайзера.",
+          "ok": true,
+          "why": "Текст превращается в id токенов до того, как попадает в модель. Букв и слов модель не видит."
+        },
+        {
+          "s": "Словарь токенайзера строит BPE: самые частые соседние пары склеиваются в одну запись, поэтому частые слова становятся одним токеном.",
+          "ok": true,
+          "why": "Длину в токенах определяет частота куска текста в корпусе. Редкие слова режутся на несколько токенов."
+        },
+        {
+          "s": "BPE склеивает куски текста по смыслу, поэтому слова со сложным значением занимают больше токенов, чем простые.",
+          "ok": false,
+          "why": "BPE смотрит только на частоту пар в корпусе. Редкое слово режется мельче независимо от того, что оно значит."
+        },
+        {
+          "s": "Русский текст обычно занимает больше токенов, чем английский того же смысла, потому что словарь строился на корпусе с преобладанием английского.",
+          "ok": true,
+          "why": "Эффективные склейки достались английскому, а кириллица режется мельче. Надбавка бьёт и по цене, и по месту в контекстном окне."
+        },
+        {
+          "s": "Надбавка в токенах за русский текст одинакова у всех токенайзеров и составляет примерно пять раз по сравнению с английским.",
+          "ok": false,
+          "why": "Разница зависит от токенайзера: у GPT-2 пять раз и больше, у cl100k около двух, у o200k около полутора и меньше."
+        },
+        {
+          "s": "Новый токенайзер Claude даёт на том же тексте столько же токенов, сколько прежний, поэтому старые оценки бюджета остаются точными.",
+          "ok": false,
+          "why": "Новый токенайзер может дать на том же тексте до трети больше токенов. Поэтому токены считают, а не делят длину текста на константу."
+        },
+        {
+          "s": "Перед бюджетированием русскоязычной фичи токены стоит измерить на реальном тексте счётчиком вендора, например count_tokens у Claude.",
+          "ok": true,
+          "why": "Соотношение символов и токенов зависит от языка и токенайзера, поэтому точную цифру даёт только подсчёт на своём тексте."
+        }
       ],
       "en": [
-        "A token is a single character of text.",
-        "One token is roughly four words."
+        {
+          "s": "A token is a subword unit, a chunk of text from the model's fixed vocabulary: a word, part of a word or a character.",
+          "ok": true,
+          "why": "Frequent words sit in the vocabulary whole, while rare ones are assembled from several pieces."
+        },
+        {
+          "s": "A language-model token corresponds to one character of text, so the token count roughly equals the string length in characters.",
+          "ok": false,
+          "why": "One English token covers about four characters on average. A token is a single character only for rare pieces of text."
+        },
+        {
+          "s": "By OpenAI's rule of thumb, one token of English text is about four characters, or roughly three quarters of a word.",
+          "ok": true,
+          "why": "That's one ratio expressed in two units. For Claude, Anthropic quotes about 3.5 characters per token."
+        },
+        {
+          "s": "By OpenAI's rule of thumb, one token of English text covers about four words on average.",
+          "ok": false,
+          "why": "A token covers about three quarters of a word, so \"four words\" is roughly a 5x error. Four is the character count."
+        },
+        {
+          "s": "Tokenization applies only to the prompt, and the model generates its answer directly as words, without tokens.",
+          "ok": false,
+          "why": "Tokens exist on both sides: the prompt is tokenized on the way in, the model produces tokens on the way out, and output tokens are billed too."
+        },
+        {
+          "s": "The model receives a sequence of integers as input, and each integer is an index into the tokenizer's vocabulary.",
+          "ok": true,
+          "why": "Text is turned into token ids before it reaches the model. The model never sees letters or words."
+        },
+        {
+          "s": "The tokenizer vocabulary is built by BPE: the most frequent adjacent pairs are merged into one entry, so common words become one token.",
+          "ok": true,
+          "why": "Token length is decided by how often a piece of text appears in the corpus. Rare words get split into several tokens."
+        },
+        {
+          "s": "BPE merges pieces of text by meaning, so words with complex meanings take more tokens than simple ones.",
+          "ok": false,
+          "why": "BPE only looks at how often pairs occur in the corpus. A rare word gets split finer regardless of what it means."
+        },
+        {
+          "s": "Russian text usually takes more tokens than English with the same meaning, because the vocabulary was built on an English-heavy corpus.",
+          "ok": true,
+          "why": "English got the efficient merges and Cyrillic is split finer. The premium hits both cost and context window space."
+        },
+        {
+          "s": "The token premium for Russian text is the same across all tokenizers and is roughly five times that of English.",
+          "ok": false,
+          "why": "It depends on the tokenizer: GPT-2-era ones were five times or worse, cl100k about double, o200k around one and a half or less."
+        },
+        {
+          "s": "Claude's newer tokenizer produces the same number of tokens on the same text as the old one, so old budget estimates stay accurate.",
+          "ok": false,
+          "why": "The newer tokenizer can produce up to a third more tokens on the same text. That's why you count tokens instead of dividing by a constant."
+        },
+        {
+          "s": "Before budgeting a Russian-language feature, measure tokens on real text with the vendor's counter, such as count_tokens on Claude.",
+          "ok": true,
+          "why": "The character-to-token ratio depends on the language and the tokenizer, so only counting your own text gives an exact figure."
+        }
       ]
     },
     "cloze": {

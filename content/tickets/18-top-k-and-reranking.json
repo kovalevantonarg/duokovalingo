@@ -19,14 +19,14 @@
       },
       {
         "q": "Реранкер",
-        "t": "Первая стадия — embedding search — быстрая и приближённая: запрос и документ кодируются по отдельности и никак не взаимодействуют. Реранкер — это cross-encoder: он читает запрос и каждого кандидата вместе и оценивает релевантность точно. Прогнать его по всему корпусу нельзя, слишком дорого. Поэтому схема: достать пул пошире, примерно до ста пятидесяти, переранжировать и оставить верхние, от трёх до двадцати по бюджету контекста; в исследовании Anthropic про contextual retrieval из ста пятидесяти оставляли двадцать. Cohere или Voyage по API, либо локальный cross-encoder. В пайплайне он стоит после retrieval, и это одна из настроек, которые я подбираю по результатам эвала."
+        "t": "Первая стадия, embedding search, быстрая и приближённая: запрос и документ кодируются по отдельности и никак не взаимодействуют. Реранкер — это cross-encoder: он читает запрос и каждого кандидата вместе и оценивает релевантность точно. Прогнать его по всему корпусу нельзя, слишком дорого. Поэтому схема: достать пул пошире, примерно до ста пятидесяти, переранжировать и оставить верхние, от трёх до двадцати по бюджету контекста; в исследовании Anthropic про contextual retrieval из ста пятидесяти оставляли двадцать. Cohere или Voyage по API, либо локальный cross-encoder. В пайплайне он стоит после retrieval, и это одна из настроек, которые я подбираю по результатам эвала."
       },
       {
         "q": "Цена",
-        "t": "Это ещё один сетевой вызов, обычно сто–триста миллисекунд, и оплата за поиск или за токены, смотря по вендору; длинные документы дороже в любом случае. Пропускаю, когда корпус крошечный, когда k и так маленькое, или когда бюджет задержки жёсткий. Добавляю, когда точность важнее — ответы цитируют не тот документ — или когда корпус большой и грязный. Решение измеряю: precision в top-3 с реранкером и без. Если разницы нет, лишний вызов не нужен."
+        "t": "Это ещё один сетевой вызов, обычно сто–триста миллисекунд, и оплата за поиск или за токены, смотря по вендору; длинные документы дороже в любом случае. Пропускаю, когда корпус крошечный, когда k и так маленькое, или когда бюджет задержки жёсткий. Добавляю, когда точность важнее (ответы цитируют не тот документ) или когда корпус большой и грязный. Решение измеряю: precision в top-3 с реранкером и без. Если разницы нет, лишний вызов не нужен."
       }
     ],
-    "kill": "<b>«Реранкинг — просто ещё раз отсортировать по score»</b> — нет, это другая модель, которая читает пары. И <b>k равно одному</b> — тогда любой промах ретривера фатален."
+    "kill": "<b>«Реранкинг — просто ещё раз отсортировать по score»</b>. Нет, это другая модель, которая читает пары. И <b>k равно одному</b> — тогда любой промах ретривера фатален."
   },
   "en": {
     "topic": "Top-k and reranking",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "k",
-        "t": "k is how many candidates I pull from the vector index, usually five to twenty. Too few and the right passage doesn't show up at all. Too many and the context fills with noise, cost rises, and the model is worse at using a relevant passage that lands in the middle of a long context. I choose it by recall at k on a golden set, not intuition: the smallest k where the gold passage is almost always inside. It's one of the cheapest metrics in the whole pipeline — deterministic, no LLM judge needed."
+        "t": "k is how many candidates I pull from the vector index, usually five to twenty. Too few and the right passage doesn't show up at all. Too many and the context fills with noise, cost rises, and the model is worse at using a relevant passage that lands in the middle of a long context. I choose it by recall at k on a golden set, not intuition: the smallest k where the gold passage is almost always inside. It's one of the cheapest metrics in the whole pipeline: deterministic, no LLM judge needed."
       },
       {
         "q": "Reranker",
-        "t": "The first stage — embedding search — is fast and approximate: query and document are encoded separately and never interact. A reranker is a cross-encoder: it reads the query and each candidate together and scores relevance precisely. You can't run it over the whole corpus, far too expensive. So the pattern is: retrieve a wider pool, up to a hundred fifty or so, rerank, keep the top three to twenty by context budget; in Anthropic's contextual retrieval study they went from a hundred fifty to twenty. Cohere or Voyage over an API, or a local cross-encoder. In the pipeline it sits after retrieval, and it's one of the knobs I tune against the eval."
+        "t": "The first stage, embedding search, is fast and approximate: query and document are encoded separately and never interact. A reranker is a cross-encoder: it reads the query and each candidate together and scores relevance precisely. You can't run it over the whole corpus, far too expensive. So the pattern is: retrieve a wider pool, up to a hundred fifty or so, rerank, keep the top three to twenty by context budget; in Anthropic's contextual retrieval study they went from a hundred fifty to twenty. Cohere or Voyage over an API, or a local cross-encoder. In the pipeline it sits after retrieval, and it's one of the settings I tune against the eval."
       },
       {
         "q": "Cost",
-        "t": "It's another network call, typically a hundred to three hundred milliseconds, billed per search or per token depending on the vendor, and long documents cost more either way. I skip it when the corpus is tiny, when k is small anyway, or when the latency budget is tight. I add it when precision matters more — answers citing the wrong document — or when the corpus is large and noisy. I measure the decision: precision at three with and without the reranker. No difference, no extra call."
+        "t": "It's another network call, typically a hundred to three hundred milliseconds, billed per search or per token depending on the vendor, and long documents cost more either way. I skip it when the corpus is tiny, when k is small anyway, or when the latency budget is tight. I add it when precision matters more (answers citing the wrong document) or when the corpus is large and noisy. I measure the decision: precision at three with and without the reranker. If there's no difference, the extra call isn't worth it."
       }
     ],
     "kill": "<b>\"Reranking is just sorting by score again\"</b> — no, it's a different model that reads the pairs. And <b>k equals one</b> — then any retriever miss is fatal."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Реранкер — это повторная сортировка кандидатов по тому же score.",
-        "k = 1 — оптимально: меньше шума в контексте."
+        {
+          "s": "Cross-encoder выгоднее запускать сразу по всему корпусу, тогда отдельная стадия векторного поиска становится не нужна.",
+          "ok": false,
+          "why": "Cross-encoder на всём корпусе слишком дорог: кластеризация 10 000 предложений занимает около 65 часов против 5 секунд у bi-encoder."
+        },
+        {
+          "s": "В RAG число k — это сколько кандидатов поиск достаёт из векторного индекса, и обычно оно от 5 до 20.",
+          "ok": true,
+          "why": "Anthropic сравнивал 5, 10 и 20 кусков и лучшим оказалось 20. Точное значение подбирают на своих данных."
+        },
+        {
+          "s": "Реранкер работает как cross-encoder: он читает запрос и каждого кандидата вместе и заново оценивает релевантность пары.",
+          "ok": true,
+          "why": "Внутри одной модели запрос и документ взаимодействуют, поэтому оценка точнее, чем сравнение двух отдельных векторов."
+        },
+        {
+          "s": "Реранкер почти не добавляет задержки, потому что работает внутри векторной базы вместе с поиском.",
+          "ok": false,
+          "why": "Обычно это отдельный сетевой вызов к Cohere, Voyage или локальной модели. Он добавляет примерно 100–300 мс."
+        },
+        {
+          "s": "k выбирают как наименьшее значение, при котором нужный пассаж почти всегда попадает в top-k на золотом наборе.",
+          "ok": true,
+          "why": "Это и есть подбор по recall@k: дальше увеличивать k нет смысла, растут только шум и цена."
+        },
+        {
+          "s": "При большом k качество ответа только растёт, потому что модель получает больше потенциально полезного контекста.",
+          "ok": false,
+          "why": "Лишние куски добавляют шум и цену, а нужный фрагмент может оказаться в середине длинного контекста, где модель использует его хуже."
+        },
+        {
+          "s": "Метрика recall@k детерминирована и не требует LLM-судьи, поэтому это одна из самых дешёвых метрик RAG-пайплайна.",
+          "ok": true,
+          "why": "Она только сравнивает id найденных кусков с размеченными. Ни генерации, ни оценки моделью не нужно."
+        },
+        {
+          "s": "Реранкер заново сортирует найденных кандидатов по тому же score сходства, который уже вернул векторный поиск.",
+          "ok": false,
+          "why": "Реранкер — отдельная модель. Она читает каждую пару запрос–документ и выдаёт новую оценку релевантности."
+        },
+        {
+          "s": "Значение k = 1 лучше всего подходит для RAG, потому что в контекст модели не попадает лишний шум.",
+          "ok": false,
+          "why": "При k = 1 любой промах ретривера фатален: если нужный кусок не на первом месте, модель его не увидит."
+        },
+        {
+          "s": "Реранкинг можно пропустить, если корпус крошечный, k и так маленькое или бюджет задержки жёсткий.",
+          "ok": true,
+          "why": "Решение проверяют метрикой: precision в top-3 с реранкером и без. Если разницы нет, лишний вызов не нужен."
+        },
+        {
+          "s": "Реранкеру обычно передают ровно столько кандидатов, сколько потом попадёт в промпт, например три.",
+          "ok": false,
+          "why": "Реранкеру дают пул пошире: в исследовании Anthropic из 150 кандидатов оставляли 20. Иначе реранкеру нечего переставлять."
+        },
+        {
+          "s": "На первой стадии поиска запрос и документ кодируются по отдельности, поэтому она быстрая, но приближённая.",
+          "ok": true,
+          "why": "Векторы документов считаются заранее, а при запросе сравниваются только числа. Тонкие связи между запросом и текстом при этом теряются."
+        }
       ],
       "en": [
-        "A reranker is re-sorting the candidates by the same score.",
-        "k = 1 is optimal: less noise in the context."
+        {
+          "s": "It's better to run a cross-encoder over the whole corpus, which makes a separate vector-search stage unnecessary.",
+          "ok": false,
+          "why": "A cross-encoder over a whole corpus is far too expensive: clustering 10,000 sentences takes about 65 hours versus 5 seconds with a bi-encoder."
+        },
+        {
+          "s": "In RAG, k is how many candidates the search pulls from the vector index, and it is usually between 5 and 20.",
+          "ok": true,
+          "why": "Anthropic compared 5, 10 and 20 chunks and found 20 performed best. The exact value is tuned on your own data."
+        },
+        {
+          "s": "A reranker works as a cross-encoder: it reads the query and each candidate together and rescores the relevance of the pair.",
+          "ok": true,
+          "why": "Query and document interact inside one model, so the score is more precise than comparing two separate vectors."
+        },
+        {
+          "s": "A reranker adds almost no latency, because it runs inside the vector database together with the search.",
+          "ok": false,
+          "why": "It's usually a separate network call to Cohere, Voyage or a local model. It adds roughly 100–300 ms."
+        },
+        {
+          "s": "You choose k as the smallest value at which the gold passage almost always lands in the top-k on a golden set.",
+          "ok": true,
+          "why": "That's tuning by recall@k: raising k further adds only noise and cost."
+        },
+        {
+          "s": "With a large k, answer quality only improves, because the model gets more potentially useful context.",
+          "ok": false,
+          "why": "Extra chunks add noise and cost, and the relevant passage can end up in the middle of a long context, where the model uses it worse."
+        },
+        {
+          "s": "Recall@k is deterministic and needs no LLM judge, which makes it one of the cheapest metrics in a RAG pipeline.",
+          "ok": true,
+          "why": "It just compares the ids of retrieved chunks with the labelled ones. No generation and no model-based grading."
+        },
+        {
+          "s": "A reranker re-sorts the retrieved candidates by the same similarity score that the vector search already returned.",
+          "ok": false,
+          "why": "A reranker is a separate model. It reads each query–document pair and produces a new relevance score."
+        },
+        {
+          "s": "Setting k = 1 works best for RAG, because no extra noise gets into the model's context.",
+          "ok": false,
+          "why": "With k = 1 any retriever miss is fatal: if the right chunk isn't ranked first, the model never sees it."
+        },
+        {
+          "s": "You can skip reranking when the corpus is tiny, k is small anyway, or the latency budget is tight.",
+          "ok": true,
+          "why": "You check the decision with a metric: precision at three with and without the reranker. If there's no difference, skip the extra call."
+        },
+        {
+          "s": "A reranker is usually given exactly as many candidates as will end up in the prompt, for example three.",
+          "ok": false,
+          "why": "A reranker gets a wider pool: in Anthropic's study 150 candidates were cut to 20. Otherwise it has nothing to reorder."
+        },
+        {
+          "s": "In the first retrieval stage, query and document are encoded separately, so it is fast but approximate.",
+          "ok": true,
+          "why": "Document vectors are computed in advance, and a query only compares numbers. Fine-grained links between query and text get lost."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "k обычно [[5-20|5–20]]; выбираю по [[recall@k|recall at k|recall]] на золотом наборе.",
-        "Реранкер — это [[cross-encoder]]: читает запрос и кандидата [[вместе]].",
-        "Схема: достать широкий пул, [[переранжировать]], оставить верхние — у Anthropic из [[150|ста пятидесяти]] оставляли 20."
+        "Число кандидатов k в RAG обычно [[5-20|5–20]], а точное значение выбирают по [[recall@k|recall at k|recall]] на золотом наборе.",
+        "Реранкер — это [[cross-encoder]], который читает запрос и кандидата [[вместе|одновременно]].",
+        "Реранкеру дают широкий пул: в исследовании Anthropic из [[150|ста пятидесяти]] кандидатов после [[переранжирования|реранкинга|reranking]] оставляли 20."
       ],
       "en": [
-        "k is usually [[5-20|5–20]]; I pick it by [[recall@k|recall at k|recall]] on a golden set.",
-        "A reranker is a [[cross-encoder]]: it reads query and candidate [[together]].",
-        "The pattern: retrieve a wide pool, [[rerank|re-rank]], keep the top few — Anthropic went from [[150|a hundred fifty|one hundred fifty]] to 20."
+        "The number of candidates k in RAG is usually [[5-20|5–20]], and the exact value is chosen by [[recall@k|recall at k|recall]] on a golden set.",
+        "A reranker is a [[cross-encoder]] that reads the query and the candidate [[together]].",
+        "A reranker gets a wide pool: in Anthropic's study, [[150|a hundred fifty|one hundred fifty]] candidates were cut to 20 after [[reranking|re-ranking]]."
       ]
     }
   },

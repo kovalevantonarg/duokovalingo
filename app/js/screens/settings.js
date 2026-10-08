@@ -2,6 +2,7 @@
 import { icon } from "../icons.js";
 import { route } from "../router.js";
 import { beep, soundOn, toggleSound } from "../sound.js";
+import { canSpeak, setVoice, speak, voice, voices } from "../speech.js";
 import { emptyDb } from "../../lib/srs.js";
 import { persist, state } from "../state.js";
 import { setLang, ui } from "../ui.js";
@@ -124,6 +125,20 @@ export function openSettings() {
   const html = `<h3 class="sh">${ui().settings}</h3>
     ${row(ui().language, "", `<div class="seg"><button data-l="ru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button data-l="en" class="${state.lang === "en" ? "on" : ""}">EN</button></div>`)}
     ${row(ui().sound, ui().soundd, toggle("sndT", soundOn()))}
+    ${
+      canSpeak && voices().length
+        ? row(
+            ui().voiceL,
+            ui().voiceD,
+            `<select id="vsel" class="vsel">${voices()
+              .map(
+                (v) =>
+                  `<option value="${esc(v.name)}" ${voice()?.name === v.name ? "selected" : ""}>${esc(v.name)}</option>`,
+              )
+              .join("")}</select>`,
+          )
+        : ""
+    }
     ${state.db.push && pushable() ? row(ui().reminders, ui().remindersd, toggle("pushT", false)) : ""}
     ${"serviceWorker" in navigator ? row(ui().offlineLessons, ui().offlineLessonsd, `<button class="btn line" id="offl">${localStorage.getItem("learn.offline") ? ui().saved : ui().save}</button>`) : ""}
     <div class="sfoot">${state.live ? ui().synced : `${icon.warn}${ui().offlineShort}${state.pending.length ? ` · ${state.pending.length} ${ui().pending}` : ""}`}</div>
@@ -145,6 +160,12 @@ export function openSettings() {
       e.currentTarget.setAttribute("aria-checked", on);
       beep(true);
     };
+    const vs = sh.querySelector("#vsel");
+    if (vs)
+      vs.onchange = () => {
+        setVoice(vs.value);
+        speak(ui().voiceSample);
+      };
     const pt = sh.querySelector("#pushT");
     if (pt) {
       currentSub().then((s) => {

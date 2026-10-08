@@ -46,32 +46,148 @@
       },
       {
         "q": "Why it's not a boundary",
-        "t": "Because it's a trained tendency, not an enforced permission system. There's no code path that stops the model obeying a sufficiently persuasive instruction — it's a soft prior, not a barrier. So I'd call the system prompt defense-in-depth, but not a defense. The real controls sit outside the model: authorization at the level of each tool, where the model asks and my code decides; least privilege; schema validation of output, because what the model returns is untrusted input; and human confirmation on anything destructive. And separately, the system prompt isn't secret — people extract them routinely — so no keys and no confidential logic go in there."
+        "t": "Because it's a trained tendency, not an enforced permission system. There's no code path that stops the model obeying a sufficiently persuasive instruction — it's a soft prior, not a barrier. So I'd call the system prompt defense-in-depth, but not a defense. The real controls sit outside the model: authorization at the level of each tool, where the model asks and my code decides; least privilege; schema validation of output, because what the model returns is untrusted input; and human confirmation on anything destructive. And separately, the system prompt isn't secret: people extract them routinely, so no keys and no confidential logic go in there."
       }
     ],
     "kill": "<b>\"We put the rule in the system prompt, so it's safe\"</b> — that sentence tells the interviewer you've never run an agent in production."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Системный промпт — это жёсткая граница: модель физически не может его нарушить.",
-        "Данные пользователя лучше интерполировать в system, чтобы модель их точно учла."
+        {
+          "s": "В API Anthropic системный промпт передаётся отдельным top-level параметром, а не первым сообщением в массиве messages.",
+          "ok": true,
+          "why": "System живёт отдельно от диалога, а в messages идут ходы user и assistant."
+        },
+        {
+          "s": "Данные конкретного пользователя лучше подставлять в системный промпт, чтобы модель гарантированно их учла.",
+          "ok": false,
+          "why": "Подстановка меняет префикс на каждом запросе, и prompt caching перестаёт попадать. То, что верно только для этого хода, идёт в user."
+        },
+        {
+          "s": "В системный промпт кладут то, что верно для каждого хода: роль, правила, ограничения и формат вывода.",
+          "ok": true,
+          "why": "Так system остаётся статичным, а запрос конкретного хода идёт в сообщении user."
+        },
+        {
+          "s": "Системный промпт — жёсткая граница: модель технически не может выполнить инструкцию, которая ему противоречит.",
+          "ok": false,
+          "why": "Приоритет system — натренированная склонность. Нет кода, который запретил бы модели послушаться достаточно убедительной инструкции."
+        },
+        {
+          "s": "Если подставлять данные пользователя в системный промпт при включённом кэше, каждый запрос заново пишет кэш и стоит дороже обычного.",
+          "ok": true,
+          "why": "Префикс меняется на каждом запросе, попаданий нет, а запись в кэш оплачивается с наценкой."
+        },
+        {
+          "s": "Модель склонна выбирать system при конфликте с user, потому что instruction hierarchy закрепляется при instruction tuning и RLHF.",
+          "ok": true,
+          "why": "При обучении модель учится при конфликте предпочитать более высокий уровень. Это выученное поведение, а не проверка прав."
+        },
+        {
+          "s": "В instruction hierarchy результаты инструментов стоят выше сообщений пользователя, потому что это данные из проверенных источников.",
+          "ok": false,
+          "why": "Результаты инструментов и найденный контент стоят ниже всех. Порядок примерно такой: system, developer, user, затем tool results."
+        },
+        {
+          "s": "Приоритет системного промпта обеспечивает API: сервер вырезает из сообщений user инструкции, которые противоречат system.",
+          "ok": false,
+          "why": "API ничего не вырезает. Приоритет system — выученное поведение модели, а не фильтр на стороне сервера."
+        },
+        {
+          "s": "Настоящие контроли безопасности агента живут вне модели: авторизация на каждом инструменте, минимальные права и подтверждение человеком.",
+          "ok": true,
+          "why": "Модель только просит действие, а решает код. Поэтому убедительная инструкция не обходит проверку прав."
+        },
+        {
+          "s": "Ответ модели, полученный по строгому системному промпту, можно передавать дальше в систему без валидации схемой.",
+          "ok": false,
+          "why": "Ответ модели — недоверенный ввод. Его валидируют схемой независимо от того, что написано в system."
+        },
+        {
+          "s": "Системный промпт нельзя считать секретом, потому что его регулярно извлекают, поэтому ключи и конфиденциальную логику туда не кладут.",
+          "ok": true,
+          "why": "Пользователи часто уговаривают модель показать системный промпт. Секреты должны жить в коде."
+        },
+        {
+          "s": "API-ключи можно хранить в системном промпте, потому что пользователь видит только ответы модели, а не сам промпт.",
+          "ok": false,
+          "why": "Системные промпты регулярно вытаскивают, уговаривая модель их показать. Ключи и конфиденциальная логика должны жить в коде."
+        }
       ],
       "en": [
-        "The system prompt is a hard boundary: the model physically cannot violate it.",
-        "Per-user data belongs in the system prompt so the model definitely takes it into account."
+        {
+          "s": "In Anthropic's API the system prompt is passed as a separate top-level parameter, not as the first message in the messages array.",
+          "ok": true,
+          "why": "System lives outside the conversation, and messages holds the user and assistant turns."
+        },
+        {
+          "s": "Per-user data is best interpolated into the system prompt so the model is sure to take it into account.",
+          "ok": false,
+          "why": "Interpolation changes the prefix on every request, so prompt caching stops hitting. Whatever is true only for this turn goes in the user message."
+        },
+        {
+          "s": "The system prompt holds what's true on every turn: the role, rules, constraints and output format.",
+          "ok": true,
+          "why": "That keeps system static, while the request for a given turn goes in the user message."
+        },
+        {
+          "s": "The system prompt is a hard boundary: the model technically cannot follow an instruction that contradicts it.",
+          "ok": false,
+          "why": "System priority is a trained tendency. No code stops the model from obeying a sufficiently persuasive instruction."
+        },
+        {
+          "s": "If you interpolate per-user data into the system prompt with caching on, every request rewrites the cache and costs more than normal.",
+          "ok": true,
+          "why": "The prefix changes on every request, nothing hits, and cache writes are billed at a premium."
+        },
+        {
+          "s": "The model tends to side with system when it conflicts with user, because the instruction hierarchy is learned during instruction tuning and RLHF.",
+          "ok": true,
+          "why": "Training teaches the model to prefer the higher level in a conflict. It's learned behaviour, not a permission check."
+        },
+        {
+          "s": "In the instruction hierarchy, tool results rank above user messages because they come from trusted sources.",
+          "ok": false,
+          "why": "Tool results and retrieved content rank lowest. The order is roughly system, developer, user, then tool results."
+        },
+        {
+          "s": "The API enforces system prompt priority: the server strips instructions from user messages that contradict the system prompt.",
+          "ok": false,
+          "why": "The API strips nothing. System priority is the model's learned behaviour, not a server-side filter."
+        },
+        {
+          "s": "An agent's real security controls live outside the model: authorization on each tool, least privilege and human confirmation.",
+          "ok": true,
+          "why": "The model only asks for an action, and code decides. So a persuasive instruction can't get past the permission check."
+        },
+        {
+          "s": "A model response produced under a strict system prompt can be passed on to the rest of the system without schema validation.",
+          "ok": false,
+          "why": "Model output is untrusted input. It gets validated against a schema no matter what the system prompt says."
+        },
+        {
+          "s": "The system prompt can't be treated as secret because people extract it routinely, so keys and confidential logic stay out of it.",
+          "ok": true,
+          "why": "Users regularly talk the model into revealing its system prompt. Secrets belong in code."
+        },
+        {
+          "s": "API keys can be stored in the system prompt, because the user sees only the model's answers and not the prompt itself.",
+          "ok": false,
+          "why": "System prompts are routinely extracted by talking the model into revealing them. Keys and confidential logic belong in code."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "System держат [[статичным|static|неизменным]], иначе [[prompt caching|кэш|кэширование]] никогда не сработает.",
         "Модель обучена [[иерархии инструкций|instruction hierarchy]]: system выше user, user выше результатов инструментов.",
-        "Системный промпт — это [[тенденция|склонность|prior]] из обучения, а не система прав."
+        "Приоритет системного промпта — это натренированная [[склонность|тенденция|prior]], а не система прав."
       ],
       "en": [
         "Keep system [[static|stable]], or [[prompt caching|caching|the cache]] never hits.",
         "Models are trained on an [[instruction hierarchy|hierarchy]]: system outranks user, user outranks tool results.",
-        "The system prompt is a trained [[tendency|prior]], not a permission system."
+        "The system prompt's priority is a trained [[tendency|prior]], not a permission system."
       ]
     }
   },

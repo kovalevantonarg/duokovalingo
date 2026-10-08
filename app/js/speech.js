@@ -7,6 +7,49 @@ export const canDictate = !!SR;
 export const canSpeak = "speechSynthesis" in window;
 const tag = () => (state.lang === "ru" ? "ru-RU" : "en-US");
 
+// ---- voice choice: system voices differ a lot; the "natural"/"enhanced" ones sound far less robotic ----
+const GOOD =
+  /natural|neural|online|premium|enhanced|siri|google|милена|katya|yuri|dariya|svetlana|dmitry|samantha|ava|zoe|evan/i;
+const BAD = /compact|espeak|novelty|whisper|bad news|bells|zarvox|trinoids|albert|fred|junior|ralph/i;
+/** Voices for the current language, best first. */
+export function voices() {
+  if (!canSpeak) return [];
+  const want = tag().slice(0, 2);
+  const score = (v) =>
+    (GOOD.test(v.name) ? 4 : 0) +
+    (v.lang === tag() ? 2 : 0) +
+    (v.localService ? 0 : 1) -
+    (BAD.test(v.name) ? 10 : 0);
+  return speechSynthesis
+    .getVoices()
+    .filter((v) => v.lang.replace("_", "-").toLowerCase().startsWith(want))
+    .sort((a, b) => score(b) - score(a));
+}
+const voiceKey = () => "drill.voice." + state.lang;
+/** The chosen voice for the current language: the one picked in settings, else the best-scoring one. */
+export function voice() {
+  const vs = voices();
+  let saved = null;
+  try {
+    saved = localStorage.getItem(voiceKey());
+  } catch {}
+  return vs.find((v) => v.name === saved) || vs[0] || null;
+}
+export function setVoice(name) {
+  try {
+    localStorage.setItem(voiceKey(), name);
+  } catch {}
+}
+if (canSpeak) speechSynthesis.getVoices(); // Chrome loads the list lazily
+const utter = (text, rate) => {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = tag();
+  u.rate = rate;
+  const v = voice();
+  if (v) u.voice = v;
+  return u;
+};
+
 /**
  * Start dictation. `onText(final, interim)` gets the recognised text so far: final grows, interim is the
  * current guess. Recognition restarts itself after pauses until `stop()` is called.
@@ -60,10 +103,7 @@ export function speak(text, rate = 0.95) {
   if (!canSpeak) return;
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = tag();
-    u.rate = rate;
-    speechSynthesis.speak(u);
+    speechSynthesis.speak(utter(text, rate));
   } catch {}
 }
 
@@ -90,9 +130,7 @@ export function readAloud(parts, { onPart, onDone, rate = 1, from = 0 } = {}) {
   const next = () => {
     if (stopped) return;
     if (i >= parts.length) return onDone?.();
-    const u = new SpeechSynthesisUtterance(parts[i]);
-    u.lang = tag();
-    u.rate = rate;
+    const u = utter(parts[i], rate);
     u.onend = () => {
       i++;
       next();

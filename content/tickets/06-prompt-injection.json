@@ -52,21 +52,137 @@
     "kill": "Answering only about direct injection. <b>Indirect</b> is what actually breaks production agents, and it's where the follow-up goes."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Prompt injection — это когда пользователь пишет «ignore previous instructions»; на этом всё.",
-        "Хорошие разделители вокруг документа полностью закрывают injection."
+        {
+          "s": "Prompt injection — это когда недоверенный текст попадает в контекст и модель выполняет его как инструкцию, а не читает как данные.",
+          "ok": true,
+          "why": "Модель не отличает данные от инструкций надёжно, поэтому любой текст в контексте может повлиять на её поведение."
+        },
+        {
+          "s": "Prompt injection — это только случай, когда пользователь сам пишет в чат «ignore previous instructions».",
+          "ok": false,
+          "why": "Это прямая инъекция, и она в основном демонстрация. Опаснее indirect: инструкция приходит внутри данных, которые агент достал сам."
+        },
+        {
+          "s": "Прямая prompt injection опаснее indirect, потому что атакующий сам управляет текстом запроса к модели.",
+          "ok": false,
+          "why": "Агентов в проде ломает indirect: атака приезжает вместе с данными, а пользователь ничего вредного не писал. Прямая — в основном демонстрация."
+        },
+        {
+          "s": "При indirect prompt injection вредоносная инструкция лежит внутри веб-страницы, PDF или тикета, которые агент загрузил сам.",
+          "ok": true,
+          "why": "Пользователь при этом ничего вредного не писал. Именно так ломают агентов в проде."
+        },
+        {
+          "s": "Недоверенный контент передают модели в блоке tool_result в JSON-кодировке, чтобы он не мог закрыть тег и выйти в инструкции.",
+          "ok": true,
+          "why": "Кодирование не даёт тексту сломать разметку. Вместе с этим модели прямо говорят, что содержимое инструментов — это данные."
+        },
+        {
+          "s": "Недоверенный контент безопаснее вставлять в системный промпт, потому что модель внимательнее относится к тексту в system.",
+          "ok": false,
+          "why": "Недоверенный контент кладут в tool_result, а не в system или текст пользователя. В system он получил бы самый высокий приоритет."
+        },
+        {
+          "s": "Минимальные права у каждого инструмента ограничивают ущерб агента, даже если prompt injection всё-таки сработала.",
+          "ok": true,
+          "why": "Инъекцию нельзя исключить полностью, поэтому важно, что агент вообще способен сделать после неё."
+        },
+        {
+          "s": "Хорошие разделители вокруг недоверенного документа полностью закрывают уязвимость агента к prompt injection.",
+          "ok": false,
+          "why": "Разделители повышают цену атаки, но не устраняют её. Модель всё равно может послушаться убедительного текста."
+        },
+        {
+          "s": "Против prompt injection достаточно прямо написать в промпте, что содержимое инструментов — это данные, а не инструкции.",
+          "ok": false,
+          "why": "Такая пометка снижает риск, но модель всё равно может послушаться. Нужны минимальные права, подтверждение человеком и проверки в коде."
+        },
+        {
+          "s": "Надёжная граница против prompt injection возможна только в коде, который исполняет действия агента, а не в промпте.",
+          "ok": true,
+          "why": "Послушается ли модель, зависит от убедительности текста. Код проверяет права одинаково для любого текста."
+        },
+        {
+          "s": "Список доменов, куда может ходить агент, надёжнее всего ограничивать инструкцией в системном промпте.",
+          "ok": false,
+          "why": "Список доменов ограничивают в коде. Инструкцию в промпте модель может нарушить, а проверку в коде обойти нельзя."
+        },
+        {
+          "s": "Разрушительные действия агента выполняют только после подтверждения человеком, потому что успешную инъекцию промптом не исключить.",
+          "ok": true,
+          "why": "Даже при всех мерах в промпте модель может послушаться чужой инструкции, а подтверждение останавливает вред до исполнения."
+        }
       ],
       "en": [
-        "Prompt injection is when the user types 'ignore previous instructions' — that's the whole thing.",
-        "Good delimiters around the document fully close the injection hole."
+        {
+          "s": "Prompt injection is when untrusted text lands in the context and the model follows it as an instruction instead of reading it as data.",
+          "ok": true,
+          "why": "The model can't reliably tell data from instructions, so any text in the context can affect what it does."
+        },
+        {
+          "s": "Prompt injection is only the case where the user types \"ignore previous instructions\" into the chat.",
+          "ok": false,
+          "why": "That's direct injection, and it's mostly a demo. Indirect is worse: the instruction arrives inside data the agent fetched itself."
+        },
+        {
+          "s": "Direct prompt injection is more dangerous than indirect, because the attacker controls the text of the request to the model.",
+          "ok": false,
+          "why": "Indirect is what breaks production agents: the attack arrives with the data and the user typed nothing malicious. Direct is mostly a demo."
+        },
+        {
+          "s": "In indirect prompt injection the malicious instruction sits inside a web page, PDF or ticket that the agent fetched itself.",
+          "ok": true,
+          "why": "The user never typed anything malicious. That's how production agents actually get broken."
+        },
+        {
+          "s": "Untrusted content is passed to the model in a tool_result block, JSON-encoded so it can't close a tag and break out into the instructions.",
+          "ok": true,
+          "why": "Encoding stops the text from breaking the markup. Alongside that, the model is told plainly that tool content is data."
+        },
+        {
+          "s": "Untrusted content is safer in the system prompt, because the model treats text in system more carefully.",
+          "ok": false,
+          "why": "Untrusted content goes in tool_result, not in system or user text. In system it would get the highest priority."
+        },
+        {
+          "s": "Least privilege on every tool limits the damage an agent can do, even when a prompt injection succeeds.",
+          "ok": true,
+          "why": "Injection can't be ruled out completely, so what matters is what the agent is able to do afterwards."
+        },
+        {
+          "s": "Good delimiters around an untrusted document fully close an agent's prompt injection hole.",
+          "ok": false,
+          "why": "Delimiters raise the cost of an attack without removing it. The model can still be persuaded by the text."
+        },
+        {
+          "s": "To stop prompt injection, it's enough to state in the prompt that tool content is data, not instructions.",
+          "ok": false,
+          "why": "That label lowers the risk, but the model can still obey. You also need least privilege, human confirmation and checks in code."
+        },
+        {
+          "s": "A reliable boundary against prompt injection exists only in the code that executes the agent's actions, not in the prompt.",
+          "ok": true,
+          "why": "Whether the model obeys depends on how persuasive the text is. Code checks permissions the same way for any text."
+        },
+        {
+          "s": "The list of domains an agent may reach is most reliably restricted by an instruction in the system prompt.",
+          "ok": false,
+          "why": "Allowed domains are enforced in code. The model can break a prompt instruction, but it can't get around a check in code."
+        },
+        {
+          "s": "Destructive agent actions run only after human confirmation, because prompt measures can't rule out a successful injection.",
+          "ok": true,
+          "why": "Even with every prompt-side measure the model can follow a planted instruction, and confirmation stops the damage before it executes."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "Опасный вид — [[indirect|непрямой|косвенный]] injection: инструкция сидит в странице или PDF, которые агент достал сам.",
         "Надёжная граница существует только [[вне|снаружи]] модели — в коде, который исполняет действия.",
-        "Что вернула модель — это [[недоверенный|untrusted]] ввод: валидируй по схеме."
+        "Ответ модели — это [[недоверенный|untrusted]] ввод, его валидируют по схеме."
       ],
       "en": [
         "The dangerous kind is [[indirect]] injection: the instruction sits in a page or PDF the agent fetched itself.",

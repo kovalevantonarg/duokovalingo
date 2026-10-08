@@ -16,7 +16,7 @@
     "a": [
       {
         "q": "Петля",
-        "t": "Для моих собственных инструментов модель ничего не вызывает. Она возвращает намерение: имя инструмента и аргументы. Дальше всё делает мой код: идёт в интернет, получает результат и кладёт его в массив сообщений как tool_result с тем же tool_use_id. Потом модель вызывается снова с результатом в контексте, и так по кругу, пока stop_reason не перестанет быть tool_use. Исключение — серверные инструменты Anthropic вроде веб-поиска: их исполняет платформа и отдаёт результат в том же ответе. Для клиентских инструментов руки — мой код, поэтому права пользователя и аргументы я проверяю там, до исполнения."
+        "t": "Для моих собственных инструментов модель ничего не вызывает. Она возвращает намерение: имя инструмента и аргументы. Дальше всё делает мой код: идёт в интернет, получает результат и кладёт его в массив сообщений как tool_result с тем же tool_use_id. Потом модель вызывается снова с результатом в контексте, и так по кругу, пока stop_reason не перестанет быть tool_use. Исключение — серверные инструменты Anthropic вроде веб-поиска: их исполняет платформа и отдаёт результат в том же ответе. Клиентские инструменты исполняет мой код, поэтому права пользователя и аргументы я проверяю там, до исполнения."
       },
       {
         "q": "Определение",
@@ -39,7 +39,7 @@
     "a": [
       {
         "q": "The loop",
-        "t": "For my own tools the model doesn't call anything. It returns an intent: a tool name and arguments. Everything after that is my code: it goes to the internet, gets the result, and appends it to the messages array as a tool_result with the same tool_use_id. Then the model is called again with that result in context, and round it goes until stop_reason is no longer tool_use. The exception is Anthropic's server tools, like web search: those run on Anthropic's side and return results in the same response. For client tools the hands are my code, which is exactly where I check the user's permissions and the arguments before anything runs."
+        "t": "For my own tools the model doesn't call anything. It returns an intent: a tool name and arguments. Everything after that is my code: it goes to the internet, gets the result, and appends it to the messages array as a tool_result with the same tool_use_id. Then the model is called again with that result in context, and round it goes until stop_reason is no longer tool_use. The exception is Anthropic's server tools, like web search: those run on Anthropic's side and return results in the same response. Client tools are executed by my code, which is exactly where I check the user's permissions and the arguments before anything runs."
       },
       {
         "q": "The definition",
@@ -53,14 +53,130 @@
     "kill": "<b>\"The model calls the function\"</b> — for your own tools it doesn't: it returns a tool_use block with a name and JSON input, and you execute it. That's exactly why authorization is possible; only Anthropic's server tools run on the platform."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Для инструмента, который я описал сам, модель сама вызывает функцию и получает результат.",
-        "Описание инструмента — это документация для людей; модель смотрит на схему."
+        {
+          "s": "Для клиентского инструмента модель ничего не вызывает сама, а возвращает блок tool_use с именем инструмента и аргументами.",
+          "ok": true,
+          "why": "Это только намерение. Исполняет инструмент код приложения, поэтому там и возможна авторизация."
+        },
+        {
+          "s": "Для инструмента, описанного разработчиком, модель сама выполняет функцию и получает результат на стороне API.",
+          "ok": false,
+          "why": "Модель возвращает имя и аргументы, а исполняет инструмент код приложения. На стороне платформы работают только серверные инструменты Anthropic."
+        },
+        {
+          "s": "Цикл клиентского tool use заканчивается после первого вызова инструмента, потому что результат приходит в том же ответе модели.",
+          "ok": false,
+          "why": "Результат клиентского инструмента код отправляет новым вызовом модели. Цикл идёт, пока stop_reason не перестанет быть tool_use."
+        },
+        {
+          "s": "Результат инструмента возвращают модели в массиве messages как tool_result с тем же tool_use_id, что и у запроса.",
+          "ok": true,
+          "why": "По tool_use_id модель связывает результат с конкретным запросом. Затем модель вызывают снова с результатом в контексте."
+        },
+        {
+          "s": "Серверные инструменты Anthropic, например веб-поиск, исполняет сама платформа и возвращает результат в том же ответе.",
+          "ok": true,
+          "why": "Это исключение из общего правила. Клиентские инструменты исполняет код приложения."
+        },
+        {
+          "s": "Права пользователя для клиентского инструмента проверяет модель, поэтому их достаточно перечислить в описании инструмента.",
+          "ok": false,
+          "why": "Клиентский инструмент исполняет код приложения. Права пользователя и аргументы проверяются там, до исполнения."
+        },
+        {
+          "s": "Описание инструмента — это документация для людей, а решение о вызове модель принимает по JSON-схеме параметров.",
+          "ok": false,
+          "why": "Описание работает как промпт и сильнее всего влияет на решение о вызове. Имя и схема тоже влияют, но гораздо слабее."
+        },
+        {
+          "s": "Описание инструмента — главное, по чему модель решает, вызывать ли его и с какими аргументами.",
+          "ok": true,
+          "why": "Описание фактически промпт. Имя, описания параметров и примеры тоже влияют, но гораздо слабее."
+        },
+        {
+          "s": "Хорошее описание инструмента говорит, что он делает, когда его применять и отдельно когда его применять не надо.",
+          "ok": true,
+          "why": "Описание пишут как инструкцию для толкового незнакомца, которому нужно решить, звать ли инструмент."
+        },
+        {
+          "s": "Если модель вызывает инструмент не вовремя, это исправляют в коде обработчика, а описание инструмента на это почти не влияет.",
+          "ok": false,
+          "why": "Решение о вызове модель принимает в основном по описанию. Плохое описание чинят правкой текста."
+        },
+        {
+          "s": "Ответ модели с запросом инструмента содержит ровно один блок tool_use, а текст в том же ответе прийти не может.",
+          "ok": false,
+          "why": "В одном ответе могут быть текст и несколько запросов инструментов сразу. Поэтому код фильтрует блоки по полю type."
+        },
+        {
+          "s": "Поле content в ответе Messages API — массив блоков с полем type, потому что текст и запросы инструментов приходят вместе.",
+          "ok": true,
+          "why": "Модель может одновременно рассуждать вслух и просить данные. Код не должен считать ответ строкой."
+        }
       ],
       "en": [
-        "For a tool I define myself, the model calls the function itself and receives the result.",
-        "The tool description is documentation for humans; the model looks at the schema."
+        {
+          "s": "For a client tool the model calls nothing itself; it returns a tool_use block with the tool name and arguments.",
+          "ok": true,
+          "why": "That's only an intent. The application code executes the tool, which is why authorization is possible there."
+        },
+        {
+          "s": "For a tool the developer defined, the model executes the function itself and gets the result on the API side.",
+          "ok": false,
+          "why": "The model returns a name and arguments, and the application code executes the tool. Only Anthropic's server tools run on the platform."
+        },
+        {
+          "s": "The client tool-use loop ends after the first tool call, because the result arrives in the same model response.",
+          "ok": false,
+          "why": "Your code sends a client tool's result in a new model call. The loop runs until stop_reason is no longer tool_use."
+        },
+        {
+          "s": "A tool's result goes back to the model in the messages array as a tool_result with the same tool_use_id as the request.",
+          "ok": true,
+          "why": "The tool_use_id ties the result to a specific request. Then the model is called again with the result in context."
+        },
+        {
+          "s": "Anthropic's server tools, such as web search, are executed by the platform, which returns the result in the same response.",
+          "ok": true,
+          "why": "That's the exception to the rule. Client tools are executed by the application code."
+        },
+        {
+          "s": "The model checks the user's permissions for a client tool, so it's enough to list them in the tool description.",
+          "ok": false,
+          "why": "The application code executes a client tool. The user's permissions and the arguments are checked there, before anything runs."
+        },
+        {
+          "s": "A tool description is documentation for humans, and the model decides whether to call the tool from the JSON schema of the parameters.",
+          "ok": false,
+          "why": "The description works as a prompt and has the strongest effect on the call decision. The name and schema count too, but far less."
+        },
+        {
+          "s": "The tool description is the main thing the model uses to decide whether to call the tool and with what arguments.",
+          "ok": true,
+          "why": "The description is effectively a prompt. The name, parameter descriptions and examples count too, but far less."
+        },
+        {
+          "s": "A good tool description says what the tool does, when to use it, and separately when not to use it.",
+          "ok": true,
+          "why": "You write it as instructions for a competent stranger who has to decide whether to call the tool."
+        },
+        {
+          "s": "If the model calls a tool at the wrong time, you fix the handler code, since the description barely affects that.",
+          "ok": false,
+          "why": "The model decides whether to call a tool mainly from its description. A bad description is fixed by editing the text."
+        },
+        {
+          "s": "A model response with a tool request contains exactly one tool_use block, and no text can come in the same response.",
+          "ok": false,
+          "why": "One response can carry text and several tool requests at once. That's why code filters the blocks by their type field."
+        },
+        {
+          "s": "The content field in a Messages API response is an array of typed blocks, because text and tool requests can arrive together.",
+          "ok": true,
+          "why": "The model can reason out loud and ask for data in the same response. Code shouldn't treat the response as a string."
+        }
       ]
     },
     "cloze": {

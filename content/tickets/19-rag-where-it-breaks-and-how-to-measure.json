@@ -15,15 +15,15 @@
     "a": [
       {
         "q": "Четыре места",
-        "t": "Ингестия: плохой парсинг PDF или неверный chunking, и знание вообще не попало в индекс как надо. Retrieval miss: нужный пассаж не в top-k, потому что запрос сформулирован иначе или эмбеддинг не отличает нужный пассаж от похожих. Ранжирование: пассаж есть, но закопан на пятнадцатом месте и в контекст не попал. Генерация: модель игнорирует контекст, отвечает из головы или добавляет то, чего в контексте нет. Главный принцип — диагностировать по стадиям, а не смотреть на итоговый ответ: иначе непонятно, что чинить."
+        "t": "Ингестия: плохой парсинг PDF или неверный chunking, и знание вообще не попало в индекс как надо. Retrieval miss: нужный пассаж не в top-k, потому что запрос сформулирован иначе или эмбеддинг не отличает нужный пассаж от похожих. Ранжирование: пассаж есть, но закопан на пятнадцатом месте и в контекст не попал. Генерация: модель игнорирует контекст, отвечает из головы или добавляет то, чего в контексте нет. Главное правило: диагностировать по стадиям, а не смотреть на итоговый ответ: иначе непонятно, что чинить."
       },
       {
         "q": "Метрики",
-        "t": "Recall at k, при одном нужном пассаже это то же, что hit rate: попал ли нужный пассаж в top-k. Нужен размеченный набор, зато считается детерминированно и мгновенно. Context relevance, или precision: простой precision at k — доля вытащенных кусков по делу, а context precision в RAGAS учитывает ранжирование: релевантные должны стоять выше. Faithfulness, или groundedness: каждое утверждение в ответе подтверждается вытащенным контекстом — мерю LLM-судьёй со строгой рубрикой или проверкой цитат. Answer relevance: ответ отвечает на вопрос, а не на соседний. Ключевое — разделять метрики retrieval и метрики генерации: первые дешёвые и точные, вторые дорогие и шумные."
+        "t": "Recall at k, при одном нужном пассаже это то же, что hit rate: попал ли нужный пассаж в top-k. Нужен размеченный набор, зато считается детерминированно и мгновенно. Context relevance, или precision: простой precision at k — доля найденных кусков, которые относятся к делу, а context precision в RAGAS учитывает ранжирование: релевантные должны стоять выше. Faithfulness, или groundedness: каждое утверждение в ответе подтверждается найденным контекстом. Мерю её LLM-судьёй со строгой рубрикой или проверкой цитат. Answer relevance: ответ отвечает на вопрос, а не на соседний. Важно разделять метрики retrieval и метрики генерации: первые дешёвые и точные, вторые дорогие и шумные."
       },
       {
         "q": "Мой эвал",
-        "t": "Золотой набор: вопросы, к каждому — ожидаемый исходный пассаж и факты, которые должны быть в ответе. Прогоняю пайплайн, recall at k считаю автоматически. Для faithfulness — LLM-судья с рубрикой, и выборочно проверяю судью руками, потому что судья тоже ошибается. Гоняю на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением. Набор небольшой, и это нормально: тридцать–пятьдесят хороших вопросов лучше, чем ноль. Так работоспособность пайплайна показывается цифрами, а не просто утверждается."
+        "t": "Золотой набор: вопросы, к каждому — ожидаемый исходный пассаж и факты, которые должны быть в ответе. Прогоняю пайплайн, recall at k считаю автоматически. Для faithfulness — LLM-судья с рубрикой, и выборочно проверяю судью руками, потому что судья тоже ошибается. Гоняю на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением. Набор небольшой, и это нормально: тридцать–пятьдесят хороших вопросов лучше, чем ноль. Так я показываю цифрами, что пайплайн работает, а не просто утверждаю это."
       }
     ],
     "kill": "<b>«Работает, я потыкал пару вопросов»</b>. И мерить только end-to-end: ответ плохой, а какая из четырёх стадий виновата — неизвестно."
@@ -38,11 +38,11 @@
     "a": [
       {
         "q": "Four places",
-        "t": "Ingestion: bad PDF parsing or wrong chunking, so the knowledge never made it into the index properly. Retrieval miss: the right passage isn't in the top-k, because the query is phrased differently or the embedding can't tell it apart from similar passages. Ranking: the passage is there but buried at position fifteen and never reaches the context. Generation: the model ignores the context, answers from memory, or adds things the context doesn't say. The principle is to diagnose by stage, not by looking at the final answer — otherwise you don't know what to fix."
+        "t": "Ingestion: bad PDF parsing or wrong chunking, so the knowledge never made it into the index properly. Retrieval miss: the right passage isn't in the top-k, because the query is phrased differently or the embedding can't tell it apart from similar passages. Ranking: the passage is there but buried at position fifteen and never reaches the context. Generation: the model ignores the context, answers from memory, or adds things the context doesn't say. The principle is to diagnose by stage, not by looking at the final answer, otherwise you don't know what to fix."
       },
       {
         "q": "Metrics",
-        "t": "Recall at k, which equals hit rate when there's one gold passage: did the gold passage make it into the top-k. Needs a labelled set, but it's deterministic and instant. Context relevance, or precision: plain precision at k is the fraction of retrieved chunks that are on-topic, while RAGAS's context precision is ranking-aware and rewards relevant chunks sitting higher. Faithfulness, or groundedness: every claim in the answer is supported by retrieved context — measured with an LLM judge on a strict rubric, or citation checks. Answer relevance: it answers the question asked, not a neighbouring one. The key is separating retrieval metrics from generation metrics — the first are cheap and exact, the second expensive and noisy."
+        "t": "Recall at k, which equals hit rate when there's one gold passage: did the gold passage make it into the top-k. Needs a labelled set, but it's deterministic and instant. Context relevance, or precision: plain precision at k is the fraction of retrieved chunks that are on-topic, while RAGAS's context precision is ranking-aware and rewards relevant chunks sitting higher. Faithfulness, or groundedness: every claim in the answer is supported by retrieved context, measured with an LLM judge on a strict rubric, or citation checks. Answer relevance: it answers the question asked, not a neighbouring one. Keep retrieval metrics separate from generation metrics: the first are cheap and exact, the second expensive and noisy."
       },
       {
         "q": "My eval",
@@ -52,33 +52,149 @@
     "kill": "<b>\"It works, I tried a few questions.\"</b> And measuring only end-to-end: the answer is bad and which of the four stages is at fault stays unknown."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Если ответ плохой, это почти всегда вина модели-генератора.",
-        "Эвал на 30 вопросах слишком мал, чтобы что-то значить."
+        {
+          "s": "Метрика faithfulness проверяет, что каждое утверждение в ответе подтверждается найденным контекстом.",
+          "ok": true,
+          "why": "Её считают как долю подтверждённых утверждений, обычно LLM-судьёй со строгой рубрикой или проверкой цитат."
+        },
+        {
+          "s": "Эвал RAG стоит запускать на каждый коммит, чтобы смена размера куска отражалась числом, а не впечатлением.",
+          "ok": true,
+          "why": "Так любое изменение нарезки, модели или промпта сразу видно по recall и faithfulness, а не по паре ручных вопросов."
+        },
+        {
+          "s": "Ошибка ранжирования — это когда нужный пассаж найден, но стоит слишком низко и не попадает в контекст модели.",
+          "ok": true,
+          "why": "Например, пассаж на пятнадцатом месте при k = 5. Поиск формально сработал, но модель этот текст не увидела."
+        },
+        {
+          "s": "Высокий faithfulness означает, что ответ правильный, поэтому recall поиска отдельно можно не проверять.",
+          "ok": false,
+          "why": "Faithfulness проверяет только соответствие ответа найденному контексту. Если поиск нашёл не тот или устаревший документ, ответ будет faithful, но неверный."
+        },
+        {
+          "s": "RAG может сломаться ещё на ингестии: плохой парсинг PDF или неверный chunking не дают знанию нормально попасть в индекс.",
+          "ok": true,
+          "why": "Если знания нет в индексе, никакой поиск и никакая модель его не найдут. Поэтому проверку начинают с этой стадии."
+        },
+        {
+          "s": "Золотой набор из 30–50 вопросов слишком мал, чтобы по нему сравнивать варианты RAG-пайплайна.",
+          "ok": false,
+          "why": "Для старта 20–50 задач из реальных сбоев вполне достаточно: ранние изменения дают большой эффект, и его видно даже на малом наборе."
+        },
+        {
+          "s": "Если RAG дал плохой ответ, причину обычно стоит искать в модели-генераторе, а не в поиске или индексе.",
+          "ok": false,
+          "why": "Большинство типовых точек отказа находятся до генерации: ингестия, промах ретривера и ранжирование. Поэтому диагностируют по стадиям."
+        },
+        {
+          "s": "Context precision в RAGAS — просто доля релевантных кусков, и порядок кандидатов в выдаче на неё не влияет.",
+          "ok": false,
+          "why": "Простой precision@k действительно порядок не учитывает. Context precision в RAGAS учитывает ранжирование: релевантные куски должны стоять выше."
+        },
+        {
+          "s": "Метрика answer relevance проверяет, что ответ отвечает на заданный вопрос, а не на соседний.",
+          "ok": true,
+          "why": "Ответ может полностью опираться на контекст и всё равно не отвечать на вопрос. Эту ошибку ловит answer relevance."
+        },
+        {
+          "s": "Recall@k показывает, попал ли нужный пассаж в первые k результатов, и считается без LLM-судьи.",
+          "ok": true,
+          "why": "Скрипт сравнивает найденные куски с размеченными. Нужна разметка, зато результат детерминирован и считается мгновенно."
+        },
+        {
+          "s": "Качество RAG достаточно мерить end-to-end по итоговому ответу, а метрики по стадиям нужны только для отчётов.",
+          "ok": false,
+          "why": "По одному итоговому ответу не видно, какая из четырёх стадий виновата. Без метрик по стадиям непонятно, что чинить."
+        },
+        {
+          "s": "Оценкам LLM-судьи для faithfulness можно доверять без ручной проверки, если рубрика достаточно строгая.",
+          "ok": false,
+          "why": "Судья тоже ошибается, поэтому его выборочно проверяют руками и калибруют по оценкам людей."
+        }
       ],
       "en": [
-        "If the answer is bad, it's almost always the generator model's fault.",
-        "An eval of 30 questions is too small to mean anything."
+        {
+          "s": "The faithfulness metric checks that every claim in the answer is supported by the retrieved context.",
+          "ok": true,
+          "why": "It's computed as the share of supported claims, usually by an LLM judge with a strict rubric or by checking citations."
+        },
+        {
+          "s": "A RAG eval should run on every commit, so a chunk-size change shows up as a number rather than an impression.",
+          "ok": true,
+          "why": "That way any change to chunking, model or prompt shows up in recall and faithfulness, not in a couple of hand-typed questions."
+        },
+        {
+          "s": "A ranking failure is when the right passage is retrieved but ranked too low to reach the model's context.",
+          "ok": true,
+          "why": "For example, the passage is at position fifteen with k = 5. Search technically worked, but the model never saw that text."
+        },
+        {
+          "s": "A high faithfulness score means the answer is correct, so you don't need to check retrieval recall separately.",
+          "ok": false,
+          "why": "Faithfulness only checks that the answer matches the retrieved context. If search found the wrong or an outdated document, the answer is faithful but wrong."
+        },
+        {
+          "s": "RAG can break as early as ingestion: bad PDF parsing or wrong chunking keeps the knowledge from getting into the index properly.",
+          "ok": true,
+          "why": "If the knowledge isn't in the index, no search and no model can find it. That's why checking starts at this stage."
+        },
+        {
+          "s": "A golden set of 30–50 questions is too small to compare versions of a RAG pipeline.",
+          "ok": false,
+          "why": "To start, 20–50 tasks taken from real failures is plenty: early changes have large effects that show up even on a small set."
+        },
+        {
+          "s": "When RAG gives a bad answer, the cause is usually the generator model rather than the search or the index.",
+          "ok": false,
+          "why": "Most common failure points sit before generation: ingestion, retrieval misses and ranking. That's why you diagnose stage by stage."
+        },
+        {
+          "s": "Context precision in RAGAS is just the share of relevant chunks, and the order of results doesn't affect it.",
+          "ok": false,
+          "why": "Plain precision@k ignores order. RAGAS's context precision is ranking-aware: relevant chunks should sit higher."
+        },
+        {
+          "s": "The answer relevance metric checks that the answer addresses the question asked, not a neighbouring one.",
+          "ok": true,
+          "why": "An answer can be fully grounded in the context and still miss the question. Answer relevance catches that."
+        },
+        {
+          "s": "Recall@k shows whether the gold passage made it into the top k results, and it needs no LLM judge.",
+          "ok": true,
+          "why": "A script compares retrieved chunks with labelled ones. It needs labels, but the result is deterministic and instant."
+        },
+        {
+          "s": "It's enough to measure RAG quality end-to-end on the final answer; per-stage metrics are only for reports.",
+          "ok": false,
+          "why": "The final answer alone doesn't show which of the four stages failed. Without per-stage metrics you don't know what to fix."
+        },
+        {
+          "s": "You can trust an LLM judge's faithfulness scores without manual checks, as long as the rubric is strict enough.",
+          "ok": false,
+          "why": "Judges make mistakes too, so you spot-check them by hand and calibrate them against human ratings."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Четыре стадии отказа: ингестия, [[retrieval miss|промах ретривера]], ранжирование, [[генерация|generation]].",
-        "[[Faithfulness|Groundedness]] — каждое утверждение ответа подтверждено вытащенным контекстом.",
-        "Метрики retrieval — дешёвые и [[детерминированные|детерминистичные]]; метрики генерации — дорогие и шумные."
+        "RAG ломается на четырёх стадиях: ингестия, [[retrieval miss|промах ретривера]], ранжирование и [[генерация|generation]].",
+        "Метрика [[faithfulness|Faithfulness|groundedness]] проверяет, что каждое утверждение ответа подтверждено найденным контекстом.",
+        "Метрики retrieval дешёвые и [[детерминированные|детерминистичные]], а метрики генерации дорогие и шумные."
       ],
       "en": [
-        "Four failure stages: ingestion, [[retrieval miss]], ranking, [[generation]].",
-        "[[Faithfulness|Groundedness]] — every claim in the answer is supported by retrieved context.",
-        "Retrieval metrics are cheap and [[deterministic]]; generation metrics are expensive and noisy."
+        "RAG breaks at four stages: ingestion, [[retrieval miss]], ranking and [[generation]].",
+        "The [[faithfulness|Faithfulness|groundedness]] metric checks that every claim in the answer is supported by retrieved context.",
+        "Retrieval metrics are cheap and [[deterministic]], while generation metrics are expensive and noisy."
       ]
     },
     "steps": {
       "ru": {
         "title": "RAG отвечает плохо. Диагностика по стадиям, в порядке проверки",
         "items": [
-          "Ингестия: парсинг и chunking — знание вообще в индексе?",
+          "Ингестия: парсинг и chunking. Знание вообще есть в индексе?",
           "Retrieval: нужный пассаж в top-k? (recall@k)",
           "Ранжирование: пассаж есть, но закопан?",
           "Генерация: модель игнорирует контекст или добавляет своё?"
@@ -87,7 +203,7 @@
       "en": {
         "title": "RAG answers badly. Diagnose by stage, in checking order",
         "items": [
-          "Ingestion: parsing and chunking — is the knowledge even in the index?",
+          "Ingestion: parsing and chunking. Is the knowledge even in the index?",
           "Retrieval: is the gold passage in the top-k? (recall@k)",
           "Ranking: it's there but buried?",
           "Generation: model ignores the context or adds its own?"

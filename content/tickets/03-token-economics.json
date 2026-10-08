@@ -19,14 +19,14 @@
       },
       {
         "q": "Дебаг стоимости",
-        "t": "Это порядок диагностики, а не рейтинг экономии: ищу, что изменилось. Первое — выбор модели: не уехал ли путь на более дорогой тир. Второе — cache hit rate (доля попаданий в кэш): timestamp или данные пользователя в system молча ломают кэш. Третье — многословность: «ответь одним предложением» экономит больше, чем чистка системного промпта. Четвёртое — не растёт ли история без ограничений. Потом batch API. Для нового агента Anthropic ставит prompt caching первым."
+        "t": "Это порядок диагностики, а не рейтинг экономии: ищу, что изменилось. Первое — выбор модели: не ушла ли часть запросов на более дорогой тир. Второе — cache hit rate (доля попаданий в кэш): timestamp или данные пользователя в system молча ломают кэш. Третье — многословность: «ответь одним предложением» экономит больше, чем чистка системного промпта. Четвёртое — не растёт ли история без ограничений. Потом batch API. Для нового агента Anthropic ставит prompt caching первым."
       },
       {
         "q": "Разворот",
-        "t": "Изменилась архитектура. В агенте на каждом шаге пересылается весь разговор со всеми скачанными страницами, поэтому суммарный вход за задачу растёт примерно квадратично по числу шагов и быстро обгоняет выход. И вывод отсюда не «input дороже» и не «output дороже», а тот, что профиль расходов определяется архитектурой, а не моделью. Поэтому его меряют, а не угадывают, и перемеряют заново после каждого изменения архитектуры."
+        "t": "Изменилась архитектура. В агенте на каждом шаге пересылается весь разговор со всеми скачанными страницами, поэтому суммарный вход за задачу растёт примерно квадратично по числу шагов и быстро обгоняет выход. Вывод отсюда такой: профиль расходов задаёт архитектура, а не модель. Поэтому его меряют, а не угадывают, и перемеряют заново после каждого изменения архитектуры."
       }
     ],
-    "kill": "<b>«Оптимизируем промпт»</b> — в простом вызове это театр: срежешь 26 токенов входа и заплатишь больше, если ответ вырос на 19."
+    "kill": "<b>«Сократим промпт»</b> — в одиночном вызове это почти ничего не даёт: срежешь 26 токенов входа и заплатишь больше, если ответ вырос на 19."
   },
   "en": {
     "topic": "Token economics",
@@ -46,20 +46,136 @@
       },
       {
         "q": "The flip",
-        "t": "The architecture changed. In an agent every step resends the entire conversation including every page you fetched, so total input over the task grows roughly with the square of the step count and quickly overtakes output. And the takeaway isn't that input is expensive or that output is expensive — it's that the cost profile is decided by architecture, not by the model. Which is why you measure it instead of assuming, and re-measure after every architectural change."
+        "t": "The architecture changed. In an agent every step resends the entire conversation including every page you fetched, so total input over the task grows roughly with the square of the step count and quickly overtakes output. The takeaway is that the cost profile is set by the architecture, not by the model. Which is why you measure it instead of assuming, and re-measure after every architectural change."
       }
     ],
-    "kill": "<b>\"We'll optimise the prompt\"</b> — in a single call that's theatre: cut 26 input tokens and you pay more if the answer grows by 19."
+    "kill": "<b>\"We'll trim the prompt\"</b> — in a single call that barely matters: cut 26 input tokens and you pay more if the answer grows by 19."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Входные и выходные токены стоят одинаково, разница только в количестве.",
-        "Сокращение системного промпта — главный рычаг экономии в агенте."
+        {
+          "s": "У крупных вендоров выходной токен сейчас стоит примерно в пять раз дороже входного.",
+          "ok": true,
+          "why": "Цена отражает механизм: весь вход считается одним параллельным проходом, а каждый выходной токен требует отдельного прохода."
+        },
+        {
+          "s": "Входные и выходные токены стоят одинаково, а разница в счёте возникает только из-за их количества.",
+          "ok": false,
+          "why": "Выходной токен примерно в пять раз дороже входного, потому что выход генерируется последовательно, по токену за проход."
+        },
+        {
+          "s": "Выходные токены модель генерирует параллельно пачками, поэтому длина ответа почти не влияет на время генерации.",
+          "ok": false,
+          "why": "Каждый выходной токен — отдельный проход через модель, и следующий нельзя посчитать, пока не выбран предыдущий."
+        },
+        {
+          "s": "Весь промпт обрабатывается за один параллельный проход, потому что все его токены известны заранее.",
+          "ok": true,
+          "why": "GPU при этом загружен эффективно. Выход так посчитать нельзя: каждый следующий токен зависит от выбранного предыдущего."
+        },
+        {
+          "s": "Каждый проход генерации упирается в пропускную способность памяти, потому что веса и KV-кэш перечитываются ради одного токена.",
+          "ok": true,
+          "why": "Поэтому декодирование использует железо хуже, чем обработка промпта, и выходной токен обходится дороже."
+        },
+        {
+          "s": "Стриминг возможен потому, что модель сначала генерирует весь ответ, а сервер затем отправляет его частями.",
+          "ok": false,
+          "why": "Стриминг возможен потому, что выход рождается по одному токену, и каждый токен можно отправить сразу после генерации."
+        },
+        {
+          "s": "Timestamp в системном промпте не влияет на prompt caching, потому что кэш сравнивает только смысл инструкций.",
+          "ok": false,
+          "why": "Кэш работает по точному префиксу. Timestamp или данные пользователя в system меняют префикс и молча ломают попадания."
+        },
+        {
+          "s": "Когда счёт за LLM внезапно вырос, первым делом проверяют, не ушла ли часть запросов на более дорогую модель.",
+          "ok": true,
+          "why": "Это порядок диагностики: ищут, что изменилось. Смена тира сразу меняет цену каждого токена."
+        },
+        {
+          "s": "Просьба отвечать одним предложением обычно экономит больше денег, чем чистка системного промпта.",
+          "ok": true,
+          "why": "Выходной токен дороже входного, поэтому короткий ответ даёт больше, чем срезанные несколько десятков входных токенов."
+        },
+        {
+          "s": "Сокращение системного промпта — главный рычаг экономии в агенте, важнее кэширования и выбора модели.",
+          "ok": false,
+          "why": "Для нового агента Anthropic ставит prompt caching первым. При росте счёта сначала проверяют выбор модели и cache hit rate."
+        },
+        {
+          "s": "Соотношение входа и выхода в счёте задаёт модель, а не архитектура, поэтому его достаточно измерить один раз.",
+          "ok": false,
+          "why": "Профиль расходов задаёт архитектура: в простом вызове output был 99% счёта, а в агенте input стал 84%. Его перемеряют после каждого изменения."
+        },
+        {
+          "s": "В агенте каждый шаг пересылает всю историю, поэтому суммарный вход за задачу растёт примерно квадратично по числу шагов.",
+          "ok": true,
+          "why": "Из-за этого в агенте вход быстро обгоняет выход по доле в счёте, хотя выходной токен дороже."
+        }
       ],
       "en": [
-        "Input and output tokens cost the same; only the count differs.",
-        "Trimming the system prompt is the main cost lever in an agent."
+        {
+          "s": "At the big vendors an output token currently costs about five times as much as an input token.",
+          "ok": true,
+          "why": "The price reflects the mechanism: all input is computed in one parallel pass, while every output token needs its own pass."
+        },
+        {
+          "s": "Input and output tokens cost the same per token, and the difference in the bill comes only from their counts.",
+          "ok": false,
+          "why": "An output token costs about five times as much as an input token, because output is generated sequentially, one token per pass."
+        },
+        {
+          "s": "The model generates output tokens in parallel batches, so the length of the answer barely affects generation time.",
+          "ok": false,
+          "why": "Each output token is a separate pass through the model, and the next one can't be computed until the previous one is chosen."
+        },
+        {
+          "s": "The whole prompt is processed in one parallel pass, because all of its tokens are known in advance.",
+          "ok": true,
+          "why": "That keeps the GPU efficiently busy. Output can't be computed that way, since each next token depends on the one chosen before it."
+        },
+        {
+          "s": "Each decode pass is bound by memory bandwidth, because the weights and the KV cache are reloaded to produce a single token.",
+          "ok": true,
+          "why": "That's why decoding uses the hardware less efficiently than prompt processing, and why an output token costs more."
+        },
+        {
+          "s": "Streaming works because the model first generates the whole answer and the server then sends it in parts.",
+          "ok": false,
+          "why": "Streaming works because output is produced one token at a time, and each token can be sent as soon as it's generated."
+        },
+        {
+          "s": "A timestamp in the system prompt doesn't affect prompt caching, because the cache compares only the meaning of the instructions.",
+          "ok": false,
+          "why": "The cache matches on the exact prefix. A timestamp or per-user data in the system prompt changes the prefix and silently breaks cache hits."
+        },
+        {
+          "s": "When an LLM bill suddenly grows, the first thing to check is whether some requests started going to a pricier model.",
+          "ok": true,
+          "why": "This is a diagnosis order: you look for what changed. A tier change alters the price of every token at once."
+        },
+        {
+          "s": "Asking for a one-sentence answer usually saves more money than trimming the system prompt.",
+          "ok": true,
+          "why": "An output token costs more than an input token, so a shorter answer saves more than cutting a few dozen input tokens."
+        },
+        {
+          "s": "Trimming the system prompt is the main cost lever in an agent, more important than caching or model choice.",
+          "ok": false,
+          "why": "For a new agent, Anthropic puts prompt caching first. When a bill grows, you check model selection and cache hit rate first."
+        },
+        {
+          "s": "The split between input and output in the bill is set by the model rather than the architecture, so measuring it once is enough.",
+          "ok": false,
+          "why": "The architecture sets the cost profile: in a single call output was 99% of the bill, in an agent input became 84%. Re-measure after every change."
+        },
+        {
+          "s": "In an agent every step resends the whole history, so total input over a task grows roughly with the square of the step count.",
+          "ok": true,
+          "why": "That's why input quickly overtakes output in an agent's bill, even though each output token costs more."
+        }
       ]
     },
     "cloze": {

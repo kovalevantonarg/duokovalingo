@@ -52,14 +52,130 @@
     "kill": "<b>\"staleTime is how long data stays in the cache\"</b> — that's gcTime; staleTime only decides when a refetch is triggered. And <b>copying query data into useState</b> creates a second source of truth."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "При staleTime по умолчанию, равном нулю, TanStack Query прячет закешированные данные и показывает состояние загрузки при каждом монтировании.",
-        "Context перерисовывает только тех потребителей, которые читают изменившуюся часть значения."
+        {
+          "s": "Состояние, которое использует один компонент, например открыт ли dropdown, остаётся локальным в useState.",
+          "ok": true,
+          "why": "Начинают с того, кто владеет данными. Если двум соседям нужно одно значение, его поднимают к ближайшему общему родителю."
+        },
+        {
+          "s": "Загруженные с сервера данные удобнее скопировать в useState, чтобы компонент владел собственной копией.",
+          "ok": false,
+          "why": "Копия даёт второй источник правды и свои баги инвалидации. Server state держат в кеше вроде TanStack Query, который сам перезапрашивает и дедуплицирует."
+        },
+        {
+          "s": "В TanStack Query staleTime задаёт, сколько неиспользуемый запрос хранится в кеше после ухода последнего подписчика.",
+          "ok": false,
+          "why": "Это gcTime, по умолчанию пять минут. staleTime задаёт, сколько данные считаются свежими и когда запускать refetch."
+        },
+        {
+          "s": "Фильтры, сортировку и активную вкладку держат в URL, чтобы вид пережил перезагрузку и ссылкой можно было поделиться.",
+          "ok": true,
+          "why": "Search params переживают перезагрузку и работают с кнопкой «назад». Ссылку с таким состоянием можно приложить к баг-репорту."
+        },
+        {
+          "s": "По умолчанию staleTime в TanStack Query равен нулю, поэтому закешированные данные сразу считаются устаревшими.",
+          "ok": true,
+          "why": "Устаревшие данные перезапрашиваются при монтировании нового компонента или возврате фокуса в окно. Пока идёт запрос, старые данные остаются на экране."
+        },
+        {
+          "s": "При staleTime, равном нулю, TanStack Query прячет закешированные данные и показывает загрузку при каждом монтировании.",
+          "ok": false,
+          "why": "Закешированные данные показываются сразу, а refetch идёт в фоне. staleTime решает только, запускать ли повторный запрос."
+        },
+        {
+          "s": "Всё, от чего зависит запрос в TanStack Query, например фильтры, нужно включать в query key.",
+          "ok": true,
+          "why": "Query key — это идентичность записи в кеше. Если фильтр не попал в ключ, разные фильтры будут читать одну и ту же запись."
+        },
+        {
+          "s": "Два компонента с одинаковым query key отправляют два отдельных запроса и хранят две копии данных.",
+          "ok": false,
+          "why": "Компоненты с одним ключом делят один запрос и одну запись в кеше. Это и есть дедупликация."
+        },
+        {
+          "s": "В onMutate оптимистичного обновления сначала отменяют текущие запросы по ключу, чтобы старый refetch не затёр оптимистичную запись.",
+          "ok": true,
+          "why": "Потом делают снимок данных, пишут оптимистичную версию через setQueryData и возвращают снимок. В onError его восстанавливают, в onSettled инвалидируют ключ."
+        },
+        {
+          "s": "Context перерисовывает только тех потребителей, которые читают изменившуюся часть его значения.",
+          "ok": false,
+          "why": "У Context нет селекторов: при смене value перерисовываются все потребители. Выборочную подписку дают сторы вроде Zustand."
+        },
+        {
+          "s": "Если в проекте уже есть Redux Toolkit или Zustand, серверные данные лучше хранить в том же глобальном сторе.",
+          "ok": false,
+          "why": "Серверные данные идут в TanStack Query или RTK Query. Глобальный стор сам не решает устаревание, refetch и инвалидацию."
+        },
+        {
+          "s": "Redux Toolkit оправдан, когда большой команде нужна навязанная структура: явные actions, middleware и time-travel в devtools.",
+          "ok": true,
+          "why": "Журнал событий, изменивших состояние, помогает отлаживать сложные сценарии. Для небольшой команды обычно хватает Zustand с меньшим количеством шаблонного кода."
+        }
       ],
       "en": [
-        "With the default staleTime of zero, TanStack Query hides cached data and shows a loading state on every mount.",
-        "Context re-renders only the consumers that read the part of the value that changed."
+        {
+          "s": "State used by a single component, like whether a dropdown is open, stays local in useState.",
+          "ok": true,
+          "why": "You start from who owns the data. If two siblings need the same value, you lift it to their nearest common parent."
+        },
+        {
+          "s": "Fetched server data is best copied into useState so the component owns its own copy.",
+          "ok": false,
+          "why": "A copy creates a second source of truth and its own invalidation bugs. Server state lives in a cache like TanStack Query, which handles refetching and deduping."
+        },
+        {
+          "s": "In TanStack Query, staleTime sets how long an unused query stays in the cache after its last observer unmounts.",
+          "ok": false,
+          "why": "That's gcTime, five minutes by default. staleTime sets how long data counts as fresh and when a refetch is triggered."
+        },
+        {
+          "s": "Filters, sort and the active tab go in the URL, so the view survives a reload and the link can be shared.",
+          "ok": true,
+          "why": "Search params survive a reload and work with the back button. A link with that state can go straight into a bug report."
+        },
+        {
+          "s": "The default staleTime in TanStack Query is zero, so cached data counts as stale immediately.",
+          "ok": true,
+          "why": "Stale data is refetched when a new component mounts or the window regains focus. The old data stays on screen while the refetch runs."
+        },
+        {
+          "s": "With staleTime at zero, TanStack Query hides cached data and shows a loading state on every mount.",
+          "ok": false,
+          "why": "Cached data is shown right away while the refetch runs in the background. staleTime only decides whether a refetch is triggered."
+        },
+        {
+          "s": "Everything a TanStack Query fetch depends on, like filters, has to be part of the query key.",
+          "ok": true,
+          "why": "The query key is the identity of the cache entry. If a filter isn't in the key, different filters read the same entry."
+        },
+        {
+          "s": "Two components with the same query key send two separate requests and keep two copies of the data.",
+          "ok": false,
+          "why": "Components with the same key share one request and one cache entry. That's deduping."
+        },
+        {
+          "s": "In onMutate for an optimistic update, you first cancel in-flight queries for the key so an older refetch can't overwrite the optimistic write.",
+          "ok": true,
+          "why": "Then you snapshot the data, write the optimistic version with setQueryData and return the snapshot. onError restores it, onSettled invalidates the key."
+        },
+        {
+          "s": "Context re-renders only the consumers that read the part of its value that changed.",
+          "ok": false,
+          "why": "Context has no selectors: when the value changes, every consumer re-renders. Stores like Zustand give you per-slice subscriptions."
+        },
+        {
+          "s": "If a project already has Redux Toolkit or Zustand, server data is best kept in that same global store.",
+          "ok": false,
+          "why": "Server data goes to TanStack Query or RTK Query. A global store doesn't handle staleness, refetching or invalidation by itself."
+        },
+        {
+          "s": "Redux Toolkit makes sense when a large team wants enforced structure: explicit actions, middleware and time-travel devtools.",
+          "ok": true,
+          "why": "A log of every event that changed state helps debug complex flows. A smaller team usually does fine with Zustand and less boilerplate."
+        }
       ]
     },
     "cloze": {

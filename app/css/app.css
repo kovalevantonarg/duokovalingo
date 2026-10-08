@@ -2916,3 +2916,15 @@ body.inround .tabs {
     padding: 13px 20px;
   }
 }
+
+.v-app .vsel {
+  max-width: 170px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 8px;
+}

@@ -23,18 +23,18 @@
     "a": [
       {
         "q": "Event loop",
-        "t": "Микрозадачи всегда раньше макрозадач: после текущего синхронного кода движок опустошает очередь микрозадач целиком — промисы, queueMicrotask — и только потом берёт одну макрозадачу вроде setTimeout. Поэтому колбэк then выполнится раньше, даже если у setTimeout задержка ноль. Между микрозадачами и следующей макрозадачей браузер может (не обязан) отрендерить кадр — в браузере это происходит после опустошения микрозадач и перед следующей макрозадачей, поэтому длинная цепочка промисов без единой макрозадачи между ними может держать UI без перерисовки дольше, чем кажется. forEach с await не ждёт, потому что forEach не смотрит на возвращаемое значение колбэка: он по очереди вызывает каждый async-колбэк, тот выполняется до первого await и возвращает промис, который forEach просто выбрасывает. Итерации идут конкурентно (вперемешку), а не параллельно, и никто их не ждёт. for...of работает внутри одной async-функции, и await там реально останавливает цикл."
+        "t": "Микрозадачи всегда раньше макрозадач: после текущего синхронного кода движок опустошает очередь микрозадач целиком (промисы, queueMicrotask) и только потом берёт одну макрозадачу вроде setTimeout. Поэтому колбэк then выполнится раньше, даже если у setTimeout задержка ноль. Между микрозадачами и следующей макрозадачей браузер может (не обязан) отрендерить кадр — в браузере это происходит после опустошения микрозадач и перед следующей макрозадачей, поэтому длинная цепочка промисов без единой макрозадачи между ними может держать UI без перерисовки дольше, чем кажется. forEach с await не ждёт, потому что forEach не смотрит на возвращаемое значение колбэка: он по очереди вызывает каждый async-колбэк, тот выполняется до первого await и возвращает промис, который forEach просто выбрасывает. Итерации идут конкурентно (вперемешку), а не параллельно, и никто их не ждёт. for...of работает внутри одной async-функции, и await там реально останавливает цикл."
       },
       {
         "q": "Closure и this",
-        "t": "var в цикле — одна переменная на всю функцию, и к моменту срабатывания таймеров цикл уже закончился, все колбэки видят финальное значение. let создаёт привязку на итерацию, и каждая функция замыкает свою. this: по умолчанию — глобальный объект или undefined в strict; implicit — объект перед точкой; explicit — call, apply, bind; new — свежий объект. Стрелка не имеет своего this и берёт его лексически из окружения, поэтому её нельзя переопределить через call и нельзя использовать как метод, которому нужен this."
+        "t": "var в цикле — одна переменная на всю функцию, и к моменту срабатывания таймеров цикл уже закончился, все колбэки видят финальное значение. let создаёт привязку на итерацию, и каждая функция замыкает свою. Правила this: default даёт глобальный объект или undefined в strict; implicit берёт объект перед точкой; explicit задаётся через call, apply, bind; new создаёт свежий объект. Стрелка не имеет своего this и берёт его лексически из окружения, поэтому её нельзя переопределить через call и нельзя использовать как метод, которому нужен this."
       },
       {
         "q": "Типы",
         "t": "type Pick<T, K extends keyof T> = { [P in K]: T[P] }: mapped type по ключам K, значение — индексный доступ. Discriminated union — Result равен либо { ok: true, data }, либо { ok: false, error }. Проверка ok сужает тип: в ветке true компилятор знает про data, в ветке false — про error, и невозможное состояние «и data, и error» не выражается вообще. С optional-полями каждый потребитель проверяет оба поля вручную и рано или поздно забывает. Из той же серии: Promise.all падает на первом реджекте, allSettled ждёт всех и отдаёт статусы."
       }
     ],
-    "kill": "Ответить «then первый» без слова <b>микрозадача</b> — это угадывание. И описать стрелку как «короткий синтаксис» — интервьюер ждёт про this."
+    "kill": "Если сказать «then первый» и не назвать <b>микрозадачу</b>, это звучит как угадывание. Если описать стрелку как «короткий синтаксис», ты пропускаешь то, о чём спрашивают: как она работает с this."
   },
   "en": {
     "topic": "JS/TS: parked check",
@@ -46,40 +46,156 @@
     "a": [
       {
         "q": "Event loop",
-        "t": "Microtasks always run before macrotasks: after the current synchronous code, the engine drains the whole microtask queue — promises, queueMicrotask — and only then picks one macrotask like setTimeout. So the then callback fires first even with a zero delay. Between the microtasks and the next macrotask, the browser may (not must) paint a frame — that happens after the microtask queue drains and before the next macrotask, so a long promise chain with no macrotask in between can hold the UI without a repaint longer than you'd expect. forEach with await doesn't wait because forEach ignores the callback's return value: it calls each async callback in turn, each runs until its first await and hands back a promise that forEach just drops. So the iterations run concurrently, interleaved, not in parallel, and nothing waits for them. for...of runs inside a single async function, and await there genuinely pauses the loop."
+        "t": "Microtasks always run before macrotasks: after the current synchronous code, the engine drains the whole microtask queue (promises, queueMicrotask) and only then picks one macrotask like setTimeout. So the then callback fires first even with a zero delay. Between the microtasks and the next macrotask, the browser may (not must) paint a frame — that happens after the microtask queue drains and before the next macrotask, so a long promise chain with no macrotask in between can hold the UI without a repaint longer than you'd expect. forEach with await doesn't wait because forEach ignores the callback's return value: it calls each async callback in turn, each runs until its first await and hands back a promise that forEach just drops. So the iterations run concurrently, interleaved, not in parallel, and nothing waits for them. for...of runs inside a single async function, and await there genuinely pauses the loop."
       },
       {
         "q": "Closure and this",
-        "t": "var in a loop is one variable for the whole function, and by the time the timers fire the loop is finished, so every callback sees the final value. let creates a binding per iteration, and each function closes over its own. this: default — the global object, or undefined in strict mode; implicit — the object before the dot; explicit — call, apply, bind; new — a fresh object. An arrow has no this of its own and takes it lexically from the surrounding scope, so you can't override it with call and can't use it as a method that needs this."
+        "t": "var in a loop is one variable for the whole function, and by the time the timers fire the loop is finished, so every callback sees the final value. let creates a binding per iteration, and each function closes over its own. The this rules: default gives the global object, or undefined in strict mode; implicit takes the object before the dot; explicit is set with call, apply, bind; new creates a fresh object. An arrow has no this of its own and takes it lexically from the surrounding scope, so you can't override it with call and can't use it as a method that needs this."
       },
       {
         "q": "Types",
         "t": "type Pick<T, K extends keyof T> = { [P in K]: T[P] } — a mapped type over the keys in K, with an indexed access for the value. A discriminated union: Result is either { ok: true, data } or { ok: false, error }. Checking ok narrows the type — in the true branch the compiler knows about data, in the false branch about error, and the impossible state of both data and error can't be expressed at all. With optional fields every consumer checks both by hand and eventually forgets. Same family: Promise.all rejects on the first rejection, allSettled waits for all and returns statuses."
       }
     ],
-    "kill": "Saying then goes first without the word <b>microtask</b> — that's guessing. And describing an arrow function as short syntax — the interviewer is waiting for this."
+    "kill": "If you say then goes first without naming the <b>microtask</b>, it sounds like a guess. If you describe an arrow function as just shorter syntax, you skip what the interviewer is asking about: how it handles this."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "setTimeout(0) выполнится раньше Promise.then, потому что ноль — это сразу.",
-        "Стрелочная функция — это просто короткий синтаксис, this у неё такой же."
+        {
+          "s": "После синхронного кода event loop выполняет всю очередь микрозадач и только потом берёт одну макрозадачу вроде setTimeout.",
+          "ok": true,
+          "why": "Промисы и queueMicrotask попадают в очередь микрозадач, и она опустошается целиком, включая добавленные по ходу. Только после этого выполняется следующая макрозадача."
+        },
+        {
+          "s": "Колбэк setTimeout с задержкой 0 выполняется раньше колбэка Promise.then, потому что нулевая задержка означает немедленный запуск.",
+          "ok": false,
+          "why": "then ставит микрозадачу, setTimeout ставит макрозадачу. Микрозадачи выполняются раньше любой макрозадачи, и нулевая задержка этого не меняет."
+        },
+        {
+          "s": "Браузер может отрисовать кадр после опустошения очереди микрозадач и перед следующей макрозадачей, но не обязан это делать.",
+          "ok": true,
+          "why": "Рендеринг стоит в цикле после microtask checkpoint, но выполняется только при возможности отрисовки. Поэтому кадр там бывает, но не гарантирован."
+        },
+        {
+          "s": "Длинная цепочка промисов не задерживает перерисовку, потому что браузер может отрендерить кадр между двумя соседними микрозадачами.",
+          "ok": false,
+          "why": "Кадр возможен только после того, как опустошится вся очередь микрозадач. Поэтому длинная цепочка промисов без макрозадач держит UI без перерисовки."
+        },
+        {
+          "s": "forEach с async-колбэком дожидается промиса от каждого вызова, прежде чем вызвать колбэк для следующего элемента массива.",
+          "ok": false,
+          "why": "forEach игнорирует возвращаемое значение колбэка и выбрасывает промис. Каждый вызов доходит до первого await, итерации идут вперемешку, и их никто не ждёт."
+        },
+        {
+          "s": "В цикле for...of внутри async-функции await приостанавливает весь цикл, пока промис текущей итерации не завершится.",
+          "ok": true,
+          "why": "for...of выполняется внутри одной async-функции, и await останавливает эту функцию вместе с циклом. Следующая итерация начнётся только после завершения промиса."
+        },
+        {
+          "s": "Счётчик цикла, объявленный через var, получает новую привязку на каждой итерации, поэтому каждый setTimeout видит своё значение.",
+          "ok": false,
+          "why": "var создаёт одну переменную на всю функцию, и к срабатыванию таймеров в ней лежит финальное значение. Привязку на каждую итерацию создаёт let."
+        },
+        {
+          "s": "При вызове obj.method() срабатывает implicit binding, и this внутри метода указывает на объект перед точкой.",
+          "ok": true,
+          "why": "this определяется в момент вызова. Если функцию вызвали через obj, this равен obj, независимо от того, где функция объявлена."
+        },
+        {
+          "s": "Стрелочная функция отличается от обычной только синтаксисом, поэтому её this можно переопределить через call или bind.",
+          "ok": false,
+          "why": "У стрелки нет своего this, она берёт его лексически из окружающей области. call, apply и bind его не меняют, поэтому стрелка не подходит для метода, которому нужен this."
+        },
+        {
+          "s": "Pick<T, K> реализуется как mapped type по ключам K, где тип значения берётся индексным доступом T[P].",
+          "ok": true,
+          "why": "Определение такое: type Pick<T, K extends keyof T> = { [P in K]: T[P] }. Ограничение extends keyof T не даёт передать ключ, которого нет в T."
+        },
+        {
+          "s": "В discriminated union проверка поля ok сужает тип, и в каждой ветке компилятор знает, доступно ли data или error.",
+          "ok": true,
+          "why": "Тип Result равен либо { ok: true, data }, либо { ok: false, error }. Состояние, где есть и data, и error, просто нельзя выразить."
+        },
+        {
+          "s": "Promise.allSettled отклоняется на первом реджекте, а Promise.all дожидается всех промисов и возвращает массив статусов.",
+          "ok": false,
+          "why": "Наоборот: Promise.all отклоняется на первом реджекте. allSettled ждёт завершения всех промисов и возвращает статус и значение или причину для каждого."
+        }
       ],
       "en": [
-        "setTimeout(0) runs before Promise.then because zero means immediately.",
-        "An arrow function is just shorter syntax; its this behaves the same."
+        {
+          "s": "After the synchronous code, the event loop runs the whole microtask queue and only then picks one macrotask such as setTimeout.",
+          "ok": true,
+          "why": "Promises and queueMicrotask go to the microtask queue, which drains completely, including items added along the way. Only then does the next macrotask run."
+        },
+        {
+          "s": "A setTimeout callback with a 0 delay runs before a Promise.then callback, because a zero delay means it starts immediately.",
+          "ok": false,
+          "why": "then queues a microtask and setTimeout queues a macrotask. Microtasks run before any macrotask, and a zero delay doesn't change that."
+        },
+        {
+          "s": "The browser may paint a frame after the microtask queue drains and before the next macrotask, but it is not required to.",
+          "ok": true,
+          "why": "Rendering sits in the loop after the microtask checkpoint, but only runs when there is a rendering opportunity. So a frame can happen there, but it isn't guaranteed."
+        },
+        {
+          "s": "A long promise chain doesn't delay repainting, because the browser can render a frame between two adjacent microtasks.",
+          "ok": false,
+          "why": "A frame is only possible after the whole microtask queue drains. So a long promise chain with no macrotask in between holds the UI without a repaint."
+        },
+        {
+          "s": "forEach with an async callback waits for the promise from each call before invoking the callback for the next array element.",
+          "ok": false,
+          "why": "forEach ignores the callback's return value and drops the promise. Each call runs to its first await, the iterations interleave, and nothing waits for them."
+        },
+        {
+          "s": "Inside an async function, await in a for...of loop pauses the whole loop until the current iteration's promise settles.",
+          "ok": true,
+          "why": "for...of runs inside a single async function, and await pauses that function along with the loop. The next iteration starts only after the promise settles."
+        },
+        {
+          "s": "A loop counter declared with var gets a new binding on every iteration, so each setTimeout callback sees its own value.",
+          "ok": false,
+          "why": "var creates one variable for the whole function, and by the time the timers fire it holds the final value. A per-iteration binding comes from let."
+        },
+        {
+          "s": "When you call obj.method(), implicit binding applies, and this inside the method points to the object before the dot.",
+          "ok": true,
+          "why": "this is decided at call time. If the function is called through obj, this is obj, regardless of where the function was declared."
+        },
+        {
+          "s": "An arrow function differs from a regular function only in syntax, so its this can be overridden with call or bind.",
+          "ok": false,
+          "why": "An arrow has no this of its own and takes it lexically from the surrounding scope. call, apply and bind don't change it, so an arrow is a poor fit for a method that needs this."
+        },
+        {
+          "s": "Pick<T, K> is implemented as a mapped type over the keys in K, where the value type comes from the indexed access T[P].",
+          "ok": true,
+          "why": "The definition is type Pick<T, K extends keyof T> = { [P in K]: T[P] }. The extends keyof T constraint stops you from passing a key that T doesn't have."
+        },
+        {
+          "s": "In a discriminated union, checking the ok field narrows the type, so in each branch the compiler knows whether data or error is available.",
+          "ok": true,
+          "why": "Result is either { ok: true, data } or { ok: false, error }. A state with both data and error can't be expressed at all."
+        },
+        {
+          "s": "Promise.allSettled rejects on the first rejection, while Promise.all waits for every promise and returns an array of statuses.",
+          "ok": false,
+          "why": "It's the other way round: Promise.all rejects on the first rejection. allSettled waits for every promise to settle and returns a status plus value or reason for each."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "[[Микрозадачи|microtasks]] всегда раньше макрозадач: очередь опустошается целиком.",
+        "Очередь [[микрозадач|microtasks]] опустошается целиком, прежде чем event loop возьмёт следующую макрозадачу.",
         "forEach с await не ждёт, потому что forEach [[игнорирует|не смотрит на]] возвращаемое значение колбэка.",
-        "Стрелка берёт this [[лексически|из окружения]] и не имеет своего."
+        "Стрелочная функция не имеет своего this и берёт его [[лексически|из окружения]]."
       ],
       "en": [
-        "[[Microtasks]] always run before macrotasks: the queue is drained entirely.",
+        "The [[microtask|microtasks]] queue drains completely before the event loop picks the next macrotask.",
         "forEach with await doesn't wait because forEach [[ignores]] the callback's return value.",
-        "An arrow takes this [[lexically]] and has none of its own."
+        "An arrow function has no this of its own and takes it [[lexically]]."
       ]
     },
     "steps": {

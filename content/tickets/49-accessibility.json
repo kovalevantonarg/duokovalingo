@@ -26,7 +26,7 @@
         "t": "Если повесить aria-live на сообщение, которое стримится (приходит по частям), скринридер пытается читать каждый токен, и получается заикание или обрывки. Поэтому сам пузырь со стримом не live region. Я держу отдельную визуально скрытую область с aria-live polite, которая есть в DOM с самого начала. Когда ответ завершён, кладу туда финальный текст или короткое «ответ готов». Для очень длинных ответов можно троттлить (ограничивать частоту) до кусков размером с предложение. Во время генерации ставлю aria-busy на контейнер сообщения, но поддержка в скринридерах разная, так что настоящая гарантия — одно объявление в конце. Кнопка Stop — настоящий button, видимый и доступный по Tab, а фокус остаётся в поле ввода, чтобы можно было продолжать печатать. Я уважаю prefers-reduced-motion: убираю анимацию печати и плавный автоскролл. Тестирую так: сначала проход только с клавиатуры, потом VoiceOver или NVDA. axe и Lighthouse ловят только часть проблем, по исследованию самого Deque около 57% найденных проблем по их числу. Ориентир — WCAG 2.2 уровня AA, текущая рекомендация W3C, а WCAG 3 пока черновик."
       }
     ],
-    "kill": "<b>«Повешу role=\"button\" и aria-label — и готово»</b> — ARIA меняет только то, что объявляется, а не поведение: div всё так же не получает фокус и не реагирует на Enter и Space."
+    "kill": "<b>«Повешу role=\"button\" и aria-label, и готово»</b> — ARIA меняет только то, что объявляется, а не поведение: div всё так же не получает фокус и не реагирует на Enter и Space."
   },
   "en": {
     "topic": "Accessibility",
@@ -52,21 +52,137 @@
     "kill": "<b>\"I'll add role=\"button\" and an aria-label and we're done\"</b> — ARIA changes what gets announced, not behavior: the div still isn't focusable and ignores Enter and Space."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Если добавить role=\"button\" на div, он станет фокусируемым и начнёт активироваться с клавиатуры.",
-        "Если axe и Lighthouse не нашли ни одной проблемы, страница доступна."
+        {
+          "s": "Нативный элемент button получает фокус, активируется по Enter и Space и объявляется скринридером как кнопка.",
+          "ok": true,
+          "why": "Всё это браузер даёт бесплатно, вместе с состоянием disabled. div с onClick ничего из этого не умеет."
+        },
+        {
+          "s": "Атрибут role=\"button\" на div делает его фокусируемым и добавляет активацию с клавиатуры.",
+          "ok": false,
+          "why": "ARIA меняет только то, что объявляется. tabindex и обработку Enter и Space пришлось бы добавлять самому, поэтому проще взять button."
+        },
+        {
+          "s": "Неправильная ARIA-разметка безопаснее, чем полное отсутствие ARIA на интерактивных элементах.",
+          "ok": false,
+          "why": "Плохая ARIA хуже никакой: она обещает скринридеру роли и поведение, которых у элемента нет."
+        },
+        {
+          "s": "Первое правило ARIA: не использовать ARIA, если нативный HTML-элемент даёт нужную семантику и поведение.",
+          "ok": true,
+          "why": "Нативный элемент уже правильно работает с клавиатурой и скринридером. Из ARIA на практике берут состояния вроде aria-expanded и aria-invalid."
+        },
+        {
+          "s": "Пользователи скринридеров перемещаются по заголовкам, поэтому на странице один h1, а уровни заголовков идут по порядку.",
+          "ok": true,
+          "why": "Заголовки и landmarks вроде header, nav и main работают как оглавление, по которому можно прыгать между областями."
+        },
+        {
+          "s": "При закрытии модального окна фокус переносят в начало документа, чтобы пользователь начал обход страницы заново.",
+          "ok": false,
+          "why": "Фокус возвращают на элемент, который открыл модалку. Если этого не сделать, пользователь клавиатуры окажется в начале документа и потеряет место."
+        },
+        {
+          "s": "Нативный dialog, открытый через showModal, делает остальную страницу inert и закрывается по Escape.",
+          "ok": true,
+          "why": "Возврат фокуса на триггер всё равно проверяют руками: в React триггер могли перерендерить или удалить."
+        },
+        {
+          "s": "Клиентская навигация в SPA, как и полная загрузка страницы, сбрасывает фокус и заставляет скринридер прочитать новый title.",
+          "ok": false,
+          "why": "Клиентская навигация не делает ни того, ни другого. После перехода фокус переносят на h1 или main новой страницы или объявляют заголовок через live region."
+        },
+        {
+          "s": "aria-live на пузыре со стримящимся ответом позволяет скринридеру прочитать ответ целиком и без обрывов.",
+          "ok": false,
+          "why": "Скринридер пытается зачитать каждое изменение, то есть каждый токен, и получаются обрывки. Отдельная скрытая область получает текст один раз, когда ответ готов."
+        },
+        {
+          "s": "Live region должна существовать в DOM до того, как в неё положат текст, иначе скринридер может его не объявить.",
+          "ok": true,
+          "why": "Скринридер объявляет изменения в уже известной области. Область, которая появилась сразу с текстом, для него не изменилась."
+        },
+        {
+          "s": "Если axe и Lighthouse не нашли ни одной проблемы, страница соответствует WCAG 2.2 уровня AA.",
+          "ok": false,
+          "why": "По исследованию Deque автоматические проверки находят около 57% проблем по их числу. Нужны проход с клавиатуры и проверка в VoiceOver или NVDA."
+        },
+        {
+          "s": "WCAG 2.2 — текущая рекомендация W3C, а WCAG 3 пока остаётся черновиком.",
+          "ok": true,
+          "why": "Поэтому ориентиром для проверки служит WCAG 2.2 уровня AA."
+        }
       ],
       "en": [
-        "Adding role=\"button\" to a div makes it focusable and keyboard-activatable.",
-        "If axe and Lighthouse report zero issues, the page is accessible."
+        {
+          "s": "A native button element is focusable, activates on Enter and Space, and is announced as a button by screen readers.",
+          "ok": true,
+          "why": "The browser gives you all of that for free, plus the disabled state. A div with onClick has none of it."
+        },
+        {
+          "s": "The role=\"button\" attribute on a div makes it focusable and adds keyboard activation.",
+          "ok": false,
+          "why": "ARIA only changes what gets announced. You'd have to add tabindex and Enter and Space handling yourself, so a button is simpler."
+        },
+        {
+          "s": "Incorrect ARIA markup is safer than having no ARIA at all on interactive elements.",
+          "ok": false,
+          "why": "Bad ARIA is worse than none: it promises the screen reader roles and behavior the element doesn't have."
+        },
+        {
+          "s": "The first rule of ARIA is not to use ARIA when a native HTML element provides the semantics and behavior you need.",
+          "ok": true,
+          "why": "A native element already works correctly with the keyboard and screen readers. In practice the ARIA you add is state, like aria-expanded and aria-invalid."
+        },
+        {
+          "s": "Screen reader users navigate by headings, so a page has one h1 and heading levels go in order.",
+          "ok": true,
+          "why": "Headings and landmarks like header, nav and main work as a table of contents for jumping between regions."
+        },
+        {
+          "s": "When a modal closes, focus moves to the top of the document so the user starts going through the page again.",
+          "ok": false,
+          "why": "Focus returns to the element that opened the modal. Otherwise a keyboard user lands at the top of the document and loses their place."
+        },
+        {
+          "s": "A native dialog opened with showModal makes the rest of the page inert and closes on Escape.",
+          "ok": true,
+          "why": "You still test that focus returns to the trigger, because in React the trigger may have been re-rendered or removed."
+        },
+        {
+          "s": "Client-side navigation in a SPA, like a full page load, resets focus and makes the screen reader announce the new title.",
+          "ok": false,
+          "why": "Client-side navigation does neither. After navigating you move focus to the new page's h1 or main, or announce the title in a live region."
+        },
+        {
+          "s": "Putting aria-live on the bubble with the streaming reply lets the screen reader read the whole answer without cuts.",
+          "ok": false,
+          "why": "The screen reader tries to read every change, meaning every token, and you get fragments. A separate hidden region gets the text once, when the reply is done."
+        },
+        {
+          "s": "A live region has to exist in the DOM before text is put into it, or the screen reader may not announce it.",
+          "ok": true,
+          "why": "Screen readers announce changes to a region they already know about. A region that appears with its text already in it hasn't changed."
+        },
+        {
+          "s": "If axe and Lighthouse find zero issues, the page meets WCAG 2.2 level AA.",
+          "ok": false,
+          "why": "Per Deque's own study, automated checks find about 57% of issues by count. You still need a keyboard pass and a check in VoiceOver or NVDA."
+        },
+        {
+          "s": "WCAG 2.2 is the current W3C Recommendation, while WCAG 3 is still a working draft.",
+          "ok": true,
+          "why": "That's why WCAG 2.2 level AA is the reference to test against."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "Первое правило ARIA: не используй ARIA, если нативный [[элемент|HTML-элемент]] справляется.",
         "При закрытии модалки фокус нужно вернуть на [[триггер|элемент, который её открыл|кнопку открытия]].",
-        "Для стриминга я использую регион aria-live=\"[[polite]]\" и объявляю ответ по [[завершении|окончании]]."
+        "Для стримящегося ответа я использую отдельную область aria-live=\"[[polite]]\" и объявляю ответ по [[завершении|окончании]]."
       ],
       "en": [
         "The first rule of ARIA: don't use ARIA if a native [[element|HTML element]] does the job.",

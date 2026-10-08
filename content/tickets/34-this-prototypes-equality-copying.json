@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Правила this",
-        "t": "this определяется в момент вызова, а не там, где функция написана, и я проверяю правила по порядку. Если это стрелочная функция, правила не применяются — она берёт this лексически, из окружающей области. Иначе, если функцию вызвали через new, this — это только что созданный объект. Если через call, apply или bind, то this — это то, что я передал. Если как obj.method(), то this — это obj. А при обычном вызове работает правило по умолчанию: undefined в strict mode (строгом режиме), а модули и классы всегда строгие, или globalThis в нестрогом коде. Поэтому obj.method, переданный как колбэк (функция, которую вызовет кто-то другой), ломается: его вызывают как обычную функцию, и неявная привязка теряется. У стрелочных функций нет своего arguments, поэтому я беру rest-параметры (...args). И у них нет prototype, так что new на стрелке бросает TypeError. Ловушка, за которой я слежу, — стрелка как метод в литерале объекта: она видит не объект, а внешний this."
+        "t": "this определяется в момент вызова, а не там, где функция написана, и я проверяю правила по порядку. Если это стрелочная функция, правила не применяются — она берёт this лексически, из окружающей области. Иначе, если функцию вызвали через new, this — это только что созданный объект. Если через call, apply или bind, то this — это то, что я передал. Если как obj.method(), то this — это obj. А при обычном вызове работает правило по умолчанию: undefined в strict mode (строгом режиме), а модули и классы всегда строгие, или globalThis в нестрогом коде. Поэтому obj.method, переданный как колбэк (функция, которую вызовет кто-то другой), ломается: его вызывают как обычную функцию, и неявная привязка теряется. У стрелочных функций нет своего arguments, поэтому я беру rest-параметры (...args). И у них нет prototype, так что new на стрелке бросает TypeError. Отдельно слежу за стрелкой в роли метода в литерале объекта: она видит не объект, а внешний this."
       },
       {
         "q": "Class и прототипы",
@@ -26,7 +26,7 @@
         "t": "По умолчанию я пишу ===, потому что == запускает нестрогое сравнение с приведением типов, и результаты трудно держать в голове: пустая строка == 0 даёт true, [] == false тоже true, а null == 0 даёт false. Намеренно я использую == в одном месте: x == null. Это true для null и undefined и на практике больше ни для чего, то есть заменяет двойную проверку. Для NaN не работает ни то, ни другое, там Number.isNaN или Object.is. С копированием так: spread (оператор ...) и Object.assign делают поверхностную копию, только один уровень собственных перечисляемых свойств. Вложенные объекты остаются общими, мутация вложенного массива в копии меняет оригинал, а мемоизированный (закешированный) дочерний компонент, который сравнивает эту вложенную ссылку, не перерисуется. structuredClone делает настоящую глубокую копию и понимает Map, Set, Date и даже циклические ссылки. Но он бросает ошибку на функциях и DOM-узлах, а экземпляры классов возвращает простыми объектами без прототипа. Копирование через JSON.stringify и JSON.parse ещё хуже: Date превращаются в строки, undefined пропадает. А в React я обычно вообще не делаю глубоких копий: копирую только тот путь, который меняю."
       }
     ],
-    "kill": "<b>«Стрелочная функция привязывает this к объекту, в котором объявлена»</b> — нет, стрелка в литерале объекта берёт this из внешней области, а в модуле это часто undefined."
+    "kill": "<b>«Стрелочная функция привязывает this к объекту, в котором объявлена»</b> неверно: стрелка в литерале объекта берёт this из внешней области, а в модуле это часто undefined."
   },
   "en": {
     "topic": "this, prototypes, equality, copying",
@@ -49,28 +49,144 @@
         "t": "I default to === because == runs loose equality with type coercion, and the results are hard to hold in your head: an empty string == 0 is true, [] == false is true, but null == 0 is false. The one place I use == on purpose is x == null. It's true for null and undefined and in practice nothing else, so it replaces a two-part check. For NaN neither works, so I use Number.isNaN or Object.is. For copying, spread and Object.assign are shallow: one level of own enumerable properties. Nested objects stay shared, so mutating the copy's nested array mutates the original, and a memoized child that compares that nested reference won't re-render. structuredClone makes a real deep copy and handles Map, Set, Date and even cycles. But it throws on functions and DOM nodes, and class instances come back as plain objects without their prototype. A JSON round trip is worse: Dates become strings and undefined disappears. In React I usually don't deep copy at all. I copy only the path I change."
       }
     ],
-    "kill": "<b>\"An arrow function binds this to the object it's defined in\"</b> — no, an arrow in an object literal takes this from the outer scope, which in a module is often undefined."
+    "kill": "<b>\"An arrow function binds this to the object it's defined in\"</b> is wrong: an arrow in an object literal takes this from the outer scope, which in a module is often undefined."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Стрелочная функция берёт this от того, кто её вызывает, поэтому obj.arrow() привязывает this к obj.",
-        "structuredClone сохраняет прототип экземпляров класса, так что методы на копии продолжают работать."
+        {
+          "s": "Для обычной функции this определяется в момент вызова, а не там, где функция написана в коде.",
+          "ok": true,
+          "why": "Одна и та же функция получает разный this в зависимости от способа вызова: через new, call/apply/bind, obj.method() или обычным вызовом."
+        },
+        {
+          "s": "Стрелочная функция берёт this от того, кто её вызывает, поэтому вызов obj.arrow() привязывает this к obj.",
+          "ok": false,
+          "why": "Стрелка берёт this лексически из окружающей области. В литерале объекта это внешний this, а в модуле он часто undefined."
+        },
+        {
+          "s": "При обычном вызове функции внутри ES-модуля this указывает на globalThis, так же как в нестрогом скрипте.",
+          "ok": false,
+          "why": "Модули и классы всегда работают в strict mode, поэтому при обычном вызове this равен undefined. globalThis получается только в нестрогом коде."
+        },
+        {
+          "s": "Метод obj.method, переданный как колбэк, теряет this, потому что его потом вызывают как обычную функцию.",
+          "ok": true,
+          "why": "Неявная привязка работает только при вызове через точку. При обычном вызове действует правило по умолчанию: undefined в strict mode."
+        },
+        {
+          "s": "Вызов стрелочной функции через new бросает TypeError, потому что у стрелки нет свойства prototype.",
+          "ok": true,
+          "why": "Стрелка не может быть конструктором. Своего arguments у неё тоже нет, вместо него используют rest-параметры."
+        },
+        {
+          "s": "Каждый экземпляр класса получает собственную копию методов, объявленных в теле класса.",
+          "ok": false,
+          "why": "Методы класса лежат в ClassName.prototype, и все экземпляры делят одну копию. На каждый экземпляр создаются только поля класса."
+        },
+        {
+          "s": "Синтаксис class ничего не добавляет к функции-конструктору: вызов класса без new работает так же, как вызов обычной функции.",
+          "ok": false,
+          "why": "Вызов класса без new бросает ошибку. Кроме того, тело класса всегда в strict mode, а его методы неперечисляемые."
+        },
+        {
+          "s": "Стрелочная функция в поле класса создаётся заново для каждого экземпляра и не лежит на прототипе.",
+          "ok": true,
+          "why": "Взамен она даёт стабильный this для колбэков. Цена: память на каждый объект, нет super.handleClick() в подклассе и мока через прототип в тестах."
+        },
+        {
+          "s": "Проверка x == null истинна для null и undefined и на практике не срабатывает ни для каких других значений.",
+          "ok": true,
+          "why": "Поэтому x == null заменяет двойную проверку на null и undefined. В остальных случаях безопаснее ===, потому что == приводит типы."
+        },
+        {
+          "s": "Сравнение NaN === NaN возвращает true, поэтому для проверки значения на NaN хватает строгого равенства.",
+          "ok": false,
+          "why": "NaN не равен себе ни по ==, ни по ===. Для проверки используют Number.isNaN или Object.is."
+        },
+        {
+          "s": "structuredClone сохраняет прототип экземпляров класса, поэтому методы на скопированном объекте продолжают работать.",
+          "ok": false,
+          "why": "structuredClone возвращает экземпляры классов простыми объектами без прототипа. На функциях и DOM-узлах он бросает ошибку."
+        },
+        {
+          "s": "Spread и Object.assign копируют один уровень собственных перечисляемых свойств, а вложенные объекты остаются общими с оригиналом.",
+          "ok": true,
+          "why": "Мутация вложенного массива в копии меняет оригинал. А мемоизированный дочерний компонент, который сравнивает эту ссылку, не перерисуется."
+        }
       ],
       "en": [
-        "An arrow function takes this from whoever calls it, so obj.arrow() binds this to obj.",
-        "structuredClone keeps the prototype of class instances, so methods still work on the copy."
+        {
+          "s": "For a regular function, this is decided at call time, not by where the function is written in the code.",
+          "ok": true,
+          "why": "The same function gets a different this depending on how it's called: with new, call/apply/bind, obj.method(), or a plain call."
+        },
+        {
+          "s": "An arrow function takes this from whoever calls it, so calling obj.arrow() binds this to obj.",
+          "ok": false,
+          "why": "An arrow takes this lexically from the enclosing scope. In an object literal that's the outer this, which in a module is often undefined."
+        },
+        {
+          "s": "In a plain function call inside an ES module, this points to globalThis, just as in a non-strict script.",
+          "ok": false,
+          "why": "Modules and classes are always strict, so a plain call gets undefined as this. globalThis only comes up in sloppy code."
+        },
+        {
+          "s": "obj.method passed as a callback loses its this, because it is later invoked as a plain function.",
+          "ok": true,
+          "why": "Implicit binding only applies to a call through the dot. A plain call gets the default rule: undefined in strict mode."
+        },
+        {
+          "s": "Calling an arrow function with new throws a TypeError, because an arrow has no prototype property.",
+          "ok": true,
+          "why": "An arrow can't be a constructor. It has no arguments object of its own either; rest parameters replace it."
+        },
+        {
+          "s": "Every class instance gets its own copy of the methods declared in the class body.",
+          "ok": false,
+          "why": "Class methods live on ClassName.prototype, and all instances share one copy. Only class fields are created per instance."
+        },
+        {
+          "s": "The class syntax adds nothing to a constructor function: calling a class without new behaves like calling a regular function.",
+          "ok": false,
+          "why": "Calling a class without new throws. Also, a class body is always in strict mode, and its methods are non-enumerable."
+        },
+        {
+          "s": "An arrow function in a class field is created anew for each instance and doesn't live on the prototype.",
+          "ok": true,
+          "why": "In return it gives a stable this for callbacks. The cost: memory per object, no super.handleClick() in a subclass, and no mocking via the prototype in tests."
+        },
+        {
+          "s": "The check x == null is true for null and undefined and in practice for no other value.",
+          "ok": true,
+          "why": "So x == null replaces a two-part check for null and undefined. Elsewhere === is safer, because == coerces types."
+        },
+        {
+          "s": "The comparison NaN === NaN returns true, so strict equality is enough to check whether a value is NaN.",
+          "ok": false,
+          "why": "NaN isn't equal to itself under either == or ===. To check for it, use Number.isNaN or Object.is."
+        },
+        {
+          "s": "structuredClone keeps the prototype of class instances, so methods keep working on the copied object.",
+          "ok": false,
+          "why": "structuredClone returns class instances as plain objects without their prototype. It throws on functions and DOM nodes."
+        },
+        {
+          "s": "Spread and Object.assign copy one level of own enumerable properties, and nested objects stay shared with the original.",
+          "ok": true,
+          "why": "Mutating a nested array in the copy changes the original. And a memoized child comparing that reference won't re-render."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "Стрелочные функции берут this [[лексически]] из окружающей области и не могут вызываться через [[new]].",
-        "x == null истинно для null и [[undefined]], поэтому это единственное намеренное использование ==.",
+        "Проверка x == null истинна для null и [[undefined]] и заменяет двойную проверку.",
         "Spread делает [[поверхностную]] копию, а [[structuredClone]] делает глубокую, но бросает ошибку на функциях."
       ],
       "en": [
         "Arrow functions take this [[lexically]] from the enclosing scope and can't be called with [[new]].",
-        "x == null is true for null and [[undefined]], which is why it's the one intentional use of ==.",
+        "The check x == null is true for null and [[undefined]] and replaces a two-part check.",
         "Spread makes a [[shallow]] copy, while [[structuredClone]] makes a deep one but throws on functions."
       ]
     },

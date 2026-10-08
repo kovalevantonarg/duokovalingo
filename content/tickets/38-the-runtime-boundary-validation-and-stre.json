@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Валидация границ",
-        "t": "Типы стираются при компиляции. В runtime (во время выполнения) ничто не проверяет, что JSON соответствует моему интерфейсу, поэтому response.json() с типом any или мой as User — это обещание, которое никто не исполняет. Всё, что пересекает границу, остаётся unknown, пока не проверено: ответы API, localStorage, переменные окружения и особенно вывод модели. Аргументы tool call (вызова инструмента) — это сгенерированный текст. В них может не быть поля или тип может быть не тот. Strict-режим для инструментов (strict: true) гарантирует структуру JSON, но не все ограничения схемы применяются при генерации: minimum и maximum, например, нет, а обрыв по max_tokens оставляет недописанный JSON. Поэтому я пишу одну zod-схему и вывожу тип через z.infer, и схема становится единственным источником правды. На границе я использую safeParse: он возвращает success с data или error с issues, а не бросает исключение. Для tool call я отправляю эти issues обратно модели, чтобы она исправилась. parse, который бросает, я оставляю для fail-fast (падения сразу), например для конфига окружения при старте. В zod 4 форматы строк вынесены на верхний уровень, как z.email(), а старая форма через метод устарела. Вместо .strict() рекомендуют z.strictObject, хотя .strict() считается legacy (устаревшим API) и по-прежнему работает."
+        "t": "Типы стираются при компиляции. В runtime (во время выполнения) ничто не проверяет, что JSON соответствует моему интерфейсу, поэтому response.json() с типом any или мой as User — это обещание, которое никто не проверяет. Всё, что пересекает границу, остаётся unknown, пока не проверено: ответы API, localStorage, переменные окружения и особенно вывод модели. Аргументы tool call (вызова инструмента) — это сгенерированный текст. В них может не быть поля или тип может быть не тот. Strict-режим для инструментов (strict: true) гарантирует структуру JSON, но не все ограничения схемы применяются при генерации: minimum и maximum, например, нет, а обрыв по max_tokens оставляет недописанный JSON. Поэтому я пишу одну zod-схему и вывожу тип через z.infer, и схема становится единственным источником правды. На границе я использую safeParse: он возвращает success с data или error с issues, а не бросает исключение. Для tool call я отправляю эти issues обратно модели, чтобы она исправилась. parse, который бросает, я оставляю для fail-fast (падения сразу), например для конфига окружения при старте. В zod 4 форматы строк вынесены на верхний уровень, как z.email(), а старая форма через метод устарела. Вместо .strict() рекомендуют z.strictObject, хотя .strict() считается legacy (устаревшим API) и по-прежнему работает."
       },
       {
         "q": "Типизированный стрим",
@@ -23,10 +23,10 @@
       },
       {
         "q": "Флаги строгости",
-        "t": "strict — это база, и с TypeScript 6.0 он включён по умолчанию. В него входят strictNullChecks, noImplicitAny, unknown для переменных в catch и другое. Два флага, которые я бы добавил, в strict не входят. noUncheckedIndexedAccess добавляет undefined к arr[i] и record[key], и это правда, потому что index signature (индексная сигнатура) не обещает, что ключ существует. Он ловит классическое падение на пустом массиве или отсутствующем ключе в словаре. exactOptionalPropertyTypes различает «ключа нет» и «ключ есть со значением undefined», так что timeout?: number больше не принимает явный undefined. Это ловит реальный баг: spread (разворот объекта) overrides с timeout: undefined поверх defaults молча затирает значение по умолчанию. Цена в большой кодовой базе — волна ошибок, многие из которых шум, вроде arr[0] сразу после проверки длины, плюс типы библиотек, не рассчитанные на exactOptionalPropertyTypes. Я бы включал по одному флагу, чинил по директориям и фиксировал baseline (снимок текущих ошибок) в CI (конвейере проверок), чтобы новые не появлялись. Расставлять non-null assertion (оператор !, утверждение «не null») только ради снижения счётчика значит убить весь смысл."
+        "t": "strict — базовый уровень, и с TypeScript 6.0 он включён по умолчанию. В него входят strictNullChecks, noImplicitAny, unknown для переменных в catch и другое. Два флага, которые я бы добавил, в strict не входят. noUncheckedIndexedAccess добавляет undefined к arr[i] и record[key], и это верно, потому что index signature (индексная сигнатура) не обещает, что ключ существует. Он ловит классическое падение на пустом массиве или отсутствующем ключе в словаре. exactOptionalPropertyTypes различает «ключа нет» и «ключ есть со значением undefined», так что timeout?: number больше не принимает явный undefined. Это ловит реальный баг: spread (разворот объекта) overrides с timeout: undefined поверх defaults молча затирает значение по умолчанию. Цена в большой кодовой базе — волна ошибок, многие из которых шум, вроде arr[0] сразу после проверки длины, плюс типы библиотек, не рассчитанные на exactOptionalPropertyTypes. Я бы включал по одному флагу, чинил по директориям и фиксировал baseline (снимок текущих ошибок) в CI (конвейере проверок), чтобы новые не появлялись. Если расставлять non-null assertion (оператор !, утверждение «не null») только ради снижения счётчика, смысл флага пропадает."
       }
     ],
-    "kill": "<b>«TypeScript проверит ответ по моему интерфейсу»</b> — типы стираются, и as User это непроверяемое обещание. То же с <b>доверием к аргументам tool call, раз у инструмента есть схема</b>: их надо валидировать как любой другой вход."
+    "kill": "<b>«TypeScript проверит ответ по моему интерфейсу»</b> неверно: типы стираются, и as User ничего не проверяет. Та же ошибка — <b>доверять аргументам tool call, раз у инструмента есть схема</b>: их надо валидировать как любой другой вход."
   },
   "en": {
     "topic": "The runtime boundary: validation and streams",
@@ -49,17 +49,133 @@
         "t": "strict is the baseline, and since TypeScript 6.0 it's on by default. It bundles strictNullChecks, noImplicitAny and unknown catch variables, among others. The two flags I'd add are not part of strict. noUncheckedIndexedAccess makes arr[i] and record[key] include undefined, which is the truth, because an index signature doesn't promise the key exists. It catches the classic crash on an empty array or a missing map entry. exactOptionalPropertyTypes separates 'key absent' from 'key present with undefined', so timeout?: number no longer accepts an explicit undefined. That catches a real bug: spreading overrides with timeout: undefined over defaults silently wipes the default. The cost in a big codebase is a wave of errors, many of them noise, like arr[0] right after a length check, plus library types not written for exactOptionalPropertyTypes. I'd turn on one flag at a time, fix by directory, and baseline the existing errors in CI so no new ones land. Sprinkling non-null assertions just to make the count go down defeats the purpose."
       }
     ],
-    "kill": "<b>\"TypeScript checks the response against my interface\"</b> — types are erased, so as User is an unchecked promise. Same with <b>trusting tool-call arguments because the tool has a schema</b>: validate them like any other input."
+    "kill": "<b>\"TypeScript checks the response against my interface\"</b> is wrong: types are erased, so as User checks nothing. The same mistake is <b>trusting tool-call arguments because the tool has a schema</b>: validate them like any other input."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Если привести результат response.json() к типу User через as, TypeScript проверит форму ответа в runtime.",
-        "noUncheckedIndexedAccess и exactOptionalPropertyTypes оба включаются вместе с strict: true."
+        {
+          "s": "Типы TypeScript стираются при компиляции, поэтому в runtime ничто не проверяет, что пришедший JSON соответствует интерфейсу.",
+          "ok": true,
+          "why": "Аннотация и as существуют только для компилятора. Всё, что пересекает границу приложения, остаётся unknown, пока не прошло валидацию."
+        },
+        {
+          "s": "Если привести результат response.json() к типу User через as, TypeScript проверит форму ответа во время выполнения.",
+          "ok": false,
+          "why": "as — это утверждение для компилятора, в runtime от него ничего не остаётся. Форму ответа проверяет только явная валидация, например zod-схемой."
+        },
+        {
+          "s": "Strict-режим инструментов у Anthropic (strict: true) гарантирует соблюдение всех ограничений схемы, включая minimum и maximum.",
+          "ok": false,
+          "why": "Strict-режим гарантирует структуру JSON, но не все ограничения схемы применяются при генерации, minimum и maximum в том числе. Аргументы всё равно валидируют."
+        },
+        {
+          "s": "Обрыв генерации по max_tokens может оставить аргументы tool call недописанными, то есть невалидным JSON.",
+          "ok": true,
+          "why": "Аргументы инструмента — сгенерированный текст, и он обрывается там, где кончился лимит токенов. Поэтому JSON.parse и валидацию нужно ждать с ошибкой."
+        },
+        {
+          "s": "Если выводить тип из zod-схемы через z.infer, схема становится единственным источником правды для данных на границе.",
+          "ok": true,
+          "why": "Тип и runtime-проверка берутся из одного описания и не расходятся. Отдельный интерфейс рядом со схемой рано или поздно устареет."
+        },
+        {
+          "s": "Метод safeParse в zod бросает исключение на невалидных данных, а parse возвращает объект с полями success и error.",
+          "ok": false,
+          "why": "Наоборот: safeParse возвращает success с data или error с issues, а parse бросает. parse оставляют для fail-fast, например для конфига при старте."
+        },
+        {
+          "s": "Ошибки валидации аргументов tool call из safeParse можно отправить обратно модели, чтобы она исправила вызов.",
+          "ok": true,
+          "why": "issues отправляют в tool_result с is_error: true. Модель понимает сообщения вида «expected number to be <=20» и повторяет вызов с исправлениями."
+        },
+        {
+          "s": "Строку partial_json из каждого input_json_delta нужно сразу передавать в JSON.parse, чтобы аргументы инструмента обновлялись по ходу стрима.",
+          "ok": false,
+          "why": "partial_json — это кусок JSON, который сам по себе не парсится. Строки накапливают по index блока и парсят по событию content_block_stop."
+        },
+        {
+          "s": "В стриме Anthropic delta внутри content_block_delta бывает text_delta с полем text или input_json_delta с полем partial_json.",
+          "ok": true,
+          "why": "Поэтому delta типизируют отдельным размеченным объединением. После switch по типу delta.text доступен только в ветке text_delta."
+        },
+        {
+          "s": "Неизвестный тип события в стриме Anthropic стоит обрабатывать броском ошибки в runtime, потому что такое событие означает нарушение контракта API.",
+          "ok": false,
+          "why": "Документация прямо говорит, что могут появиться новые типы событий. Ветка never даёт проверку при компиляции, а в runtime неизвестное событие логируют и пропускают."
+        },
+        {
+          "s": "С флагом exactOptionalPropertyTypes поле timeout?: number перестаёт принимать явное значение undefined.",
+          "ok": true,
+          "why": "Флаг различает «ключа нет» и «ключ есть со значением undefined». Это ловит баг, когда spread overrides с timeout: undefined затирает значение по умолчанию."
+        },
+        {
+          "s": "Флаги noUncheckedIndexedAccess и exactOptionalPropertyTypes включаются автоматически вместе с strict: true.",
+          "ok": false,
+          "why": "Оба флага в strict не входят, их включают отдельно. В большой кодовой базе их добавляют по одному и фиксируют baseline ошибок в CI."
+        }
       ],
       "en": [
-        "Casting the result of response.json() to User with as makes TypeScript check the response shape at runtime.",
-        "noUncheckedIndexedAccess and exactOptionalPropertyTypes are both turned on by strict: true."
+        {
+          "s": "TypeScript types are erased at compile time, so nothing at runtime checks that incoming JSON matches an interface.",
+          "ok": true,
+          "why": "Annotations and as exist only for the compiler. Anything crossing the app boundary stays unknown until it's validated."
+        },
+        {
+          "s": "Casting the result of response.json() to User with as makes TypeScript check the response shape at runtime.",
+          "ok": false,
+          "why": "as is a claim made to the compiler, and nothing of it survives to runtime. Only explicit validation, for example with a zod schema, checks the shape."
+        },
+        {
+          "s": "Anthropic's strict tool mode (strict: true) guarantees every schema constraint is enforced, including minimum and maximum.",
+          "ok": false,
+          "why": "Strict mode guarantees the JSON structure, but not every schema constraint is enforced during generation, minimum and maximum included. You still validate the arguments."
+        },
+        {
+          "s": "A max_tokens cutoff can leave tool-call arguments unfinished, which means invalid JSON.",
+          "ok": true,
+          "why": "Tool arguments are generated text, and it stops wherever the token limit runs out. So JSON.parse and validation have to expect failure."
+        },
+        {
+          "s": "Deriving the type from a zod schema with z.infer makes the schema the single source of truth for data at the boundary.",
+          "ok": true,
+          "why": "The type and the runtime check come from one description and can't drift apart. A separate interface next to the schema eventually goes stale."
+        },
+        {
+          "s": "zod's safeParse throws on invalid data, while parse returns an object with success and error fields.",
+          "ok": false,
+          "why": "It's the other way round: safeParse returns success with data or an error with issues, and parse throws. parse is kept for fail-fast cases like config at startup."
+        },
+        {
+          "s": "Validation errors for tool-call arguments from safeParse can be sent back to the model so it can fix the call.",
+          "ok": true,
+          "why": "The issues go into a tool_result with is_error: true. The model understands messages like 'expected number to be <=20' and retries with corrections."
+        },
+        {
+          "s": "The partial_json string from each input_json_delta should go straight into JSON.parse so the tool arguments update as the stream arrives.",
+          "ok": false,
+          "why": "partial_json is a fragment of JSON that won't parse on its own. You accumulate the strings per block index and parse on content_block_stop."
+        },
+        {
+          "s": "In Anthropic's stream, the delta inside content_block_delta is either a text_delta with a text field or an input_json_delta with a partial_json field.",
+          "ok": true,
+          "why": "That's why the delta is typed as its own discriminated union. After switching on its type, delta.text is available only in the text_delta branch."
+        },
+        {
+          "s": "An unknown event type in Anthropic's stream should be handled by throwing at runtime, because such an event means the API contract was broken.",
+          "ok": false,
+          "why": "The docs say outright that new event types may be added. The never branch gives the compile-time check, while at runtime an unknown event is logged and skipped."
+        },
+        {
+          "s": "With exactOptionalPropertyTypes, the field timeout?: number no longer accepts an explicit undefined.",
+          "ok": true,
+          "why": "The flag separates 'key absent' from 'key present with undefined'. That catches the bug where spreading overrides with timeout: undefined wipes the default."
+        },
+        {
+          "s": "The noUncheckedIndexedAccess and exactOptionalPropertyTypes flags are turned on automatically with strict: true.",
+          "ok": false,
+          "why": "Neither flag is part of strict; you enable them separately. In a large codebase you add them one at a time and baseline the errors in CI."
+        }
       ]
     },
     "cloze": {

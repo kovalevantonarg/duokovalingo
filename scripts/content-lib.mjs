@@ -1,6 +1,6 @@
 // Reads and writes the study content.
 // Source of truth: content/tickets/NN-slug.json, one file per ticket with everything about it:
-//   { n, tag, sec, core, ru, en, drills: { lies, cloze, steps? }, sources: [...] }
+//   { n, tag, sec, core, ru, en, drills: { tf, cloze, steps? }, sources: [...] }
 // The app loads generated bundles (app/tickets.js, app/drills.js, app/sources.js, app/lib/catalog.js); build them with
 // `node scripts/build-content.mjs`. Never edit the bundles by hand.
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
@@ -45,7 +45,7 @@ export function bundles(tickets = readTickets(), meta = readMeta()) {
       `window.TICKETS = [\n${plain.map((t) => JSON.stringify(t)).join(",\n")}\n];\n`,
     "app/drills.js":
       GENERATED +
-      '// Keyed by ticket n. lies: false-but-plausible statements. cloze: "[[answer|alt]]" blanks. steps: correct order, the UI shuffles.\n' +
+      '// Keyed by ticket n. tf: 12 standalone statements {s, ok, why} per language. cloze: "[[answer|alt]]" blanks. steps: correct order, the UI shuffles.\n' +
       `window.DRILLS = {\n${tickets.map((t) => `${t.n}:${JSON.stringify(t.drills)}`).join(",\n")}\n};\n`,
     "app/sources.js":
       GENERATED +

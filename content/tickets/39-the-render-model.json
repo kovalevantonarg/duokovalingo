@@ -15,11 +15,11 @@
     "a": [
       {
         "q": "Триггеры и фазы",
-        "t": "Компонент рендерится (React заново вызывает его функцию), когда его собственный state (состояние) меняется на новое значение, когда рендерится родитель или когда меняется context, который он читает. Props (входные параметры) отдельным триггером по сути не являются: они меняются только потому, что отрендерился родитель. Если записать в state то же значение по Object.is, React выходит без рендера, а мутация ref вообще ничего не запускает. В этом и смысл ref: значение живёт между рендерами, но ничего не перерисовывает. Дальше две фазы. В render phase (фаза вычисления) React вызывает мою функцию, получает новое дерево элементов и делает reconciliation (сверку) с предыдущим. Эта фаза должна быть чистой, потому что React может вызвать её дважды или выбросить результат. В commit phase (фаза применения) React вносит минимальные изменения в DOM и привязывает refs, затем запускает layout effects до того, как браузер отрисует кадр, а обычные эффекты обычно после. Но если обновление вызвано взаимодействием вроде клика, React может выполнить и их до отрисовки. Так что повторный рендер не значит, что DOM трогали. Ловушка, за которой я слежу, — считать каждый рендер дорогим. Обычно рендер дешёвый, а цена в том, что он вычисляет, или в каскадах повторных рендеров."
+        "t": "Компонент рендерится (React заново вызывает его функцию), когда его собственный state (состояние) меняется на новое значение, когда рендерится родитель или когда меняется context, который он читает. Props (входные параметры) отдельным триггером не являются: они меняются только потому, что отрендерился родитель. Если записать в state то же значение по Object.is, React выходит без рендера, а мутация ref вообще ничего не запускает. В этом и смысл ref: значение живёт между рендерами, но ничего не перерисовывает. Дальше две фазы. В render phase (фаза вычисления) React вызывает мою функцию, получает новое дерево элементов и делает reconciliation (сверку) с предыдущим. Эта фаза должна быть чистой, потому что React может вызвать её дважды или выбросить результат. В commit phase (фаза применения) React вносит минимальные изменения в DOM и привязывает refs, затем запускает layout effects до того, как браузер отрисует кадр, а обычные эффекты обычно после. Но если обновление вызвано взаимодействием вроде клика, React может выполнить и их до отрисовки. Так что повторный рендер не значит, что DOM трогали. Ловушка, за которой я слежу, — считать каждый рендер дорогим. Обычно рендер дешёвый, а цена в том, что он вычисляет, или в каскадах повторных рендеров."
       },
       {
         "q": "Key и хуки",
-        "t": "React сопоставляет новое дерево со старым по позиции и типу, а внутри списка по key. Key — это идентичность элемента, и state привязан к идентичности, а не к данным. Если key это индекс и я удаляю нулевую строку, бывшая первая строка получает key ноль. React видит, что key ноль на месте и тип тот же, поэтому оставляет этот экземпляр со всем его state, например текст в неконтролируемом поле ввода или раскрытый блок, и просто передаёт новые props. Данные сдвинулись, а state остался на прежней позиции. Вставка в начало или перестановка ломаются так же. Решение — стабильный id из данных. Только не Math.random: тогда каждая строка ремаунтится (создаётся заново) на каждом рендере. Индекс годится только для статичного списка без state в строках. Хуки (функции вида useState) работают на той же идее. React хранит state хуков списком на компонент и узнаёт каждый хук по порядку вызова. В этом весь смысл правил хуков. Если вызвать хук внутри условия, на следующем рендере порядок вызовов сдвинется, и каждый хук после него прочитал бы ячейку соседа. Поэтому React обычно бросает ошибку: «Rendered more hooks than during the previous render» или «Rendered fewer hooks than expected»."
+        "t": "React сопоставляет новое дерево со старым по позиции и типу, а внутри списка по key. Key — это идентичность элемента, и state привязан к идентичности, а не к данным. Если key это индекс и я удаляю нулевую строку, бывшая первая строка получает key ноль. React видит, что key ноль на месте и тип тот же, поэтому оставляет этот экземпляр со всем его state, например текст в неконтролируемом поле ввода или раскрытый блок, и просто передаёт новые props. Данные сдвинулись, а state остался на прежней позиции. Вставка в начало или перестановка ломаются так же. Решение — стабильный id из данных. Только не Math.random: тогда каждая строка ремаунтится (создаётся заново) на каждом рендере. Индекс годится только для статичного списка без state в строках. Хуки (функции вида useState) работают на той же идее. React хранит state хуков списком на компонент и узнаёт каждый хук по порядку вызова. Отсюда и правила хуков. Если вызвать хук внутри условия, на следующем рендере порядок вызовов сдвинется, и каждый хук после него прочитал бы ячейку соседа. Поэтому React обычно бросает ошибку: «Rendered more hooks than during the previous render» или «Rendered fewer hooks than expected»."
       },
       {
         "q": "Очередь и batching",
@@ -42,7 +42,7 @@
       },
       {
         "q": "Keys and hooks",
-        "t": "React matches the new tree to the old one by position and type, and inside a list by key. The key is the element's identity, and state belongs to the identity, not to the data. With index as key, when I delete row zero, the old row one now gets key zero. React sees key zero still there with the same type, so it keeps that instance with its state, like an uncontrolled input's text or an expanded toggle, and only passes new props. The data shifts up, but the state stays at its old position. Inserting at the top or reordering breaks the same way. The fix is a stable id from the data. Never Math.random, which remounts every row on every render. Index is fine only for a static list with no state in the rows. Hooks work on the same idea. React stores hook state in a list per component and identifies each hook by its call order. That's the whole reason behind the rules of hooks. If I call a hook inside a condition, the call order shifts next render and later hooks would read their neighbour's slot, so React usually throws, either 'Rendered more hooks than during the previous render' or 'Rendered fewer hooks than expected'."
+        "t": "React matches the new tree to the old one by position and type, and inside a list by key. The key is the element's identity, and state belongs to the identity, not to the data. With index as key, when I delete row zero, the old row one now gets key zero. React sees key zero still there with the same type, so it keeps that instance with its state, like an uncontrolled input's text or an expanded toggle, and only passes new props. The data shifts up, but the state stays at its old position. Inserting at the top or reordering breaks the same way. The fix is a stable id from the data. Never Math.random, which remounts every row on every render. Index is fine only for a static list with no state in the rows. Hooks work on the same idea. React stores hook state in a list per component and identifies each hook by its call order. That's where the rules of hooks come from. If I call a hook inside a condition, the call order shifts next render and later hooks would read their neighbour's slot, so React usually throws, either 'Rendered more hooks than during the previous render' or 'Rendered fewer hooks than expected'."
       },
       {
         "q": "Queue and batching",
@@ -52,14 +52,130 @@
     "kill": "<b>\"setState updates the state immediately\"</b> — it queues an update, so reading the variable right after still gives this render's old value."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Мутация ref.current перерендеривает компонент так же, как вызов setState.",
-        "Индекс в качестве key безопасен, если содержимое элементов списка уникально."
+        {
+          "s": "Компонент React перерендеривается, когда меняется его собственный state, когда рендерится родитель или когда меняется прочитанный им context.",
+          "ok": true,
+          "why": "Это три настоящих триггера. Props отдельным триггером не считаются: они меняются только потому, что отрендерился родитель."
+        },
+        {
+          "s": "Изменение ref.current запускает повторный рендер компонента так же, как вызов set-функции из useState.",
+          "ok": false,
+          "why": "Мутация ref ничего не запускает. Ref хранит значение между рендерами, а для перерисовки нужен state."
+        },
+        {
+          "s": "Если записать в state значение, равное текущему по Object.is, React всё равно перерендерит компонент и всех его детей.",
+          "ok": false,
+          "why": "React сравнивает новое значение со старым через Object.is и при равенстве пропускает рендер компонента и его детей."
+        },
+        {
+          "s": "Повторный рендер компонента не означает, что React изменил DOM: в commit phase применяются только отличия от прошлого дерева.",
+          "ok": true,
+          "why": "Рендер только вызывает функцию и сверяет новое дерево со старым. Если результат тот же, commit ничего в DOM не меняет."
+        },
+        {
+          "s": "Render phase в React должна быть чистой, потому что React может вызвать функцию компонента дважды или выбросить результат.",
+          "ok": true,
+          "why": "В render phase React только вычисляет новое дерево. Побочные эффекты там сработали бы дважды или для результата, который не попадёт на экран."
+        },
+        {
+          "s": "Layout effects в React запускаются после того, как браузер отрисовал кадр, в одной очереди с обычными эффектами.",
+          "ok": false,
+          "why": "Layout effects выполняются в commit phase сразу после обновления DOM и привязки refs, до отрисовки кадра. Обычные эффекты обычно идут после отрисовки."
+        },
+        {
+          "s": "Если key в списке равен индексу, удаление первой строки сдвигает данные, а state строк остаётся на прежних позициях.",
+          "ok": true,
+          "why": "State привязан к key. Бывшая вторая строка получает key ноль, и React оставляет ей state удалённой строки, например текст в неконтролируемом поле."
+        },
+        {
+          "s": "Индекс массива в качестве key безопасен для списка с удалением строк, если содержимое всех элементов уникально.",
+          "ok": false,
+          "why": "React связывает state с key, а не с содержимым. При удалении, вставке или перестановке индекс достаётся другому элементу, и state оказывается не у той строки."
+        },
+        {
+          "s": "Генерация key через Math.random() даёт строкам списка стабильную идентичность, когда в данных нет поля id.",
+          "ok": false,
+          "why": "Новый ключ на каждом рендере не совпадает со старым, поэтому React ремаунтит каждую строку и теряет её state. Нужен стабильный id из данных."
+        },
+        {
+          "s": "React узнаёт каждый хук компонента по порядку вызова, поэтому хук нельзя вызывать внутри условия.",
+          "ok": true,
+          "why": "State хуков хранится списком на компонент. Если хук в условии пропустить, порядок сдвинется, и следующие хуки прочитают чужие ячейки."
+        },
+        {
+          "s": "Три вызова setCount(count + 1) подряд в одном обработчике клика увеличивают счётчик на три.",
+          "ok": false,
+          "why": "count — константа этого рендера, поэтому все три вызова вычисляют одно и то же значение. Три даёт функциональная форма setCount(c => c + 1)."
+        },
+        {
+          "s": "Начиная с React 18 с createRoot, обновления state внутри Promise и setTimeout автоматически объединяются в один рендер.",
+          "ok": true,
+          "why": "Automatic batching работает везде, а не только в обработчиках React. Когда нужен синхронный DOM, обновление оборачивают в flushSync."
+        }
       ],
       "en": [
-        "Mutating ref.current re-renders the component, just like calling setState does.",
-        "Using the index as key is safe as long as the items' contents are unique."
+        {
+          "s": "A React component re-renders when its own state changes, when its parent renders, or when a context it reads changes.",
+          "ok": true,
+          "why": "These are the three real triggers. Props aren't a separate one, because they only change when the parent renders."
+        },
+        {
+          "s": "Mutating ref.current triggers a re-render of the component the same way a useState setter call does.",
+          "ok": false,
+          "why": "Mutating a ref triggers nothing. A ref keeps a value across renders; re-rendering is what state is for."
+        },
+        {
+          "s": "If you set state to a value equal to the current one under Object.is, React still re-renders the component and all its children.",
+          "ok": false,
+          "why": "React compares the new value with the old one using Object.is and, if they're equal, skips rendering the component and its children."
+        },
+        {
+          "s": "A component re-rendering doesn't mean React touched the DOM: the commit phase applies only the differences from the previous tree.",
+          "ok": true,
+          "why": "Rendering just calls the function and diffs the new tree against the old one. If the output is the same, the commit changes nothing in the DOM."
+        },
+        {
+          "s": "The render phase in React must be pure, because React may call the component function twice or throw the result away.",
+          "ok": true,
+          "why": "The render phase only computes the new tree. Side effects there could run twice or for a result that never reaches the screen."
+        },
+        {
+          "s": "React runs layout effects after the browser paints the frame, in the same queue as regular effects.",
+          "ok": false,
+          "why": "Layout effects run in the commit phase right after the DOM update and ref attachment, before paint. Regular effects usually run after paint."
+        },
+        {
+          "s": "With the index as key, deleting the first row shifts the data up while each row's state stays at its old position.",
+          "ok": true,
+          "why": "State is tied to the key. The old second row now gets key zero, so React gives it the deleted row's state, like text in an uncontrolled input."
+        },
+        {
+          "s": "Using the array index as key is safe for a list with row deletion, as long as every item's contents are unique.",
+          "ok": false,
+          "why": "React ties state to the key, not to the contents. On delete, insert or reorder the index moves to another item, and the state ends up on the wrong row."
+        },
+        {
+          "s": "Generating keys with Math.random() gives list rows a stable identity when the data has no id field.",
+          "ok": false,
+          "why": "A new key on every render never matches the old one, so React remounts every row and loses its state. You need a stable id from the data."
+        },
+        {
+          "s": "React identifies each hook in a component by its call order, which is why a hook can't be called inside a condition.",
+          "ok": true,
+          "why": "Hook state is stored as a list per component. Skip a hook inside a condition and the order shifts, so later hooks read the wrong slots."
+        },
+        {
+          "s": "Calling setCount(count + 1) three times in one click handler increases the counter by three.",
+          "ok": false,
+          "why": "count is a constant of this render, so all three calls compute the same value. The functional form setCount(c => c + 1) gives three."
+        },
+        {
+          "s": "Since React 18 with createRoot, state updates inside promises and setTimeout are automatically batched into one render.",
+          "ok": true,
+          "why": "Automatic batching applies everywhere, not just in React's own handlers. When you need the DOM updated synchronously, you wrap the update in flushSync."
+        }
       ]
     },
     "cloze": {

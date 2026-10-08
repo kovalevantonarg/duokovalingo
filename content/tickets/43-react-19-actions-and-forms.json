@@ -52,14 +52,130 @@
     "kill": "<b>\"I'll call useFormStatus right in the form component\"</b> — it only reads a parent form, so it has to live in a child like the submit button. And <b>calling setOptimistic outside an action</b> makes the value flash and revert."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Без reducer сеттер useOptimistic добавляет новое значение в конец существующего списка.",
-        "Несколько вызовов dispatch из useActionState выполняются параллельно, и побеждает тот, что завершился последним."
+        {
+          "s": "Action в React 19 — это синхронная или асинхронная функция, которая выполняется внутри transition.",
+          "ok": true,
+          "why": "Её передают в startTransition или в проп вроде action у формы, и тогда React оборачивает её сам. React отслеживает pending и не блокирует ввод."
+        },
+        {
+          "s": "Несколько вызовов dispatch из useActionState выполняются параллельно, и побеждает ответ, который пришёл последним.",
+          "ok": false,
+          "why": "React ставит вызовы в очередь и выполняет их последовательно. Поэтому один медленный запрос задерживает следующий."
+        },
+        {
+          "s": "После успешного выполнения action формы React автоматически сбрасывает её неконтролируемые поля ввода.",
+          "ok": true,
+          "why": "Это встроенное поведение form action: после успеха React сам очищает поля, значения которых не хранятся в state."
+        },
+        {
+          "s": "useFormStatus возвращает статус формы, даже если вызвать его в том же компоненте, который эту форму рендерит.",
+          "ok": false,
+          "why": "Хук читает только родительскую форму, поэтому работает в компоненте внутри неё. Кнопку отправки выносят в отдельный дочерний компонент."
+        },
+        {
+          "s": "Хук use() можно вызывать внутри условия, и он приостанавливает рендер, пока переданный промис не разрешится.",
+          "ok": true,
+          "why": "В отличие от других хуков, use() не обязан стоять на верхнем уровне. Промис при этом должен быть закеширован или прийти из Server Component."
+        },
+        {
+          "s": "Без reducer сеттер useOptimistic добавляет новое значение в конец существующего списка.",
+          "ok": false,
+          "why": "Без reducer сеттер заменяет значение целиком. Чтобы две быстрые отправки обе попали в список, нужен reducer, который дописывает элемент."
+        },
+        {
+          "s": "Если action упал и реальный state не изменился, оптимистичное значение из useOptimistic исчезает само.",
+          "ok": true,
+          "why": "Оптимистичный слой живёт, только пока action в процессе. После завершения снова видно реальное значение, а оно не менялось."
+        },
+        {
+          "s": "useOptimistic сам показывает пользователю ошибку, когда action упал и оптимистичное значение откатилось.",
+          "ok": false,
+          "why": "Хук только откатывает значение. Состояние «не отправлено» или toast нужно рисовать самому, иначе сообщение молча пропадёт."
+        },
+        {
+          "s": "Сеттер useOptimistic можно вызывать в обычном обработчике вне action, и значение продержится до ответа сервера.",
+          "ok": false,
+          "why": "Вне action или startTransition React выдаёт предупреждение, а оптимистичное значение мигает и сразу откатывается."
+        },
+        {
+          "s": "В чате кнопка Stop вызывает abort у AbortController, а AbortError на клиенте считается нормальным исходом.",
+          "ok": true,
+          "why": "Пользователь сам остановил ответ, поэтому ошибку не показывают. Частичный текст остаётся в сообщении."
+        },
+        {
+          "s": "Потоковый ответ ассистента в чате стоит показывать через useOptimistic, так же как сообщение пользователя.",
+          "ok": false,
+          "why": "Ответ — настоящие потоковые данные, а не предположение. Его наращивают в реальном state, в заготовке, добавленной после того, как сервер принял запрос."
+        },
+        {
+          "s": "На сервере abort должен отменять и вызов LLM, иначе оплачиваются токены, которые никто не прочитает.",
+          "ok": true,
+          "why": "Отмена fetch на клиенте только закрывает соединение. Генерацию останавливает сервер, когда передаёт сигнал в вызов модели."
+        }
       ],
       "en": [
-        "Without a reducer, the useOptimistic setter appends the new value to the existing list.",
-        "Multiple dispatch calls from useActionState run in parallel, and whichever resolves last wins."
+        {
+          "s": "An Action in React 19 is a sync or async function that runs inside a transition.",
+          "ok": true,
+          "why": "You pass it to startTransition or to a prop like the form's action, and React wraps it for you. React tracks the pending state and keeps input responsive."
+        },
+        {
+          "s": "Multiple dispatch calls from useActionState run in parallel, and the response that arrives last wins.",
+          "ok": false,
+          "why": "React queues the calls and runs them one after another, so one slow request delays the next."
+        },
+        {
+          "s": "After a form action completes successfully, React automatically resets the form's uncontrolled fields.",
+          "ok": true,
+          "why": "It's built into form actions: after a success, React clears the fields whose values aren't kept in state."
+        },
+        {
+          "s": "useFormStatus returns the form's status even when it's called in the same component that renders the form.",
+          "ok": false,
+          "why": "The hook only reads a parent form, so it works in a component rendered inside it. The submit button becomes its own child component."
+        },
+        {
+          "s": "The use() hook can be called inside a condition, and it suspends rendering until the given promise resolves.",
+          "ok": true,
+          "why": "Unlike other hooks, use() doesn't have to be at the top level. The promise still has to be cached or come from a Server Component."
+        },
+        {
+          "s": "Without a reducer, the useOptimistic setter appends the new value to the end of the existing list.",
+          "ok": false,
+          "why": "Without a reducer the setter replaces the whole value. For two quick sends to both land in the list, you need a reducer that appends."
+        },
+        {
+          "s": "If the action fails and the real state never changes, the optimistic value from useOptimistic disappears on its own.",
+          "ok": true,
+          "why": "The optimistic layer only lives while the action is pending. Once it ends, the real value shows through, and that value never changed."
+        },
+        {
+          "s": "useOptimistic shows an error to the user by itself when the action fails and the optimistic value rolls back.",
+          "ok": false,
+          "why": "The hook only rolls the value back. You render a failed state or a toast yourself, otherwise the message silently disappears."
+        },
+        {
+          "s": "The useOptimistic setter can be called from a plain handler outside an action, and the value will hold until the server responds.",
+          "ok": false,
+          "why": "Outside an action or startTransition, React logs a warning and the optimistic value flashes and immediately reverts."
+        },
+        {
+          "s": "In a chat, the Stop button calls abort on an AbortController, and the client treats AbortError as a normal outcome.",
+          "ok": true,
+          "why": "The user stopped the reply on purpose, so no error is shown. The partial text stays in the message."
+        },
+        {
+          "s": "The assistant's streaming reply in a chat should be shown through useOptimistic, just like the user's message.",
+          "ok": false,
+          "why": "The reply is real streaming data, not a guess. It grows in real state, inside a placeholder added once the server accepted the request."
+        },
+        {
+          "s": "On the server, abort must also cancel the LLM call, or you keep paying for tokens nobody reads.",
+          "ok": true,
+          "why": "Aborting fetch on the client only closes the connection. Generation stops when the server passes the signal on to the model call."
+        }
       ]
     },
     "cloze": {

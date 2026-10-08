@@ -15,11 +15,11 @@
     "a": [
       {
         "q": "Для чего эффект",
-        "t": "useEffect нужен, чтобы синхронизировать компонент с чем-то вне React: WebSocket, браузерным API, сторонним виджетом, подпиской. Если внешней системы нет, эффект мне, скорее всего, не нужен. Две ошибки я вижу постоянно. Первая — производное состояние: хранить fullName в state и обновлять его в эффекте при смене firstName. Это два рендера и промежуточный кадр со старым значением. Я просто вычисляю его во время рендера, а если это правда дорого, через useMemo. Вторая — реакция на действия пользователя: выставить флаг submitted, а потом отправить запрос в эффекте. Этой логике место в обработчике события, потому что только там я знаю, почему это произошло. Теперь про тайминг. useEffect обычно выполняется после отрисовки кадра и не блокирует его. useLayoutEffect выполняется синхронно после обновления DOM, но до отрисовки. Я беру его, только когда нужно измерить layout (геометрию элементов) и поправить что-то до того, как пользователь это увидит, например позицию тултипа (всплывающей подсказки), иначе будет мигание. Он блокирует отрисовку, поэтому это исключение."
+        "t": "useEffect нужен, чтобы синхронизировать компонент с чем-то вне React: WebSocket, браузерным API, сторонним виджетом, подпиской. Если внешней системы нет, эффект мне, скорее всего, не нужен. Две ошибки я вижу постоянно. Первая — производное состояние: хранить fullName в state и обновлять его в эффекте при смене firstName. Это два рендера и промежуточный кадр со старым значением. Я просто вычисляю его во время рендера, а если это правда дорого, через useMemo. Вторая — реакция на действия пользователя: выставить флаг submitted, а потом отправить запрос в эффекте. Этой логике место в обработчике события, потому что только там я знаю, почему это произошло. Теперь о том, когда эффекты выполняются. useEffect обычно выполняется после отрисовки кадра и не блокирует его. useLayoutEffect выполняется синхронно после обновления DOM, но до отрисовки. Я беру его, только когда нужно измерить layout (геометрию элементов) и поправить что-то до того, как пользователь это увидит, например позицию тултипа (всплывающей подсказки), иначе будет мигание. Он блокирует отрисовку, поэтому это исключение."
       },
       {
         "q": "Гонка и cleanup",
-        "t": "Это race condition (гонка запросов). userId меняется с 1 на 2, оба запроса в полёте, и если первый ответит последним, он перезапишет state данными первого пользователя. Решение — cleanup (функция очистки). Каждый раз при перезапуске эффекта React сначала вызывает cleanup предыдущего, и именно там я отменяю старое. Простой вариант — флаг ignore: let ignore = false, проверяю его перед setState, а в cleanup ставлю true. Лучше AbortController: передаю его signal в fetch и вызываю abort в cleanup, и тогда отменяется сам сетевой запрос, а не только его результат. Ровно это и подсвечивает Strict Mode. В разработке React 18 и новее один раз монтирует, размонтирует и снова монтирует компонент, так что каждый эффект проходит setup, cleanup, setup. Если от двойного запуска что-то ломается, например появляются две подписки или два соединения, значит cleanup отсутствует или неправильный. В продакшене этого нет. Тот же паттерн отмены нужен для вызовов LLM: когда пользователь переключает чат или жмёт стоп, я прерываю стрим, чтобы токены старого ответа не попали в другой диалог."
+        "t": "Это race condition (гонка запросов). userId меняется с 1 на 2, оба запроса в полёте, и если первый ответит последним, он перезапишет state данными первого пользователя. Решение — cleanup (функция очистки). Каждый раз при перезапуске эффекта React сначала вызывает cleanup предыдущего, и именно там я отменяю старое. Простой вариант — флаг ignore: let ignore = false, проверяю его перед setState, а в cleanup ставлю true. Лучше AbortController: передаю его signal в fetch и вызываю abort в cleanup, и тогда отменяется сам сетевой запрос, а не только его результат. Именно такие ошибки и показывает Strict Mode. В разработке React 18 и новее один раз монтирует, размонтирует и снова монтирует компонент, так что каждый эффект проходит setup, cleanup, setup. Если от двойного запуска что-то ломается, например появляются две подписки или два соединения, значит cleanup отсутствует или неправильный. В продакшене этого нет. Тот же паттерн отмены нужен для вызовов LLM: когда пользователь переключает чат или жмёт стоп, я прерываю стрим, чтобы токены старого ответа не попали в другой диалог."
       },
       {
         "q": "Зависимости",
@@ -52,14 +52,130 @@
     "kill": "<b>\"An empty dependency array means run once on mount\"</b> — it means the effect reads no reactive values; if it does, you have a stale closure, and in dev Strict Mode runs it twice anyway."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Strict Mode запускает эффекты дважды и в продакшене, поэтому каждый запрос нужно дедуплицировать.",
-        "useLayoutEffect выполняется после отрисовки кадра, поэтому он лучшее место для загрузки данных."
+        {
+          "s": "useEffect нужен, чтобы синхронизировать компонент с внешней системой, например WebSocket, браузерным API или сторонним виджетом.",
+          "ok": true,
+          "why": "Эффект связывает React с тем, что живёт вне него. Если внешней системы нет, эффект, скорее всего, не нужен."
+        },
+        {
+          "s": "Производное значение вроде fullName лучше хранить в state и обновлять в useEffect при смене firstName.",
+          "ok": false,
+          "why": "Так получается лишний рендер и кадр со старым значением. Производное значение вычисляют во время рендера, а если это дорого, через useMemo."
+        },
+        {
+          "s": "Отправку формы правильнее делать в useEffect, который срабатывает на флаг submitted, чем в обработчике события.",
+          "ok": false,
+          "why": "Логика, вызванная действием пользователя, живёт в обработчике события: только там известно, почему это произошло."
+        },
+        {
+          "s": "useLayoutEffect выполняется после обновления DOM, но до отрисовки кадра, и блокирует отрисовку, пока не завершится.",
+          "ok": true,
+          "why": "Поэтому в нём измеряют layout и поправляют, например, позицию тултипа без мигания. Из-за блокировки это исключение, а не правило."
+        },
+        {
+          "s": "useLayoutEffect выполняется после отрисовки кадра, поэтому он лучше useEffect подходит для загрузки данных.",
+          "ok": false,
+          "why": "useLayoutEffect выполняется до отрисовки и блокирует её. Загрузка данных остаётся в useEffect."
+        },
+        {
+          "s": "При перезапуске эффекта React сначала вызывает cleanup предыдущего запуска, а потом setup с новыми зависимостями.",
+          "ok": true,
+          "why": "Поэтому отмену старого запроса или отписку пишут в cleanup: он гарантированно выполнится до нового setup."
+        },
+        {
+          "s": "Вызов abort у AbortController в cleanup отменяет сам сетевой запрос fetch, а не только обработку его результата.",
+          "ok": true,
+          "why": "Флаг ignore только отбрасывает ответ, а запрос продолжается. Signal, переданный в fetch, прерывает его, и fetch завершается с AbortError."
+        },
+        {
+          "s": "Strict Mode запускает эффекты дважды и в продакшен-сборке, поэтому каждый запрос в эффекте нужно дедуплицировать.",
+          "ok": false,
+          "why": "Двойной запуск setup, cleanup, setup есть только в разработке. Он проверяет, что cleanup правильно отменяет то, что сделал setup."
+        },
+        {
+          "s": "Если двойной запуск эффекта в Strict Mode создаёт две подписки или два соединения, cleanup отсутствует или написан неправильно.",
+          "ok": true,
+          "why": "Правильный cleanup закрывает то, что открыл setup, и после цикла setup, cleanup, setup остаётся ровно одна подписка."
+        },
+        {
+          "s": "Пустой массив зависимостей useEffect гарантирует, что эффект выполнится ровно один раз за жизнь компонента.",
+          "ok": false,
+          "why": "Пустой массив значит лишь, что эффект не читает реактивных значений. В разработке Strict Mode всё равно запустит его дважды."
+        },
+        {
+          "s": "Массив зависимостей эффекта разработчик выбирает сам и кладёт туда только значения, при изменении которых нужен перезапуск.",
+          "ok": false,
+          "why": "Массив описывает код: в нём все реактивные значения, которые читает эффект. Если пропустить значение, эффект держит устаревшее замыкание."
+        },
+        {
+          "s": "useEffectEvent вошёл в стабильный React в версии 19.2 и даёт функцию, которая всегда видит свежие props и state.",
+          "ok": true,
+          "why": "Его вызывают только внутри эффекта и не указывают в зависимостях, поэтому эффект не перезапускается из-за значений, которые он лишь читает."
+        }
       ],
       "en": [
-        "Strict Mode runs effects twice in production too, so every request has to be deduplicated.",
-        "useLayoutEffect runs after the browser paints, which makes it the better place for data fetching."
+        {
+          "s": "useEffect exists to synchronize a component with an external system, such as a WebSocket, a browser API or a third-party widget.",
+          "ok": true,
+          "why": "An effect connects React to something that lives outside it. If there's no external system, you probably don't need one."
+        },
+        {
+          "s": "A derived value like fullName is best kept in state and updated in useEffect whenever firstName changes.",
+          "ok": false,
+          "why": "That costs an extra render and a frame with the stale value. Derived values are computed during render, with useMemo if it's expensive."
+        },
+        {
+          "s": "Submitting a form is better done in a useEffect triggered by a submitted flag than in the event handler.",
+          "ok": false,
+          "why": "Logic caused by a user action belongs in the event handler, because that's the only place that knows why it happened."
+        },
+        {
+          "s": "useLayoutEffect runs after the DOM is updated but before the browser paints, and it blocks painting until it finishes.",
+          "ok": true,
+          "why": "That's why it's used to measure layout and fix things like tooltip position without a flicker. Because it blocks paint, it's the exception."
+        },
+        {
+          "s": "useLayoutEffect runs after the browser paints, which makes it a better place than useEffect for data fetching.",
+          "ok": false,
+          "why": "useLayoutEffect runs before paint and blocks it. Data fetching stays in useEffect."
+        },
+        {
+          "s": "When an effect re-runs, React first calls the previous run's cleanup and then runs setup with the new dependencies.",
+          "ok": true,
+          "why": "That's why cancelling the old request or unsubscribing goes in cleanup: it's guaranteed to run before the next setup."
+        },
+        {
+          "s": "Calling abort on an AbortController in cleanup cancels the fetch network request itself, not only the handling of its result.",
+          "ok": true,
+          "why": "An ignore flag only discards the response while the request keeps going. The signal passed to fetch aborts it, and fetch rejects with AbortError."
+        },
+        {
+          "s": "Strict Mode runs effects twice in production builds too, so every request made in an effect has to be deduplicated.",
+          "ok": false,
+          "why": "The setup, cleanup, setup double run happens only in development. It checks that cleanup correctly undoes what setup did."
+        },
+        {
+          "s": "If Strict Mode's double effect run creates two subscriptions or two connections, the cleanup is missing or wrong.",
+          "ok": true,
+          "why": "A correct cleanup closes what setup opened, so after setup, cleanup, setup exactly one subscription is left."
+        },
+        {
+          "s": "An empty dependency array guarantees that a useEffect runs exactly once over the component's lifetime.",
+          "ok": false,
+          "why": "An empty array only means the effect reads no reactive values. In development Strict Mode still runs it twice."
+        },
+        {
+          "s": "The developer chooses an effect's dependency array, listing only the values whose changes should trigger a re-run.",
+          "ok": false,
+          "why": "The array describes the code: it lists every reactive value the effect reads. Leave one out and the effect keeps a stale closure."
+        },
+        {
+          "s": "useEffectEvent became part of stable React in version 19.2 and gives a function that always sees the latest props and state.",
+          "ok": true,
+          "why": "It's called only from inside an effect and never listed in deps, so the effect doesn't re-run because of values it only reads."
+        }
       ]
     },
     "cloze": {

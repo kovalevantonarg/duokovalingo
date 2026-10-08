@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Конвейер",
-        "t": "HTML-парсер превращает байты в токены и по ходу строит DOM (дерево узлов документа), а preload scanner (упреждающий сканер) бежит вперёд и заранее запускает загрузку найденных ресурсов. Параллельно CSS разбирается в CSSOM (дерево правил стилей). Дальше конвейер: style (вычисление стилей), где браузер сопоставляет селекторы и считает итоговые стили каждого элемента. Потом layout (расчёт геометрии): размеры и позиции блоков. Потом paint (отрисовка): запись команд рисования по слоям. И composite (сборка слоёв): слои растеризуются и собираются в кадр, в основном на GPU (графическом процессоре). На практике важно одно: каждый этап кормит следующий, поэтому изменение на раннем этапе оплачивает всё, что после него. Поменял width, и платишь за layout, paint и composite. Поменял цвет, и layout пропускается. Поменял transform или opacity у элемента на своём слое, и часто можно пропустить layout и paint и сразу перейти к composite, мимо главного потока. Самая дешёвая работа та, которой нет. Это и делает content-visibility: auto: секции за экраном не проходят layout и paint, пока не приблизятся к viewport (видимой области). Я ставлю рядом contain-intrinsic-size, чтобы полоса прокрутки не прыгала. Это Baseline (поддержано всеми основными браузерами) с 2024 года."
+        "t": "HTML-парсер превращает байты в токены и по ходу строит DOM (дерево узлов документа), а preload scanner (упреждающий сканер) бежит вперёд и заранее запускает загрузку найденных ресурсов. Параллельно CSS разбирается в CSSOM (дерево правил стилей). Дальше конвейер: style (вычисление стилей), где браузер сопоставляет селекторы и считает итоговые стили каждого элемента. Потом layout (расчёт геометрии): размеры и позиции блоков. Потом paint (отрисовка): запись команд рисования по слоям. И composite (сборка слоёв): слои растеризуются и собираются в кадр, в основном на GPU (графическом процессоре). На практике важно, что каждый этап передаёт результат следующему, поэтому изменение на раннем этапе оплачивает всё, что после него. Поменял width, и платишь за layout, paint и composite. Поменял цвет, и layout пропускается. Поменял transform или opacity у элемента на своём слое, и часто можно пропустить layout и paint и сразу перейти к composite, мимо главного потока. Ещё больше экономит content-visibility: auto: секции за экраном не проходят layout и paint, пока не приблизятся к viewport (видимой области). Я ставлю рядом contain-intrinsic-size, чтобы полоса прокрутки не прыгала. Это Baseline (поддержано всеми основными браузерами) с 2024 года."
       },
       {
         "q": "Reflow и thrashing",
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Pipeline",
-        "t": "The HTML parser turns bytes into tokens and builds the DOM incrementally, while a preload scanner runs ahead and starts fetching resources it spots. In parallel, CSS is parsed into the CSSOM. Then the pipeline runs. Style: the browser matches selectors and computes final styles for every element. Layout: it calculates geometry, the size and position of every box. Paint: it records draw commands into layers. Composite: those layers are rasterized and assembled into the frame, largely on the GPU. What matters in practice is that each stage feeds the next, so a change at an early stage pays for everything after it. Change a width and you pay for layout, paint and composite. Change a color and layout is skipped. Change transform or opacity on an element with its own layer and you can often skip layout and paint and go straight to composite, off the main thread. The cheapest work is work you skip, which is what content-visibility: auto does. Off-screen sections skip layout and paint until they get close to the viewport. I pair it with contain-intrinsic-size so the scrollbar doesn't jump, and it's been Baseline since 2024."
+        "t": "The HTML parser turns bytes into tokens and builds the DOM incrementally, while a preload scanner runs ahead and starts fetching resources it spots. In parallel, CSS is parsed into the CSSOM. Then the pipeline runs. Style: the browser matches selectors and computes final styles for every element. Layout: it calculates geometry, the size and position of every box. Paint: it records draw commands into layers. Composite: those layers are rasterized and assembled into the frame, largely on the GPU. What matters in practice is that each stage feeds the next, so a change at an early stage pays for everything after it. Change a width and you pay for layout, paint and composite. Change a color and layout is skipped. Change transform or opacity on an element with its own layer and you can often skip layout and paint and go straight to composite, off the main thread. content-visibility: auto saves even more by skipping that work entirely. Off-screen sections skip layout and paint until they get close to the viewport. I pair it with contain-intrinsic-size so the scrollbar doesn't jump, and it's been Baseline since 2024."
       },
       {
         "q": "Reflow and thrashing",
@@ -52,14 +52,130 @@
     "kill": "<b>\"transform is faster because it runs on the GPU\"</b> — the real reason is that it skips layout and paint and can run on the compositor. And <b>will-change on everything</b> doesn't speed anything up, it burns GPU memory."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Чтение offsetHeight всегда дешёвое, потому что браузер просто возвращает закешированное значение, даже сразу после записи в DOM.",
-        "Скрипты с async, как и с defer, гарантированно выполняются в порядке документа после окончания парсинга."
+        {
+          "s": "Preload scanner бежит впереди HTML-парсера и заранее запускает загрузку ресурсов, которые нашёл в разметке.",
+          "ok": true,
+          "why": "Поэтому ресурс, указанный прямо в HTML, начинает грузиться рано. Ресурс из CSS или JS сканер не видит."
+        },
+        {
+          "s": "Изменение color у элемента заставляет браузер заново пройти layout, paint и composite.",
+          "ok": false,
+          "why": "Цвет не меняет геометрию, поэтому layout пропускается. Браузер выполняет только paint и composite."
+        },
+        {
+          "s": "transform анимируется дёшево прежде всего потому, что все вычисления для него выполняет GPU.",
+          "ok": false,
+          "why": "Главная причина в том, что transform пропускает layout и paint и может обрабатываться compositor вне главного потока."
+        },
+        {
+          "s": "Изменение width у элемента запускает layout, а за ним paint и composite.",
+          "ok": true,
+          "why": "Каждый этап конвейера передаёт результат следующему, поэтому изменение на раннем этапе оплачивает все последующие."
+        },
+        {
+          "s": "content-visibility: auto пропускает layout и paint секций за экраном, пока они не приблизятся к viewport.",
+          "ok": true,
+          "why": "Рядом ставят contain-intrinsic-size, чтобы у пропущенных секций был размер и полоса прокрутки не прыгала."
+        },
+        {
+          "s": "Чтение offsetHeight сразу после записи в DOM дешёвое, потому что браузер возвращает значение из кеша.",
+          "ok": false,
+          "why": "После записи layout помечен как грязный, и браузер синхронно пересчитывает геометрию, чтобы вернуть верное число. В цикле это layout thrashing."
+        },
+        {
+          "s": "Свойство will-change: transform на всех элементах страницы ускоряет рендеринг, потому что каждый получает свой слой.",
+          "ok": false,
+          "why": "Каждый слой стоит памяти GPU. will-change ставят только тем немногим элементам, которые реально анимируются."
+        },
+        {
+          "s": "Layout thrashing лечат так: сначала все чтения геометрии, потом все записи, а записи планируют через requestAnimationFrame.",
+          "ok": true,
+          "why": "Тогда браузер пересчитывает layout один раз перед кадром, а не на каждой итерации цикла."
+        },
+        {
+          "s": "Скрипты с async выполняются после окончания парсинга строго в порядке документа, как и скрипты с defer.",
+          "ok": false,
+          "why": "async выполняется сразу, как скачался, в любом порядке и может прервать парсинг. Порядок документа гарантирует только defer."
+        },
+        {
+          "s": "CSS в head блокирует рендер, потому что без CSSOM браузер показал бы нестилизованный контент.",
+          "ok": true,
+          "why": "Браузер не рисует, пока не построил CSSOM. Поэтому небольшой критический CSS встраивают прямо в HTML."
+        },
+        {
+          "s": "Скрипт с type=module по умолчанию ведёт себя как defer: качается параллельно и выполняется после парсинга.",
+          "ok": true,
+          "why": "С атрибутом async модуль выполняется, как только готов весь его граф зависимостей."
+        },
+        {
+          "s": "Обычный тег script без атрибутов скачивается в фоне и не останавливает разбор HTML.",
+          "ok": false,
+          "why": "Классический скрипт блокирует парсер: разбор стоит, пока скрипт скачивается и выполняется. Если выше висит незагруженный стиль, скрипт ждёт и его."
+        }
       ],
       "en": [
-        "Reading offsetHeight is always cheap because the browser just returns a cached value, even right after a DOM write.",
-        "Scripts with async, just like defer, are guaranteed to run in document order after parsing finishes."
+        {
+          "s": "The preload scanner runs ahead of the HTML parser and starts fetching resources it finds in the markup.",
+          "ok": true,
+          "why": "That's why a resource referenced directly in the HTML starts loading early. The scanner can't see resources referenced from CSS or JS."
+        },
+        {
+          "s": "Changing an element's color forces the browser to run layout, paint and composite again.",
+          "ok": false,
+          "why": "Color doesn't change geometry, so layout is skipped. The browser only runs paint and composite."
+        },
+        {
+          "s": "Animating transform is cheap mainly because the GPU does all the calculations for it.",
+          "ok": false,
+          "why": "The main reason is that transform skips layout and paint and can be handled by the compositor off the main thread."
+        },
+        {
+          "s": "Changing an element's width triggers layout, followed by paint and composite.",
+          "ok": true,
+          "why": "Each pipeline stage feeds the next, so a change at an early stage pays for every stage after it."
+        },
+        {
+          "s": "content-visibility: auto skips layout and paint for off-screen sections until they get close to the viewport.",
+          "ok": true,
+          "why": "It's paired with contain-intrinsic-size so skipped sections still have a size and the scrollbar doesn't jump."
+        },
+        {
+          "s": "Reading offsetHeight right after a DOM write is cheap, because the browser returns a cached value.",
+          "ok": false,
+          "why": "After a write, layout is marked dirty and the browser recalculates geometry synchronously to return a correct number. In a loop that's layout thrashing."
+        },
+        {
+          "s": "Putting will-change: transform on every element of the page speeds up rendering, because each one gets its own layer.",
+          "ok": false,
+          "why": "Every layer costs GPU memory. will-change goes only on the few elements that actually animate."
+        },
+        {
+          "s": "Layout thrashing is fixed by doing all geometry reads first, then all writes, with the writes scheduled in requestAnimationFrame.",
+          "ok": true,
+          "why": "Then the browser recalculates layout once before the frame instead of on every loop iteration."
+        },
+        {
+          "s": "Scripts with async run after parsing finishes, strictly in document order, just like scripts with defer.",
+          "ok": false,
+          "why": "async runs as soon as it downloads, in any order, and can interrupt parsing. Only defer guarantees document order."
+        },
+        {
+          "s": "CSS in the head blocks rendering, because without the CSSOM the browser would show unstyled content.",
+          "ok": true,
+          "why": "The browser won't paint until it has built the CSSOM. That's why a small critical CSS is inlined into the HTML."
+        },
+        {
+          "s": "A script with type=module behaves like defer by default: it downloads in parallel and runs after parsing.",
+          "ok": true,
+          "why": "With the async attribute, a module runs as soon as its whole dependency graph is ready."
+        },
+        {
+          "s": "A classic script tag with no attributes downloads in the background and doesn't stop HTML parsing.",
+          "ok": false,
+          "why": "A classic script blocks the parser: parsing stops while it downloads and runs. If a stylesheet above it is still loading, the script waits for that too."
+        }
       ]
     },
     "cloze": {

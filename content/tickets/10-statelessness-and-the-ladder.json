@@ -24,7 +24,7 @@
       },
       {
         "q": "Лестница",
-        "t": "Начинаю с самого тупого — sliding window (скользящее окно): держим последние N сообщений, остальное выбрасываем, бесплатно, но молча теряем информацию. Дальше summarization, старое сжимается в накопительное резюме, свежее держится дословно — так работает большинство долгоживущих чатов. Потом RAG: не класть весь материал в контекст, а доставать релевантное под конкретный запрос — правильный выбор, когда корпус больше окна. Четвёртое — hierarchical или map-reduce: режем документ, обрабатываем части отдельно, собираем. Пятое, стоящее особняком, — prompt caching: места не экономит, экономит деньги и латентность на стабильном префиксе, поэтому идёт вместе с остальными. Свои ступени есть и у провайдеров: у Anthropic это context editing (очистка старых tool results в агенте) и серверная compaction (сжатие истории); это быстро меняется, сверяюсь с документацией."
+        "t": "Начинаю с самого простого — sliding window (скользящее окно): держим последние N сообщений, остальное выбрасываем, бесплатно, но молча теряем информацию. Дальше summarization, старое сжимается в накопительное резюме, свежее держится дословно — так работает большинство долгоживущих чатов. Потом RAG: не класть весь материал в контекст, а доставать релевантное под конкретный запрос — правильный выбор, когда корпус больше окна. Четвёртое — hierarchical или map-reduce: режем документ, обрабатываем части отдельно, собираем. Пятое, стоящее особняком, — prompt caching: места не экономит, экономит деньги и латентность на стабильном префиксе, поэтому идёт вместе с остальными. Свои ступени есть и у провайдеров: у Anthropic это context editing (очистка старых tool results в агенте) и серверная compaction (сжатие истории); это быстро меняется, сверяюсь с документацией."
       }
     ],
     "kill": "Назвать только summarization. Верно, но это одна ступень из нескольких — а спрашивают, умеешь ли выбирать <b>самое дешёвое из достаточного</b>."
@@ -53,24 +53,140 @@
     "kill": "Naming only summarization. It's correct, but it's one rung of several — and the question is really whether you can pick <b>the cheapest thing that suffices</b>."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Модель помнит предыдущие вызовы, если использовать тот же API-ключ.",
-        "Summarization — единственный способ справиться с переполнением контекста."
+        {
+          "s": "Модель не хранит состояние между вызовами API, и историю диалога помнит массив сообщений в коде приложения.",
+          "ok": true,
+          "why": "Каждый вызов — обычный HTTP-запрос, после ответа на стороне модели ничего не остаётся."
+        },
+        {
+          "s": "Модель помнит предыдущие вызовы, если запросы отправляются с одним и тем же API-ключом.",
+          "ok": false,
+          "why": "Ключ только авторизует запрос, состояния он не несёт. Память живёт в массиве messages, который код пересылает целиком."
+        },
+        {
+          "s": "Каждый ход диалога пересылает модели всю переписку заново, поэтому вход каждого запроса растёт линейно с историей.",
+          "ok": true,
+          "why": "Модель ничего не помнит, поэтому всю историю приходится отправлять в каждом запросе."
+        },
+        {
+          "s": "Суммарная стоимость разговора растёт линейно с числом ходов, потому что каждый ход добавляет примерно одинаковое число токенов.",
+          "ok": false,
+          "why": "Линейно растёт вход одного запроса. Сумма оплаченных токенов по всем ходам растёт квадратично."
+        },
+        {
+          "s": "При достаточно большом контекстном окне длинный диалог не упирается в его предел, и обходы переполнения не нужны.",
+          "ok": false,
+          "why": "История растёт с каждым ходом, поэтому окно кончается неизбежно. Это вопрос времени, а не вероятности."
+        },
+        {
+          "s": "В агентной петле одни и те же данные оплачиваются многократно, потому что каждый шаг пересылает уже загруженные страницы.",
+          "ok": true,
+          "why": "Прогон может отправить 69 тысяч входных токенов, среди которых уникальных всего 21 тысяча."
+        },
+        {
+          "s": "Sliding window — самый дешёвый обход переполнения контекста: остаются последние N сообщений, а старые молча теряются.",
+          "ok": true,
+          "why": "Это бесплатно, но информация пропадает без сигнала. С этой ступени начинают лестницу."
+        },
+        {
+          "s": "Summarization — единственный способ справиться с переполнением контекстного окна в долгом диалоге.",
+          "ok": false,
+          "why": "Это одна ступень лестницы: есть ещё sliding window, RAG, map-reduce и prompt caching. Выбирают самое дешёвое из достаточного."
+        },
+        {
+          "s": "Prompt caching освобождает место в контекстном окне, потому что закэшированный префикс не считается в лимит токенов.",
+          "ok": false,
+          "why": "Кэш экономит деньги и латентность на стабильном префиксе, но не место. Поэтому его используют вместе с остальными ступенями."
+        },
+        {
+          "s": "При summarization старые ходы диалога сжимаются в накопительное резюме, а свежие остаются дословно.",
+          "ok": true,
+          "why": "Так работает большинство долгоживущих чатов. Детали старых ходов при этом теряются."
+        },
+        {
+          "s": "RAG подходит, когда корпус больше контекстного окна: в контекст попадает только то, что релевантно конкретному запросу.",
+          "ok": true,
+          "why": "Весь материал в окно не кладут, а достают нужные куски под каждый запрос."
+        },
+        {
+          "s": "При map-reduce весь документ кладут в один запрос, а модель сама делит его на части и собирает ответ.",
+          "ok": false,
+          "why": "Документ режет код, части обрабатываются отдельными запросами, а результаты потом собираются."
+        }
       ],
       "en": [
-        "The model remembers previous calls if you use the same API key.",
-        "Summarization is the only way to deal with context overflow."
+        {
+          "s": "The model keeps no state between API calls, and the conversation history lives in the messages array in the application code.",
+          "ok": true,
+          "why": "Each call is an ordinary HTTP request, and nothing is left on the model's side after the answer."
+        },
+        {
+          "s": "The model remembers previous calls as long as the requests are sent with the same API key.",
+          "ok": false,
+          "why": "The key only authorizes the request and carries no state. Memory lives in the messages array that your code resends in full."
+        },
+        {
+          "s": "Every conversation turn resends the whole history to the model, so each request's input grows linearly with the history.",
+          "ok": true,
+          "why": "The model remembers nothing, so the full history has to go out with every request."
+        },
+        {
+          "s": "The total cost of a conversation grows linearly with the number of turns, because each turn adds about the same number of tokens.",
+          "ok": false,
+          "why": "It's each request's input that grows linearly. The total billed tokens across all turns grow quadratically."
+        },
+        {
+          "s": "With a large enough context window a long conversation doesn't hit the limit, so overflow strategies aren't needed.",
+          "ok": false,
+          "why": "History grows every turn, so the window inevitably runs out. It's a question of when, not whether."
+        },
+        {
+          "s": "In an agent loop the same data is paid for many times, because every step resends the pages already fetched.",
+          "ok": true,
+          "why": "A run can send 69 thousand input tokens of which only 21 thousand are unique."
+        },
+        {
+          "s": "A sliding window is the cheapest fix for context overflow: the last N messages stay, and older ones are silently lost.",
+          "ok": true,
+          "why": "It costs nothing, but information disappears without a signal. It's the first rung of the ladder."
+        },
+        {
+          "s": "Summarization is the only way to deal with context window overflow in a long conversation.",
+          "ok": false,
+          "why": "It's one rung of the ladder; there's also a sliding window, RAG, map-reduce and prompt caching. You pick the cheapest that suffices."
+        },
+        {
+          "s": "Prompt caching frees up space in the context window, because the cached prefix doesn't count toward the token limit.",
+          "ok": false,
+          "why": "Caching saves money and latency on a stable prefix, but no space. That's why it's used alongside the other rungs."
+        },
+        {
+          "s": "With summarization, older turns are compressed into a running summary while recent ones stay verbatim.",
+          "ok": true,
+          "why": "That's how most long-lived chat products work. Details from older turns get lost along the way."
+        },
+        {
+          "s": "RAG fits when the corpus is bigger than the context window: only what's relevant to the specific query goes into context.",
+          "ok": true,
+          "why": "Instead of putting all the material in the window, you retrieve the pieces each query needs."
+        },
+        {
+          "s": "With map-reduce the whole document goes into one request, and the model splits it into parts and combines the answer itself.",
+          "ok": false,
+          "why": "Code splits the document, the parts are processed in separate requests, and the results are combined afterwards."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Модель не помнит [[ничего|ничего между вызовами]]: помнит мой массив [[messages]].",
+        "Между вызовами модель не помнит [[ничего]], историю хранит мой массив [[messages]].",
         "Вход каждого запроса растёт [[линейно]] с историей, поэтому суммарная стоимость разговора растёт [[квадратично]].",
         "Лестница от дешёвого: [[sliding window|скользящее окно]] → summarization → RAG → map-reduce, а кэш — вместе с ними; выбираю самое дешёвое из достаточного."
       ],
       "en": [
-        "The model remembers [[nothing]]: what remembers is my [[messages]] array.",
+        "Between calls the model remembers [[nothing]]; the history lives in my [[messages]] array.",
         "Each request's input grows [[linearly]] with the history, so total cost over the conversation grows [[quadratically]].",
         "The ladder, cheapest first: [[sliding window]] → summarization → RAG → map-reduce, with caching alongside; pick the cheapest that suffices."
       ]

@@ -22,18 +22,18 @@
     "a": [
       {
         "q": "Хуки",
-        "t": "React не знает имён хуков — он хранит их состояние в списке и сопоставляет по порядку вызова. Условие меняет порядок, и второй рендер читает чужое состояние. Cleanup вызывается перед следующим запуском того же эффекта и при размонтировании; не отписался — подписка живёт после смерти компонента, утечка и setState на размонтированном. Объект или массив в deps — на каждом рендере новая ссылка, эффект бежит каждый раз, и это выглядит как «бесконечный цикл»; либо стабилизировать через useMemo, либо класть в deps примитивы."
+        "t": "React не знает имён хуков: он хранит их состояние в списке и сопоставляет по порядку вызова. Условие меняет порядок, и второй рендер читает чужое состояние. Cleanup вызывается перед следующим запуском того же эффекта и при размонтировании. Если не отписаться, подписка переживёт компонент: утечка и setState на размонтированном. Объект или массив в deps на каждом рендере получает новую ссылку, эффект запускается каждый раз, и это выглядит как «бесконечный цикл»; либо стабилизировать через useMemo, либо класть в deps примитивы."
       },
       {
         "q": "Мемоизация",
-        "t": "useMemo кэширует значение, useCallback — функцию; второе — это useMemo, возвращающий функцию. Реально нужны в двух случаях: дорогое вычисление, которое измерили, и стабильная ссылка, которую ждёт memo-дочерний компонент или массив deps. Мемоизация по умолчанию не бесплатна: код читается хуже, а один всегда-новый проп молча её ломает; цена по памяти мала. React Compiler, стабильный с версии 1.0, мемоизирует сам, и ручной useMemo — в основном запасной выход. key равный index: при перестановке React видит те же ключи на тех же позициях, считает, что изменилось содержимое, и переиспользует состояние и DOM не тех элементов — набранный текст остаётся на старой позиции и оказывается рядом с другим элементом. Ключ должен идентифицировать сущность."
+        "t": "useMemo кэширует значение, а useCallback кэширует функцию; по сути useCallback — это useMemo, возвращающий функцию. Реально нужны в двух случаях: дорогое вычисление, которое измерили, и стабильная ссылка, которую ждёт memo-дочерний компонент или массив deps. Мемоизация по умолчанию не бесплатна: код читается хуже, а один всегда-новый проп молча её ломает; цена по памяти мала. React Compiler, стабильный с версии 1.0, мемоизирует сам, и ручной useMemo нужен в основном как запасной выход. key равный index: при перестановке React видит те же ключи на тех же позициях, считает, что изменилось содержимое, и переиспользует состояние и DOM не тех элементов: набранный текст остаётся на старой позиции и оказывается рядом с другим элементом. Ключ должен идентифицировать сущность."
       },
       {
         "q": "RSC и 19",
-        "t": "SSR рендерит компонент на сервере в HTML, а потом всё равно отправляет его JS клиенту для гидрации. Server Component выполняется только на сервере, его код не попадает в бандл вообще, он может напрямую читать базу, но не может держать состояние, использовать интерактивные хуки вроде useState и useEffect или обработчики событий. Клиентский — там, где интерактивность. Suspense при стриминге позволяет отдать оболочку сразу, а медленные части досылать по мере готовности в том же потоке HTML. React 19: Actions — асинхронные функции для форм и переходов, useActionState для их состояния и ошибок, use — чтение промиса или контекста прямо в рендере."
+        "t": "SSR рендерит компонент на сервере в HTML, а потом всё равно отправляет его JS клиенту для гидрации. Server Component выполняется только на сервере, его код не попадает в бандл вообще, он может напрямую читать базу, но не может держать состояние, использовать интерактивные хуки вроде useState и useEffect или обработчики событий. Клиентский — там, где интерактивность. Suspense при стриминге позволяет отдать оболочку сразу, а медленные части досылать по мере готовности в том же потоке HTML. Из React 19: Actions (асинхронные функции для форм и переходов), useActionState для их состояния и ошибок и use для чтения промиса или контекста прямо в рендере."
       }
     ],
-    "kill": "<b>«Хуки нельзя в условиях, потому что так написано в доке»</b> — нужно слово «порядок вызова». И «useMemo для производительности» без «измерил» — интервьюер спросит, что именно ты измерил."
+    "kill": "<b>«Хуки нельзя в условиях, потому что так написано в доке»</b> не засчитают: нужно сказать про порядок вызова. А на «useMemo для производительности» интервьюер сразу спросит, что именно ты измерил."
   },
   "en": {
     "topic": "React: parked check",
@@ -45,40 +45,156 @@
     "a": [
       {
         "q": "Hooks",
-        "t": "React doesn't know hook names — it stores their state in a list and matches by call order. A condition changes the order, and the next render reads someone else's state. Cleanup runs before the next run of the same effect and on unmount; skip it and the subscription outlives the component — a leak, and setState on an unmounted component. An object or array in deps is a new reference every render, so the effect runs every time and looks like an infinite loop; either stabilise it with useMemo or put primitives in deps."
+        "t": "React doesn't know hook names: it stores their state in a list and matches by call order. A condition changes the order, and the next render reads someone else's state. Cleanup runs before the next run of the same effect and on unmount. Skip it and the subscription outlives the component: a leak, and setState on an unmounted component. An object or array in deps is a new reference every render, so the effect runs every time and looks like an infinite loop; either stabilise it with useMemo or put primitives in deps."
       },
       {
         "q": "Memoisation",
-        "t": "useMemo caches a value, useCallback caches a function — the second is just useMemo returning a function. They're genuinely needed in two cases: an expensive computation you've measured, and a stable reference that a memoised child or a deps array is waiting for. Memoising by default isn't free: code gets harder to read, and one always-new prop silently breaks it; the memory cost is small. React Compiler, stable since 1.0, memoises automatically, so manual useMemo is mostly an escape hatch. key equal to index: on reorder React sees the same keys at the same positions, assumes the content changed, and reuses the state and DOM of the wrong elements — what you typed stays at the old position and ends up next to a different item. A key has to identify the entity."
+        "t": "useMemo caches a value and useCallback caches a function; useCallback is just useMemo returning a function. They're genuinely needed in two cases: an expensive computation you've measured, and a stable reference that a memoised child or a deps array is waiting for. Memoising by default isn't free: code gets harder to read, and one always-new prop silently breaks it; the memory cost is small. React Compiler, stable since 1.0, memoises automatically, so manual useMemo is mostly an escape hatch. key equal to index: on reorder React sees the same keys at the same positions, assumes the content changed, and reuses the state and DOM of the wrong elements, so what you typed stays at the old position and ends up next to a different item. A key has to identify the entity."
       },
       {
         "q": "RSC and 19",
-        "t": "SSR renders a component to HTML on the server and then still ships its JavaScript to the client for hydration. A Server Component runs only on the server, its code never enters the bundle, it can read the database directly, but it can't use state or interactive hooks like useState and useEffect, or event handlers. Client components are where the interactivity is. Suspense with streaming lets you send the shell immediately and stream the slow parts as they're ready in the same HTML response. React 19: Actions — async functions for forms and transitions; useActionState for their state and errors; use — reading a promise or a context directly during render."
+        "t": "SSR renders a component to HTML on the server and then still ships its JavaScript to the client for hydration. A Server Component runs only on the server, its code never enters the bundle, it can read the database directly, but it can't use state or interactive hooks like useState and useEffect, or event handlers. Client components are where the interactivity is. Suspense with streaming lets you send the shell immediately and stream the slow parts as they're ready in the same HTML response. From React 19: Actions (async functions for forms and transitions), useActionState for their state and errors, and use for reading a promise or a context directly during render."
       }
     ],
-    "kill": "<b>\"Hooks can't be conditional because the docs say so\"</b> — the phrase is call order. And useMemo for performance without I measured — the interviewer will ask what exactly you measured."
+    "kill": "<b>\"Hooks can't be conditional because the docs say so\"</b> won't count: you need to mention call order. And if you say useMemo is for performance, expect the follow-up: what exactly did you measure?"
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "React сопоставляет хуки по имени, поэтому условия ломают только одноимённые.",
-        "useMemo везде по умолчанию делает приложение быстрее."
+        {
+          "s": "React хранит состояние хуков компонента в списке и сопоставляет его с вызовами по порядку, а не по имени хука.",
+          "ok": true,
+          "why": "У хуков нет имён, которые видел бы React. Если условие меняет порядок вызовов, следующий рендер прочитает состояние другого хука."
+        },
+        {
+          "s": "Cleanup-функция useEffect вызывается только при размонтировании компонента, а между повторными запусками эффекта она не выполняется.",
+          "ok": false,
+          "why": "Cleanup вызывается и перед каждым следующим запуском того же эффекта, и при размонтировании. Иначе старая подписка жила бы рядом с новой."
+        },
+        {
+          "s": "Объект в массиве зависимостей useEffect сравнивается по содержимому, поэтому эффект перезапускается только при изменении его полей.",
+          "ok": false,
+          "why": "Зависимости сравниваются по ссылке, а объект, созданный в рендере, каждый раз новый. Эффект запускается на каждом рендере; помогает useMemo или примитивы в deps."
+        },
+        {
+          "s": "useCallback по сути является useMemo, который возвращает функцию: оба хука кэшируют результат между рендерами.",
+          "ok": true,
+          "why": "useMemo кэширует значение, useCallback кэширует саму функцию. Запись useCallback(fn, deps) равна useMemo(() => fn, deps)."
+        },
+        {
+          "s": "Оборачивать каждое вычисление в useMemo по умолчанию выгодно, потому что мемоизация почти ничего не стоит и ускоряет рендер.",
+          "ok": false,
+          "why": "Мемоизация ухудшает читаемость, а один всегда-новый проп молча её ломает. Она нужна для измеренно дорогого вычисления или стабильной ссылки."
+        },
+        {
+          "s": "Стабильная ссылка от useCallback полезна, когда функцию получает memo-компонент или она стоит в массиве зависимостей.",
+          "ok": true,
+          "why": "memo-компонент сравнивает пропсы по ссылке, и новая функция на каждом рендере сводит memo на нет. То же самое с deps у эффекта."
+        },
+        {
+          "s": "React Compiler мемоизирует компоненты автоматически, поэтому ручной useMemo становится в основном запасным вариантом.",
+          "ok": true,
+          "why": "Компилятор стабилен с версии 1.0 и сам расставляет мемоизацию при сборке. Ручной useMemo остаётся для случаев, которые компилятор не покрывает."
+        },
+        {
+          "s": "Если key равен индексу элемента, React после перестановки списка переносит состояние и DOM вместе с каждым элементом.",
+          "ok": false,
+          "why": "После перестановки React видит те же ключи на тех же позициях и переиспользует состояние не тех элементов. Ключ должен идентифицировать сущность."
+        },
+        {
+          "s": "Server Component, как и компонент при SSR, после рендера на сервере отправляет свой JS-код клиенту для гидрации.",
+          "ok": false,
+          "why": "Гидрацию требует SSR: HTML приходит с сервера, а JS компонента всё равно едет в бандл. Код Server Component в бандл не попадает вообще."
+        },
+        {
+          "s": "Server Component может читать базу данных напрямую, но не может использовать useState, useEffect и обработчики событий.",
+          "ok": true,
+          "why": "Server Component выполняется только на сервере, поэтому у него есть доступ к базе, но нет состояния и интерактивности. Интерактивные части выносят в клиентские компоненты."
+        },
+        {
+          "s": "Suspense при стриминге позволяет сразу отдать оболочку страницы и досылать медленные части в том же HTML-ответе.",
+          "ok": true,
+          "why": "Пока медленная часть грузится, на её месте стоит fallback. Когда данные готовы, сервер дописывает разметку в тот же поток."
+        },
+        {
+          "s": "В React 19 хук useActionState читает промис или контекст прямо в рендере, а use хранит состояние и ошибки формы.",
+          "ok": false,
+          "why": "Роли перепутаны. use читает промис или контекст в рендере, а useActionState хранит состояние и ошибки Actions."
+        }
       ],
       "en": [
-        "React matches hooks by name, so conditions only break same-named hooks.",
-        "useMemo everywhere by default makes the app faster."
+        {
+          "s": "React keeps a component's hook state in a list and matches it to the calls by order, not by hook name.",
+          "ok": true,
+          "why": "React never sees hook names. If a condition changes the call order, the next render reads another hook's state."
+        },
+        {
+          "s": "The useEffect cleanup function runs only when the component unmounts and is not called between repeated runs of the effect.",
+          "ok": false,
+          "why": "Cleanup runs before every next run of the same effect as well as on unmount. Otherwise the old subscription would live alongside the new one."
+        },
+        {
+          "s": "An object in the useEffect dependency array is compared by its contents, so the effect re-runs only when its fields change.",
+          "ok": false,
+          "why": "Dependencies are compared by reference, and an object created during render is new every time. The effect runs on every render; useMemo or primitive deps fix it."
+        },
+        {
+          "s": "useCallback is essentially useMemo returning a function: both hooks cache a result between renders.",
+          "ok": true,
+          "why": "useMemo caches a value and useCallback caches the function itself. useCallback(fn, deps) equals useMemo(() => fn, deps)."
+        },
+        {
+          "s": "Wrapping every computation in useMemo by default pays off, because memoisation costs almost nothing and speeds up rendering.",
+          "ok": false,
+          "why": "Memoisation makes code harder to read, and one always-new prop silently breaks it. It's for a measured expensive computation or a stable reference."
+        },
+        {
+          "s": "A stable reference from useCallback is useful when the function goes to a memoised child or sits in a dependency array.",
+          "ok": true,
+          "why": "A memoised child compares props by reference, and a new function every render defeats memo. The same goes for an effect's deps."
+        },
+        {
+          "s": "React Compiler memoises components automatically, so manual useMemo becomes mostly an escape hatch.",
+          "ok": true,
+          "why": "The compiler is stable since 1.0 and inserts memoisation at build time. Manual useMemo stays for cases the compiler doesn't cover."
+        },
+        {
+          "s": "If key equals the item's index, React moves the state and DOM along with each item after the list is reordered.",
+          "ok": false,
+          "why": "After a reorder React sees the same keys at the same positions and reuses the wrong items' state. A key has to identify the entity."
+        },
+        {
+          "s": "A Server Component, like a component rendered with SSR, ships its JavaScript to the client for hydration after the server render.",
+          "ok": false,
+          "why": "Hydration is an SSR thing: HTML comes from the server and the component's JS still goes into the bundle. Server Component code never enters the bundle."
+        },
+        {
+          "s": "A Server Component can read the database directly but can't use useState, useEffect or event handlers.",
+          "ok": true,
+          "why": "A Server Component runs only on the server, so it has database access but no state or interactivity. Interactive parts go into client components."
+        },
+        {
+          "s": "With streaming, Suspense lets you send the page shell right away and stream the slow parts in the same HTML response.",
+          "ok": true,
+          "why": "While a slow part loads, its fallback stands in. When the data is ready, the server appends the markup to the same stream."
+        },
+        {
+          "s": "In React 19, the useActionState hook reads a promise or context directly during render, while use holds form state and errors.",
+          "ok": false,
+          "why": "The roles are swapped. use reads a promise or context during render, and useActionState holds the state and errors of Actions."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "React хранит состояние хуков в списке и сопоставляет по [[порядку вызова|порядку|call order]].",
-        "Cleanup вызывается перед [[следующим|next]] запуском эффекта и при размонтировании.",
-        "key равный [[index|индексу]] ломается при reorder: React переиспользует состояние не тех элементов."
+        "React хранит состояние хуков в списке и сопоставляет его по [[порядку вызова|порядку|call order]].",
+        "Cleanup в useEffect вызывается перед [[следующим|next]] запуском того же эффекта и при размонтировании.",
+        "Если key равен [[index|индексу]], после перестановки списка React переиспользует состояние не тех элементов."
       ],
       "en": [
-        "React stores hook state in a list and matches by [[call order|order]].",
-        "Cleanup runs before the [[next]] run of the effect and on unmount.",
-        "key equal to [[index]] breaks on reorder: React reuses the wrong elements' state."
+        "React stores hook state in a list and matches it by [[call order|order]].",
+        "A useEffect cleanup runs before the [[next]] run of the same effect and on unmount.",
+        "If key equals the [[index]], reordering the list makes React reuse the wrong elements' state."
       ]
     }
   },

@@ -15,11 +15,11 @@
     "a": [
       {
         "q": "Определение",
-        "t": "Контекстное окно — это максимум токенов, который модель обрабатывает за один запрос, причём вход и сгенерированный выход считаются вместе. За место в нём конкурирует всё сразу: системный промпт, история диалога, найденные документы, определения инструментов и результаты их вызовов. У топовых моделей Claude сейчас порядка миллиона токенов по умолчанию, у младших — двести тысяч; у конкурентов текущие модели в том же диапазоне порядка миллиона. Конкретные цифры я не держу в голове намертво — они двигаются каждые несколько месяцев, и перед собесом я бы их перепроверил на доках вендора, а не цитировал по памяти."
+        "t": "Контекстное окно — это максимум токенов, который модель обрабатывает за один запрос, причём вход и сгенерированный выход считаются вместе. За место в нём конкурирует всё сразу: системный промпт, история диалога, найденные документы, определения инструментов и результаты их вызовов. У топовых моделей Claude сейчас порядка миллиона токенов по умолчанию, у младших — двести тысяч; у конкурентов текущие модели в том же диапазоне порядка миллиона. Точные цифры я наизусть не держу, они меняются каждые несколько месяцев, поэтому перед собесом я бы перепроверил их в документации вендора, а не цитировал по памяти."
       },
       {
         "q": "Превышение",
-        "t": "Придёт 400 invalid_request_error, prompt is too long, до начала генерации, на любой модели. Это ключевой момент: запрос отклоняется целиком, и ни одного токена не сгенерируется. Никакого мягкого усечения нет — модель не выбрасывает молча старые сообщения. Я это запоминаю как fail fast, not silent, и это хороший дизайн: молчаливое усечение дало бы неправильные ответы без сигнала, а ошибку можно обработать. Другое дело, когда вход помещается, а в окно не влезает ответ: это отдельный случай."
+        "t": "Придёт 400 invalid_request_error, prompt is too long, до начала генерации, на любой модели. Важно, что запрос отклоняется целиком, и ни одного токена не сгенерируется. Никакого мягкого усечения нет — модель не выбрасывает молча старые сообщения. Я это запоминаю как fail fast, not silent, и это хороший дизайн: молчаливое усечение дало бы неправильные ответы без сигнала, а ошибку можно обработать. Другое дело, когда вход помещается, а в окно не влезает ответ: это отдельный случай."
       },
       {
         "q": "max_tokens",
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Definition",
-        "t": "The context window is the maximum number of tokens the model can process in one request, and it counts the input and the generated output together. Everything competes for that space: the system prompt, the conversation history, retrieved documents, tool definitions and tool results. Claude's top-tier models now default to around a million tokens, the smaller ones sit around two hundred thousand; competitors' current models are in the same million-token range. I don't keep exact figures memorized — they shift every few months — I'd check the vendor's docs the day of the interview rather than quote a number from memory."
+        "t": "The context window is the maximum number of tokens the model can process in one request, and it counts the input and the generated output together. Everything competes for that space: the system prompt, the conversation history, retrieved documents, tool definitions and tool results. Claude's top-tier models now default to around a million tokens, the smaller ones sit around two hundred thousand; competitors' current models are in the same million-token range. I don't keep exact figures memorized because they shift every few months, so I'd check the vendor's docs the day of the interview rather than quote a number from memory."
       },
       {
         "q": "Exceeding it",
@@ -52,14 +52,130 @@
     "kill": "<b>\"It truncates the old messages\"</b> — no, an oversized prompt errors out. Also log <b>stop_reason</b>: max_tokens and model_context_window_exceeded both mean clipped, silently, mid-word, with no error."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "При превышении окна модель молча отбрасывает самые старые сообщения.",
-        "На текущих моделях Claude запрос, где промпт помещается, но вход плюс max_tokens больше окна, отклоняется до генерации."
+        {
+          "s": "Контекстное окно — это максимум токенов за один запрос, и вход с сгенерированным выходом считаются в нём вместе.",
+          "ok": true,
+          "why": "Ответ занимает место в том же окне, что и промпт. Чем длиннее вход, тем меньше места остаётся на выход."
+        },
+        {
+          "s": "В контекстное окно считается только история диалога, а системный промпт и определения инструментов идут отдельно.",
+          "ok": false,
+          "why": "За место в окне конкурирует всё: системный промпт, история, найденные документы, определения инструментов и их результаты."
+        },
+        {
+          "s": "Если промпт больше контекстного окна, модель молча отбрасывает самые старые сообщения и отвечает по оставшимся.",
+          "ok": false,
+          "why": "Запрос отклоняется с ошибкой 400 до начала генерации. Мягкого усечения старых сообщений нет."
+        },
+        {
+          "s": "Если промпт сам по себе больше контекстного окна, API возвращает 400 invalid_request_error до начала генерации на любой модели.",
+          "ok": true,
+          "why": "Запрос отклоняется целиком, и ни одного токена не генерируется. Такую ошибку можно обработать, а молчаливое усечение дало бы неверный ответ без сигнала."
+        },
+        {
+          "s": "На текущих моделях Claude запрос принимается, если промпт помещается в окно, даже когда вход плюс max_tokens больше окна.",
+          "ok": true,
+          "why": "max_tokens — это потолок, а не резерв. Генерация остановится на границе окна, только если ответ действительно до неё дойдёт."
+        },
+        {
+          "s": "На текущих моделях Claude запрос, где вход плюс max_tokens больше окна, отклоняется валидационной ошибкой до генерации.",
+          "ok": false,
+          "why": "Так вели себя модели Claude до поколения 4.5. На текущих запрос принимается, а генерация при необходимости останавливается на границе окна."
+        },
+        {
+          "s": "Когда генерация на Claude доходит до границы контекстного окна, она останавливается со stop_reason model_context_window_exceeded.",
+          "ok": true,
+          "why": "Это значит, что ответ обрезан, а не закончен. Его обрабатывают так же, как stop_reason max_tokens."
+        },
+        {
+          "s": "Параметр max_tokens резервирует место под ответ, и модель сама сокращает ответ, если в окне осталось мало места.",
+          "ok": false,
+          "why": "max_tokens — только потолок длины ответа. Модель не подгоняет ответ под остаток окна: генерация просто обрывается на границе."
+        },
+        {
+          "s": "Ответ со stop_reason max_tokens приходит как обычный успешный, хотя текст обрезан на лимите, иногда посреди слова.",
+          "ok": true,
+          "why": "Ошибки при этом нет, поэтому обрезку видно только по stop_reason. Его нужно логировать и проверять."
+        },
+        {
+          "s": "Если ответ упёрся в max_tokens, API возвращает ошибку, поэтому обрезанный ответ невозможно спутать с законченным.",
+          "ok": false,
+          "why": "Ответ приходит как успешный, только со stop_reason max_tokens. Без проверки stop_reason обрезку не заметить."
+        },
+        {
+          "s": "Ответ модели не расходует контекстное окно: в окне считается только вход, а выход ограничивает один max_tokens.",
+          "ok": false,
+          "why": "Вход и сгенерированный выход делят одно окно. При большом промпте ответ может упереться в границу окна раньше, чем в max_tokens."
+        },
+        {
+          "s": "В проде входные токены считают заранее, а max_tokens ограничивают остатком контекстного окна с запасом.",
+          "ok": true,
+          "why": "Так ответ не упирается в границу окна неожиданно. model_context_window_exceeded всё равно обрабатывают как обрезку."
+        }
       ],
       "en": [
-        "When you exceed the window the model silently drops the oldest messages.",
-        "On current Claude models, a request whose prompt fits but whose input plus max_tokens exceeds the window is rejected before generation."
+        {
+          "s": "The context window is the maximum number of tokens per request, and input and generated output are counted in it together.",
+          "ok": true,
+          "why": "The answer takes space in the same window as the prompt. The longer the input, the less room is left for output."
+        },
+        {
+          "s": "Only the conversation history counts toward the context window, while the system prompt and tool definitions are counted separately.",
+          "ok": false,
+          "why": "Everything competes for the window: the system prompt, history, retrieved documents, tool definitions and tool results."
+        },
+        {
+          "s": "If the prompt is larger than the context window, the model silently drops the oldest messages and answers from the rest.",
+          "ok": false,
+          "why": "The request is rejected with a 400 before generation starts. There is no graceful truncation of old messages."
+        },
+        {
+          "s": "If the prompt alone is larger than the context window, the API returns a 400 invalid_request_error before generation starts, on every model.",
+          "ok": true,
+          "why": "The whole request is rejected and no tokens are generated. You can handle an error, whereas silent truncation would give a wrong answer with no signal."
+        },
+        {
+          "s": "On current Claude models a request is accepted when the prompt fits the window, even if input plus max_tokens exceeds it.",
+          "ok": true,
+          "why": "max_tokens is a ceiling, not a reservation. Generation stops at the window edge only if the answer actually reaches it."
+        },
+        {
+          "s": "On current Claude models, a request whose input plus max_tokens exceeds the window is rejected with a validation error before generation.",
+          "ok": false,
+          "why": "That was the behaviour of Claude models before 4.5. Current models accept the request and stop generation at the window edge if needed."
+        },
+        {
+          "s": "When generation on Claude reaches the edge of the context window, it stops with stop_reason model_context_window_exceeded.",
+          "ok": true,
+          "why": "It means the answer was cut off, not finished. Handle it the same way as stop_reason max_tokens."
+        },
+        {
+          "s": "The max_tokens parameter reserves space for the answer, and the model shortens its answer when little room is left in the window.",
+          "ok": false,
+          "why": "max_tokens is only a ceiling on answer length. The model doesn't fit its answer to the remaining space; generation just stops at the edge."
+        },
+        {
+          "s": "A response with stop_reason max_tokens arrives as a normal success, even though the text was cut at the limit, sometimes mid-word.",
+          "ok": true,
+          "why": "There is no error, so the only sign of truncation is stop_reason. Log it and check it."
+        },
+        {
+          "s": "If the answer hits max_tokens, the API returns an error, so a truncated answer can't be mistaken for a finished one.",
+          "ok": false,
+          "why": "The response arrives as a success, just with stop_reason max_tokens. Without checking stop_reason you won't notice the truncation."
+        },
+        {
+          "s": "The model's answer doesn't use up the context window: only input counts there, and output is limited by max_tokens alone.",
+          "ok": false,
+          "why": "Input and generated output share one window. With a large prompt the answer can hit the window edge before it hits max_tokens."
+        },
+        {
+          "s": "In production you count input tokens up front and cap max_tokens at the remaining context window minus a margin.",
+          "ok": true,
+          "why": "That way the answer doesn't hit the window edge by surprise. model_context_window_exceeded is still handled as truncation."
+        }
       ]
     },
     "cloze": {

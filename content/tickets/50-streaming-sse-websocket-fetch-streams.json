@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Выбор транспорта",
-        "t": "Polling (периодический опрос) самый простой: клиент спрашивает раз в несколько секунд, но я плачу задержкой и пустыми запросами, так что беру его только для медленно меняющегося статуса. WebSocket даёт двусторонний канал после HTTP upgrade (переключения протокола), и это правильный выбор, когда обе стороны постоянно говорят: совместное редактирование, присутствие, голос. Но после переключения это уже не HTTP: внутри канала нет статус-кодов и кеширования, а переподключение на мне, и он неудобен с serverless (бессерверными функциями) и некоторыми прокси. LLM-чат — это один запрос и потом односторонний поток токенов обратно. Это ровно обычный HTTP с потоковым ответом. Формат обычно SSE (Server-Sent Events, события от сервера): тип text/event-stream, события разделены пустой строкой. Сами API моделей стримят (отдают по частям) именно так. На клиенте я читаю этот поток через fetch и response.body, то есть ReadableStream, а не через EventSource, потому что мне нужно отправить разговор POST-ом. На практике получается SSE как формат и fetch как транспорт. К WebSocket я бы пошёл, только если агенту нужно постоянно и отправлять, и получать по одному каналу."
+        "t": "Polling (периодический опрос) самый простой: клиент спрашивает раз в несколько секунд, но я плачу задержкой и пустыми запросами, так что беру его только для медленно меняющегося статуса. WebSocket даёт двусторонний канал после HTTP upgrade (переключения протокола), и это правильный выбор, когда обе стороны постоянно говорят: совместное редактирование, присутствие, голос. Но после переключения это уже не HTTP: внутри канала нет статус-кодов и кеширования, а переподключение на мне, и он неудобен с serverless (бессерверными функциями) и некоторыми прокси. LLM-чат — это один запрос и потом односторонний поток токенов обратно. Это обычный HTTP с потоковым ответом. Формат обычно SSE (Server-Sent Events, события от сервера): тип text/event-stream, события разделены пустой строкой. Сами API моделей стримят (отдают по частям) именно так. На клиенте я читаю этот поток через fetch и response.body, то есть ReadableStream, а не через EventSource, потому что мне нужно отправить разговор POST-ом. На практике получается SSE как формат и fetch как транспорт. К WebSocket я бы пошёл, только если агенту нужно постоянно и отправлять, и получать по одному каналу."
       },
       {
         "q": "Лимиты EventSource",
@@ -52,14 +52,130 @@
     "kill": "<b>\"I'd just use EventSource for the chat\"</b> — it can't POST the history or send an Authorization header, so you need fetch and response.body. And <b>abort() on the client</b> alone doesn't stop the model, the server has to pass the signal on."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "EventSource подходит для чата: через него можно отправить POST с историей сообщений и заголовком Authorization.",
-        "Вызов abort() на клиенте сам останавливает генерацию LLM на сервере, серверный код для этого не нужен."
+        {
+          "s": "WebSocket лучше всего подходит для LLM-чата, потому что токены идут только от сервера к клиенту.",
+          "ok": false,
+          "why": "Односторонний поток — как раз случай для HTTP-ответа со стримингом. WebSocket оправдан, когда обе стороны постоянно отправляют данные по одному каналу."
+        },
+        {
+          "s": "LLM-чат — это один запрос и односторонний поток токенов обратно, то есть обычный HTTP с потоковым ответом.",
+          "ok": true,
+          "why": "На практике это SSE как формат и fetch как транспорт. API моделей стримят ответы именно так."
+        },
+        {
+          "s": "В формате SSE ответ имеет тип text/event-stream, а события отделяются друг от друга пустой строкой.",
+          "ok": true,
+          "why": "Поэтому клиент копит текст в буфере и режет его по пустой строке, чтобы получить полные события."
+        },
+        {
+          "s": "EventSource позволяет отправить POST с историей сообщений и задать заголовок Authorization.",
+          "ok": false,
+          "why": "EventSource умеет только GET, а из настроек есть только withCredentials для cookies. Для чата поток читают через fetch и response.body."
+        },
+        {
+          "s": "По HTTP/1.1 браузер не ограничивает число соединений на origin, поэтому стримы в шести вкладках не мешают другим запросам.",
+          "ok": false,
+          "why": "По HTTP/1.1 браузер держит около шести соединений на origin. Шесть открытых стримов ставят в очередь все остальные запросы к этому origin."
+        },
+        {
+          "s": "При переподключении EventSource отправляет заголовок Last-Event-ID, чтобы сервер дослал пропущенные события.",
+          "ok": true,
+          "why": "Сервер помечает каждое событие id. С fetch это делают вручную, и возобновление работает, только если генерация живёт на сервере отдельно от соединения."
+        },
+        {
+          "s": "Прокси, сжатие или CDN могут буферизовать SSE-ответ и отдать весь поток клиенту только в конце.",
+          "ok": true,
+          "why": "Тогда пользователь видит ответ целиком после паузы, а не по токенам. Поэтому на стриминговом роуте отключают сжатие и буферизацию."
+        },
+        {
+          "s": "Каждый сетевой чанк из response.body содержит ровно одно полное SSE-событие, поэтому его можно сразу парсить как JSON.",
+          "ok": false,
+          "why": "Чанки не совпадают с событиями: в одном может быть половина события или сразу три. Текст копят в буфере и режут по пустой строке."
+        },
+        {
+          "s": "TextDecoder с опцией stream: true не портит многобайтовый символ, разрезанный между двумя чанками.",
+          "ok": true,
+          "why": "Декодер держит неполные байты до следующего чанка. В конце decode() вызывают ещё раз без stream: true, чтобы сбросить остаток."
+        },
+        {
+          "s": "После controller.abort() чтение потока завершается с AbortError, который стоит показать пользователю как ошибку.",
+          "ok": false,
+          "why": "AbortError после Stop — нормальный исход, тост с ошибкой не нужен. Частичный текст остаётся на экране."
+        },
+        {
+          "s": "Вызов abort() на клиенте сам останавливает генерацию LLM на сервере без дополнительного серверного кода.",
+          "ok": false,
+          "why": "Сервер должен заметить закрытый запрос и передать abort-сигнал в вызов LLM SDK. Иначе генерация продолжается, и токены оплачиваются."
+        },
+        {
+          "s": "Для nginx стриминговому ответу ставят заголовок X-Accel-Buffering: no, чтобы прокси не буферизовал поток.",
+          "ok": true,
+          "why": "Вместе с ним ставят text/event-stream и Cache-Control: no-cache и отключают сжатие на этом роуте."
+        }
       ],
       "en": [
-        "EventSource works fine for chat: you can POST the message history through it with an Authorization header.",
-        "Calling abort() on the client stops the LLM generation on the server by itself, no server code needed."
+        {
+          "s": "WebSocket is the best fit for an LLM chat because tokens flow only from the server to the client.",
+          "ok": false,
+          "why": "A one-way stream is exactly what a streamed HTTP response is for. WebSocket makes sense when both sides keep sending over one channel."
+        },
+        {
+          "s": "An LLM chat is one request followed by a one-way stream of tokens back, which is plain HTTP with a streamed response.",
+          "ok": true,
+          "why": "In practice it's SSE as the wire format and fetch as the transport. Model APIs stream their responses this way."
+        },
+        {
+          "s": "In the SSE format the response has the text/event-stream content type, and events are separated by a blank line.",
+          "ok": true,
+          "why": "That's why the client buffers text and splits it on blank lines to get complete events."
+        },
+        {
+          "s": "EventSource lets you send a POST with the message history and set an Authorization header.",
+          "ok": false,
+          "why": "EventSource only does GET, and its only option is withCredentials for cookies. For a chat you read the stream with fetch and response.body."
+        },
+        {
+          "s": "Over HTTP/1.1 the browser doesn't limit connections per origin, so streams in six tabs don't hold up other requests.",
+          "ok": false,
+          "why": "Over HTTP/1.1 the browser allows about six connections per origin. Six open streams queue every other request to that origin."
+        },
+        {
+          "s": "When EventSource reconnects, it sends a Last-Event-ID header so the server can replay missed events.",
+          "ok": true,
+          "why": "The server tags each event with an id. With fetch you build this yourself, and resuming works only if generation lives on the server independently of the connection."
+        },
+        {
+          "s": "A proxy, compression or a CDN can buffer an SSE response and deliver the whole stream to the client only at the end.",
+          "ok": true,
+          "why": "Then the user sees the whole answer after a pause instead of token by token. That's why compression and buffering are turned off on the streaming route."
+        },
+        {
+          "s": "Each network chunk from response.body contains exactly one complete SSE event, so it can be parsed as JSON right away.",
+          "ok": false,
+          "why": "Chunks don't line up with events: one can hold half an event or three. You buffer the text and split it on blank lines."
+        },
+        {
+          "s": "A TextDecoder with the stream: true option doesn't corrupt a multi-byte character split across two chunks.",
+          "ok": true,
+          "why": "The decoder holds incomplete bytes until the next chunk. At the end you call decode() once more without stream: true to flush the rest."
+        },
+        {
+          "s": "After controller.abort(), reading the stream rejects with an AbortError that should be shown to the user as an error.",
+          "ok": false,
+          "why": "An AbortError after Stop is a normal outcome, so no error toast. The partial text stays on screen."
+        },
+        {
+          "s": "Calling abort() on the client stops the LLM generation on the server by itself, with no extra server code.",
+          "ok": false,
+          "why": "The server has to notice the closed request and pass an abort signal into the LLM SDK call. Otherwise generation continues and the tokens are billed."
+        },
+        {
+          "s": "For nginx, a streaming response sets the X-Accel-Buffering: no header so the proxy doesn't buffer the stream.",
+          "ok": true,
+          "why": "Along with it you send text/event-stream and Cache-Control: no-cache, and disable compression on that route."
+        }
       ]
     },
     "cloze": {

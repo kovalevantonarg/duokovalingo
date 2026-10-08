@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Что это",
-        "t": "Reason плюс Act: модель рассуждает, выбирает действие — вызов инструмента, — получает наблюдение, рассуждает снова, пока не будет финального ответа. Он решает то, что одному вызову недоступно: достать информацию, которой у модели нет, проверить гипотезу, сделать многошаговую работу, где следующий шаг зависит от предыдущего. Голый вызов не достанет нового и не исправится после ошибки. Исключение — серверные инструменты вроде web search (поиск в интернете): там цикл крутит сам провайдер внутри одного запроса, но это всё равно цикл. Главное: в статье ReAct — формат промпта, но работает он только с внешним циклом в моём коде, который исполняет действия и возвращает наблюдения."
+        "t": "Reason плюс Act: модель рассуждает, выбирает действие (вызов инструмента), получает наблюдение и рассуждает снова, пока не дойдёт до финального ответа. Он решает то, что одному вызову недоступно: достать информацию, которой у модели нет, проверить гипотезу, сделать многошаговую работу, где следующий шаг зависит от предыдущего. Голый вызов не достанет нового и не исправится после ошибки. Исключение — серверные инструменты вроде web search (поиск в интернете): там цикл крутит сам провайдер внутри одного запроса, но это всё равно цикл. Главное: в статье ReAct — формат промпта, но работает он только с внешним циклом в моём коде, который исполняет действия и возвращает наблюдения."
       },
       {
         "q": "Реализация",
@@ -23,10 +23,10 @@
       },
       {
         "q": "Где ломается",
-        "t": "Зацикливается на падающем инструменте. Уходит от цели, когда контекст растёт и исходная задача тонет посередине. Раздувает стоимость, потому что каждая итерация пересылает всю историю — одни и те же страницы оплачиваются по нескольку раз. Что добавляю: жёсткий потолок шагов и бюджет, сжатие выходов инструментов дешёвой моделью до нужных фактов, prompt caching на статичном префиксе, при длинных задачах — явный план и сжатие наблюдений, чекпоинт для человека там, где действие необратимо, и лог причины остановки — это первое, куда смотришь при разборе."
+        "t": "Зацикливается на падающем инструменте. Уходит от цели, когда контекст растёт и исходная задача тонет посередине. Раздувает стоимость, потому что каждая итерация пересылает всю историю, и одни и те же страницы оплачиваются по нескольку раз. Что добавляю: жёсткий потолок шагов и бюджет, сжатие выходов инструментов дешёвой моделью до нужных фактов, prompt caching на статичном префиксе, для длинных задач явный план и сжатие наблюдений, чекпоинт для человека там, где действие необратимо, и лог причины остановки. В этот лог смотришь первым делом при разборе."
       }
     ],
-    "kill": "<b>«ReAct — это think step by step»</b> — нет, это цикл, в котором инструменты исполняет твой код. И <b>«он сам остановится»</b> — не остановится, если инструмент продолжает падать."
+    "kill": "<b>«ReAct — это think step by step»</b>. Нет, это цикл, в котором инструменты исполняет твой код. И <b>«он сам остановится»</b> — не остановится, если инструмент продолжает падать."
   },
   "en": {
     "topic": "ReAct and the agent loop",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "What it is",
-        "t": "Reason plus Act: the model reasons, picks an action — a tool call — gets an observation, reasons again, until there's a final answer. It solves what a single call can't: fetching information the model doesn't have, checking a hypothesis, multi-step work where the next step depends on the last result. A plain call can't fetch anything new or self-correct. Server-side tools like web search loop inside one request, but that's still a loop, run by the provider. Key point: the paper framed ReAct as a prompt format, but it only works with an outer loop in my code that executes actions and feeds back observations."
+        "t": "Reason plus Act: the model reasons, picks an action (a tool call), gets an observation and reasons again, until there's a final answer. It solves what a single call can't: fetching information the model doesn't have, checking a hypothesis, multi-step work where the next step depends on the last result. A plain call can't fetch anything new or self-correct. Server-side tools like web search loop inside one request, but that's still a loop, run by the provider. Key point: the paper framed ReAct as a prompt format, but it only works with an outer loop in my code that executes actions and feeds back observations."
       },
       {
         "q": "Implementation",
-        "t": "A messages array and tool definitions. Call the model. If stop_reason is tool_use, take the name and arguments, execute them myself, append the result to messages as a tool_result, and go around again. If it's end_turn, that's the final answer, exit. Other stop reasons, like max_tokens, pause_turn or refusal, I handle explicitly, not as answers. Non-negotiable: a step cap, a spending budget, and tool errors returned as strings inside the tool_result rather than thrown — the model has to see them to react. In a research agent that means a cap on steps and pages, and every step in the log."
+        "t": "A messages array and tool definitions. Call the model. If stop_reason is tool_use, take the name and arguments, execute them myself, append the result to messages as a tool_result, and go around again. If it's end_turn, that's the final answer, exit. Other stop reasons, like max_tokens, pause_turn or refusal, I handle explicitly, not as answers. Non-negotiable: a step cap, a spending budget, and tool errors returned as strings inside the tool_result rather than thrown, because the model has to see them to react. In a research agent that means a cap on steps and pages, and every step in the log."
       },
       {
         "q": "Where it breaks",
-        "t": "It loops on a failing tool. It drifts off-goal as the context grows and the original task sinks into the middle. It balloons in cost because every iteration resends the whole history — the same pages get paid for several times over. What I add: a hard step cap and budget, having a cheap model condense tool outputs to the relevant facts, prompt caching on the static prefix, for long tasks an explicit plan and observation compression, a human checkpoint before anything irreversible, and a logged stop reason — it's the first thing you look at in a post-mortem."
+        "t": "It loops on a failing tool. It drifts off-goal as the context grows and the original task sinks into the middle. It balloons in cost because every iteration resends the whole history, so the same pages get paid for several times over. What I add: a hard step cap and budget, having a cheap model condense tool outputs to the relevant facts, prompt caching on the static prefix, for long tasks an explicit plan and observation compression, a human checkpoint before anything irreversible, and a logged stop reason. That log is the first thing you check in a post-mortem."
       }
     ],
     "kill": "<b>\"ReAct is think-step-by-step\"</b> — no, it's a loop where your code executes the tools. And <b>\"it'll stop on its own\"</b> — it won't, if the tool keeps failing."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "ReAct — это просто «думай по шагам», инструменты никто не исполняет.",
-        "Каждая итерация цикла отправляет только новое наблюдение, поэтому стоимость постоянна."
+        {
+          "s": "Агент на ReAct сам перестаёт вызывать инструмент, который постоянно падает, поэтому отдельный потолок шагов не обязателен.",
+          "ok": false,
+          "why": "Агент легко зацикливается на падающем инструменте. Остановить его гарантированно могут только жёсткий потолок шагов и бюджет в коде."
+        },
+        {
+          "s": "Если stop_reason равен tool_use, код исполняет инструмент и добавляет результат в messages как блок tool_result.",
+          "ok": true,
+          "why": "Дальше цикл снова вызывает модель с обновлённой историей. Финальный ответ означает stop_reason end_turn."
+        },
+        {
+          "s": "Ошибку инструмента лучше вернуть модели строкой в tool_result, чем бросать исключение, чтобы модель её увидела и среагировала.",
+          "ok": true,
+          "why": "Исключение останавливает агента и прячет ошибку от модели. Текст ошибки в tool_result даёт модели шанс поменять аргументы или выбрать другой путь."
+        },
+        {
+          "s": "ReAct сводится к промпту «думай по шагам»: модель рассуждает вслух, и внешний цикл в коде для него не нужен.",
+          "ok": false,
+          "why": "Рассуждение без действий — это chain-of-thought. ReAct работает только с циклом, который исполняет действия и возвращает наблюдения."
+        },
+        {
+          "s": "Перед необратимым действием агент должен останавливаться на чекпоинте, где решение подтверждает человек.",
+          "ok": true,
+          "why": "Ошибку в рассуждении можно поправить следующим шагом, а необратимое действие уже не отменить."
+        },
+        {
+          "s": "Серверные инструменты вроде web search тоже работают в цикле, только этот цикл крутит провайдер внутри одного запроса.",
+          "ok": true,
+          "why": "API сам выполняет поиск и может повторять его несколько раз за один запрос. Это тот же цикл, просто на стороне провайдера."
+        },
+        {
+          "s": "Когда контекст агента разрастается, агент может уйти от цели, потому что исходная задача оказывается в середине длинной истории.",
+          "ok": true,
+          "why": "Модели хуже используют информацию из середины длинного контекста. Помогают явный план и сжатие наблюдений."
+        },
+        {
+          "s": "Лог причины остановки агента нужен только при разработке, в продакшене его можно отключить без потерь для отладки.",
+          "ok": false,
+          "why": "При разборе инцидента причина остановки — первое, куда смотришь: потолок шагов, бюджет, ошибка или нормальный конец."
+        },
+        {
+          "s": "Каждая итерация агентного цикла отправляет модели только новое наблюдение, поэтому стоимость одного шага остаётся постоянной.",
+          "ok": false,
+          "why": "Messages API не хранит состояние: на каждой итерации пересылается вся история, и одни и те же страницы оплачиваются по нескольку раз."
+        },
+        {
+          "s": "Если stop_reason не равен tool_use, цикл можно завершать и считать последний текст модели финальным ответом.",
+          "ok": false,
+          "why": "Финальный ответ означает только end_turn. Причины вроде max_tokens, pause_turn или refusal обрабатывают явно: ответ обрезан, серверный инструмент на паузе или это отказ."
+        },
+        {
+          "s": "В ReAct модель только выбирает инструмент и аргументы, а исполняет вызов код приложения, который возвращает наблюдение.",
+          "ok": true,
+          "why": "Модель не умеет ничего исполнять сама. Внешний цикл в твоём коде вызывает инструмент и кладёт результат обратно в контекст."
+        },
+        {
+          "s": "Один вызов модели без инструментов может принести свежую информацию из интернета, если правильно сформулировать промпт.",
+          "ok": false,
+          "why": "Без инструментов модель знает только то, что было в обучении и в контексте. Новое она может достать только через действие."
+        }
       ],
       "en": [
-        "ReAct is just 'think step by step' — no tools are executed.",
-        "Each loop iteration sends only the new observation, so the cost stays constant."
+        {
+          "s": "A ReAct agent stops calling a tool that keeps failing on its own, so a separate step cap is optional.",
+          "ok": false,
+          "why": "Agents easily loop on a failing tool. Only a hard step cap and budget in your code reliably stop them."
+        },
+        {
+          "s": "When stop_reason is tool_use, the code runs the tool and appends the result to messages as a tool_result block.",
+          "ok": true,
+          "why": "The loop then calls the model again with the updated history. A final answer comes with stop_reason end_turn."
+        },
+        {
+          "s": "A tool error is better returned to the model as a string in tool_result than thrown, so the model sees it and reacts.",
+          "ok": true,
+          "why": "An exception stops the agent and hides the error from the model. Error text in tool_result lets the model change arguments or try another route."
+        },
+        {
+          "s": "ReAct boils down to a 'think step by step' prompt: the model reasons out loud and needs no outer loop in your code.",
+          "ok": false,
+          "why": "Reasoning without actions is chain-of-thought. ReAct only works with a loop that executes actions and feeds back observations."
+        },
+        {
+          "s": "Before an irreversible action, the agent should stop at a checkpoint where a human confirms the decision.",
+          "ok": true,
+          "why": "A reasoning mistake can be fixed on the next step; an irreversible action can't be undone."
+        },
+        {
+          "s": "Server-side tools like web search also run in a loop; the provider just runs that loop inside a single request.",
+          "ok": true,
+          "why": "The API runs the searches itself and can repeat them several times within one request. It's the same loop, run on the provider's side."
+        },
+        {
+          "s": "As an agent's context grows, it can drift off-goal because the original task ends up in the middle of a long history.",
+          "ok": true,
+          "why": "Models use information from the middle of a long context worse. An explicit plan and compressed observations help."
+        },
+        {
+          "s": "Logging an agent's stop reason only matters during development; in production you can turn it off without hurting debugging.",
+          "ok": false,
+          "why": "In a post-mortem the stop reason is the first thing you check: step cap, budget, an error, or a normal finish."
+        },
+        {
+          "s": "Each iteration of the agent loop sends the model only the new observation, so the cost of a step stays constant.",
+          "ok": false,
+          "why": "The Messages API is stateless: every iteration resends the whole history, so the same pages get paid for several times."
+        },
+        {
+          "s": "If stop_reason is anything other than tool_use, the loop can exit and treat the model's last text as the final answer.",
+          "ok": false,
+          "why": "Only end_turn means a final answer. Reasons like max_tokens, pause_turn or refusal are handled explicitly: a truncated answer, a paused server tool, or a refusal."
+        },
+        {
+          "s": "In ReAct the model only picks the tool and its arguments; the application code runs the call and returns the observation.",
+          "ok": true,
+          "why": "The model can't execute anything itself. The outer loop in your code calls the tool and puts the result back into context."
+        },
+        {
+          "s": "A single model call with no tools can bring in fresh information from the web if the prompt is worded well.",
+          "ok": false,
+          "why": "Without tools the model knows only its training data and the context. It can get anything new only through an action."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "ReAct: [[Reason|рассуждение]] плюс [[Act|действие]] — модель думает, выбирает инструмент, получает наблюдение, думает снова.",
-        "Если stop_reason равен [[tool_use]] — исполняю и кладу [[tool_result]]; если [[end_turn]] — это финальный ответ.",
-        "Обязательны: потолок [[шагов|steps|итераций]] и [[бюджет|budget]] по деньгам."
+        "ReAct расшифровывается как [[Reason|рассуждение]] плюс [[Act|действие]]: модель рассуждает, вызывает инструмент, получает наблюдение и рассуждает снова.",
+        "Если stop_reason равен [[tool_use]], код исполняет инструмент и кладёт [[tool_result]] в messages, а [[end_turn]] означает финальный ответ.",
+        "В агентном цикле обязательны потолок [[шагов|steps|итераций]] и [[бюджет|budget]] по деньгам."
       ],
       "en": [
-        "ReAct: [[Reason]] plus [[Act]] — the model thinks, picks a tool, observes, thinks again.",
-        "If stop_reason is [[tool_use]] I execute and append a [[tool_result]]; if [[end_turn]], that's the final answer.",
-        "Non-negotiable: a [[step cap|iteration cap]] and a spending [[budget]]."
+        "ReAct stands for [[Reason]] plus [[Act]]: the model reasons, calls a tool, gets an observation and reasons again.",
+        "If stop_reason is [[tool_use]], the code runs the tool and appends a [[tool_result]] to messages, while [[end_turn]] means the final answer.",
+        "An agent loop needs a [[step cap|iteration cap]] and a spending [[budget]]."
       ]
     },
     "steps": {
@@ -79,22 +195,22 @@
         "title": "Одна итерация ReAct",
         "items": [
           "Модель рассуждает над задачей и историей",
-          "Выбирает действие — вызов инструмента",
+          "Выбирает действие: вызов инструмента",
           "Мой код исполняет и получает наблюдение",
           "Наблюдение кладётся в контекст как tool_result",
           "Проверка: потолок шагов и бюджет не превышены",
-          "Снова к модели — или финальный ответ"
+          "Снова к модели или финальный ответ"
         ]
       },
       "en": {
         "title": "One ReAct iteration",
         "items": [
           "The model reasons over the task and history",
-          "Picks an action — a tool call",
+          "Picks an action: a tool call",
           "My code executes it and gets an observation",
           "The observation goes into context as a tool_result",
           "Check: step cap and budget not exceeded",
-          "Back to the model — or the final answer"
+          "Back to the model, or the final answer"
         ]
       }
     }

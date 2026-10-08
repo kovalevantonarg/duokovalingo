@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Три способа",
-        "t": "Первый — попросить в промпте отвечать JSON и распарсить. Дёшево, ненадёжно: модель заворачивает в markdown, добавляет пояснение, пропускает поле. Второй — нативный structured output (структурированный вывод): JSON mode или схема ответа, как response_format у OpenAI, и у Anthropic теперь есть свои structured outputs. JSON mode гарантирует только синтаксически валидный JSON, а схема в strict-режиме — ещё и соответствие схеме. Третий — tool use: описываю инструмент, чей input schema и есть нужная мне форма, и прошу модель его вызвать. Вызов инструмента — это и есть мой структурированный ответ, исполнять ничего не надо. Выбираю по требуемой надёжности и по тому, что даёт провайдер. Для продакшена — второй или третий, первый только для прототипа."
+        "t": "Первый — попросить в промпте отвечать JSON и распарсить. Это дёшево, но ненадёжно: модель заворачивает в markdown, добавляет пояснение, пропускает поле. Второй — нативный structured output (структурированный вывод): JSON mode или схема ответа, как response_format у OpenAI, и у Anthropic теперь есть свои structured outputs. JSON mode гарантирует только синтаксически валидный JSON, а схема в strict-режиме — ещё и соответствие схеме. Третий — tool use: описываю инструмент, чей input schema и есть нужная мне форма, и прошу модель его вызвать. Вызов инструмента — это и есть мой структурированный ответ, исполнять ничего не надо. Выбираю по требуемой надёжности и по тому, что даёт провайдер. Для продакшена — второй или третий, первый только для прототипа."
       },
       {
         "q": "Strict-режим",
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Three ways",
-        "t": "First, ask for JSON in the prompt and parse. Cheap, unreliable: the model wraps it in markdown, adds an explanation, drops a field. Second, native structured output: JSON mode or a response schema, like OpenAI's response_format, and Anthropic now has its own structured outputs. JSON mode guarantees only syntactically valid JSON; a schema in strict mode also guarantees conformance to it. Third, tool use: I define a tool whose input schema is exactly the shape I want and have the model call it. The tool call is my structured output — nothing gets executed. I pick by how much reliability I need and what the provider offers. Production is option two or three; option one is prototype-only."
+        "t": "First, ask for JSON in the prompt and parse. Cheap but unreliable: the model wraps it in markdown, adds an explanation, drops a field. Second, native structured output: JSON mode or a response schema, like OpenAI's response_format, and Anthropic now has its own structured outputs. JSON mode guarantees only syntactically valid JSON; a schema in strict mode also guarantees conformance to it. Third, tool use: I define a tool whose input schema is exactly the shape I want and have the model call it. The tool call is my structured output — nothing gets executed. I pick by how much reliability I need and what the provider offers. Production is option two or three; option one is prototype-only."
       },
       {
         "q": "Strict mode",
@@ -52,14 +52,130 @@
     "kill": "<b>\"JSON mode guarantees correct data\"</b> — it guarantees valid JSON, not true values. And regex-parsing a markdown fence is option zero; don't bring it up in an interview."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "JSON mode гарантирует, что значения в ответе правдивы.",
-        "Если провайдер отдал strict JSON, своя валидация не нужна."
+        {
+          "s": "Просьба в промпте отвечать JSON ненадёжна: модель может обернуть ответ в markdown, добавить пояснение или пропустить поле.",
+          "ok": true,
+          "why": "Этот способ дешёвый и годится для прототипа. В продакшене берут нативный structured output или tool use."
+        },
+        {
+          "s": "JSON mode гарантирует и синтаксически валидный JSON, и соответствие ответа заданной схеме.",
+          "ok": false,
+          "why": "JSON mode гарантирует только валидный синтаксис. Соответствие схеме даёт схема в strict-режиме."
+        },
+        {
+          "s": "Без strict: true схема инструмента у Anthropic всё равно жёстко ограничивает типы, поэтому строку «2» вместо числа получить нельзя.",
+          "ok": false,
+          "why": "Без strict схема — лишь подсказка, и можно получить «2» вместо 2. Генерацию ограничивает только strict: true."
+        },
+        {
+          "s": "Структурированный ответ можно получить через tool use: input schema инструмента задаёт нужную форму, а исполнять инструмент не нужно.",
+          "ok": true,
+          "why": "Сам вызов инструмента и есть структурированный ответ. Код просто забирает аргументы."
+        },
+        {
+          "s": "Structured outputs у Anthropic работают через constrained decoding: генерацию ограничивает схема, а не проверка после ответа.",
+          "ok": true,
+          "why": "Это касается и JSON-схемы на ответ, и strict: true на инструменте. Модель не может сгенерировать токен вне схемы."
+        },
+        {
+          "s": "Strict-режим гарантирует правдивость значений в JSON, если в схеме подробно описаны все поля.",
+          "ok": false,
+          "why": "Гарантируются синтаксис и форма, но не правдивость. Валидный объект может содержать выдуманную дату."
+        },
+        {
+          "s": "Описания полей в схеме влияют на результат, потому что модель заполняет каждое поле по его тексту.",
+          "ok": true,
+          "why": "Поэтому описания полей считают частью API, а не комментарием."
+        },
+        {
+          "s": "Если провайдер вернул ответ в strict-режиме, собственная валидация через Zod уже не нужна.",
+          "ok": false,
+          "why": "Схема провайдера и твоя схема — два разных контракта. Валидируют каждый раз, даже в strict-режиме."
+        },
+        {
+          "s": "При невалидном JSON запрос лучше повторить без изменений, потому что текст ошибки валидации модели не помогает.",
+          "ok": false,
+          "why": "Текст ошибки валидации прикладывают к повтору, и модель обычно исправляет ответ с первого раза."
+        },
+        {
+          "s": "При невалидном JSON делают retry с текстом ошибки валидации, максимум два повтора, а потом fallback и алерт.",
+          "ok": true,
+          "why": "Ограничение повторов не даёт бесконечно платить за один и тот же сбой. Невалидированный JSON в базу не попадает."
+        },
+        {
+          "s": "Чем больше опциональных полей в схеме, тем меньше модель галлюцинирует, потому что ей проще пропустить неизвестное значение.",
+          "ok": false,
+          "why": "Меньше опциональных полей означает меньше выдуманных значений, поэтому схему держат маленькой."
+        },
+        {
+          "s": "Долю невалидных ответов модели отслеживают как метрику эвала, а не списывают на случайность.",
+          "ok": true,
+          "why": "Невалидные ответы — измеримое свойство системы, поэтому их считают, как любую другую метрику качества."
+        }
       ],
       "en": [
-        "JSON mode guarantees the values in the response are true.",
-        "If the provider returned strict JSON, your own validation is unnecessary."
+        {
+          "s": "Asking for JSON in the prompt is unreliable: the model may wrap it in markdown, add an explanation or drop a field.",
+          "ok": true,
+          "why": "It's cheap and fine for a prototype. Production uses native structured output or tool use."
+        },
+        {
+          "s": "JSON mode guarantees both syntactically valid JSON and conformance of the answer to a given schema.",
+          "ok": false,
+          "why": "JSON mode guarantees only valid syntax. Schema conformance comes from a schema in strict mode."
+        },
+        {
+          "s": "Without strict: true, an Anthropic tool schema still strictly enforces types, so you can't get the string \"2\" instead of a number.",
+          "ok": false,
+          "why": "Without strict the schema is only guidance, so you can get \"2\" instead of 2. Only strict: true constrains generation."
+        },
+        {
+          "s": "You can get structured output through tool use: the tool's input schema defines the shape, and nothing needs to be executed.",
+          "ok": true,
+          "why": "The tool call itself is the structured output. The code just takes the arguments."
+        },
+        {
+          "s": "Anthropic's structured outputs work through constrained decoding: the schema limits generation instead of a check after the answer.",
+          "ok": true,
+          "why": "That applies both to a JSON schema on the response and to strict: true on a tool. The model can't generate a token outside the schema."
+        },
+        {
+          "s": "Strict mode guarantees the values in the JSON are true, as long as every field is described in detail in the schema.",
+          "ok": false,
+          "why": "What's guaranteed is syntax and shape, not truth. A valid object can still carry an invented date."
+        },
+        {
+          "s": "Field descriptions in a schema affect the result, because the model fills each field based on its description text.",
+          "ok": true,
+          "why": "That's why field descriptions count as part of the API, not as comments."
+        },
+        {
+          "s": "If the provider returned a response in strict mode, your own validation with Zod is no longer needed.",
+          "ok": false,
+          "why": "The provider's schema and yours are two different contracts. You validate every time, even in strict mode."
+        },
+        {
+          "s": "When the JSON is invalid, it's better to retry the request unchanged, because the validation error text doesn't help the model.",
+          "ok": false,
+          "why": "You append the validation error to the retry, and the model usually fixes the answer on the first try."
+        },
+        {
+          "s": "When the JSON is invalid you retry with the validation error attached, two retries at most, then a fallback and an alert.",
+          "ok": true,
+          "why": "Capping retries stops you paying for the same failure forever. Unvalidated JSON never reaches the database."
+        },
+        {
+          "s": "The more optional fields a schema has, the less the model hallucinates, because it can more easily skip an unknown value.",
+          "ok": false,
+          "why": "Fewer optional fields means fewer invented values, which is why you keep the schema small."
+        },
+        {
+          "s": "The rate of invalid model responses is tracked as an eval metric rather than written off as bad luck.",
+          "ok": true,
+          "why": "Invalid responses are a measurable property of the system, so you count them like any other quality metric."
+        }
       ]
     },
     "cloze": {

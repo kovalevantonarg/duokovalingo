@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Три подхода",
-        "t": "Fixed size — режу по N токенов. Просто, предсказуемо, режет мысль пополам. Semantic или структурный — режу по заголовкам, абзацам, блокам кода. Уважает смысл, но куски получаются разного размера, и большой абзац может не влезть. Sliding window — фиксированный размер с перекрытием, чтобы контекст на границе не терялся. На практике я делаю сначала структурный, поверх — потолок по размеру, и overlap как страховку. Один подход в чистом виде почти никогда не лучший."
+        "t": "Fixed size — режу по N токенов. Просто, предсказуемо, режет мысль пополам. Semantic или структурный — режу по заголовкам, абзацам, блокам кода. Уважает смысл, но куски получаются разного размера, и большой абзац может не влезть. Sliding window — фиксированный размер с перекрытием, чтобы контекст на границе не терялся. На практике я режу сначала по структуре, сверху ставлю потолок по размеру и добавляю overlap как страховку. Один подход в чистом виде почти никогда не лучший."
       },
       {
         "q": "Цифры",
-        "t": "Обычный старт — двести пятьдесят шесть–пятьсот двенадцать токенов и перекрытие десять–двадцать пять процентов, но значения по умолчанию разнятся, поэтому подбираю по recall at k (полноте в top-k). Overlap нужен потому, что факт рядом с границей иначе окажется разрезан на два куска, и эмбеддинг ни одного из кусков не совпадёт с вопросом об этом факте. Куски больше — больше контекста на попадание, но эмбеддинг усредняет смысл и становится мутнее. Меньше — точнее, но фрагментарно, и ответу не хватает окружения. И к каждому куску — метаданные: источник, раздел, позиция, иначе не процитируешь."
+        "t": "Обычный старт — двести пятьдесят шесть–пятьсот двенадцать токенов и перекрытие десять–двадцать пять процентов, но значения по умолчанию разнятся, поэтому подбираю по recall at k (полноте в top-k). Overlap нужен потому, что факт рядом с границей иначе окажется разрезан на два куска, и эмбеддинг ни одного из кусков не совпадёт с вопросом об этом факте. Куски больше — больше контекста на попадание, но эмбеддинг усредняет смысл и становится мутнее. Меньше — точнее, но фрагментарно, и ответу не хватает окружения. И к каждому куску добавляю метаданные (источник, раздел, позицию), иначе не процитируешь."
       },
       {
         "q": "Диагностика",
-        "t": "Два симптома. Кусок нашёлся релевантный, но ответ неполный — значит, кусок слишком мелкий или разрезан не там. Куски находятся как-то похожие, но не те — значит, слишком крупные, смысл размылся. Проверяю не чтением, а эвалом: на золотом наборе вопросов смотрю, попадает ли нужный пассаж в top-k. Это изолирует chunking и retrieval от генерации. Меняю размер, прогоняю снова, сравниваю. Размер куска для меня — ручка, которую крутят по метрике, а не по ощущению."
+        "t": "Два симптома. Нашёлся релевантный кусок, но ответ неполный: значит, кусок слишком мелкий или разрезан не там. Находятся куски вроде бы похожие, но не те: значит, они слишком крупные и смысл размылся. Проверяю не чтением, а эвалом: на золотом наборе вопросов смотрю, попадает ли нужный пассаж в top-k. Это изолирует chunking и retrieval от генерации. Меняю размер, прогоняю снова, сравниваю. Размер куска для меня — параметр, который подбирают по метрике, а не на глаз."
       }
     ],
-    "kill": "Назвать одно магическое число и остановиться. И <b>«chunking это деталь»</b> — это одна из частых причин плохого RAG, потому что от нарезки зависит, что найдёт поиск, интервьюер это знает."
+    "kill": "Назвать одно число без метода подбора и на этом остановиться. И <b>«chunking — это деталь»</b>: на деле это одна из частых причин плохого RAG, потому что от нарезки зависит, что найдёт поиск."
   },
   "en": {
     "topic": "Chunking",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "Three approaches",
-        "t": "Fixed size — cut every N tokens. Simple, predictable, splits a thought in half. Semantic or structural — cut on headings, paragraphs, code blocks. Respects meaning, but chunks come out uneven, and a big paragraph may not fit. Sliding window — fixed size with overlap so boundary context isn't lost. In practice I go structural first, a size cap on top, and overlap as insurance. One approach in pure form is almost never the best one."
+        "t": "Fixed size — cut every N tokens. Simple, predictable, splits a thought in half. Semantic or structural — cut on headings, paragraphs, code blocks. Respects meaning, but chunks come out uneven, and a big paragraph may not fit. Sliding window — fixed size with overlap so boundary context isn't lost. In practice I split by structure first, put a size cap on top, and add overlap as insurance. One approach in pure form is almost never the best one."
       },
       {
         "q": "Numbers",
-        "t": "A common start is two fifty-six to five twelve tokens per chunk with ten to twenty-five percent overlap, but vendor defaults vary widely, so I tune against recall at k. Overlap exists because a fact near a boundary would otherwise be split across two chunks, and neither chunk's embedding would match a question about it. Bigger chunks give more context per hit, but the embedding averages the meaning and gets muddier. Smaller is more precise but fragmentary, and the answer lacks surroundings. And every chunk carries metadata — source, section, position — or you can't cite it."
+        "t": "A common start is two fifty-six to five twelve tokens per chunk with ten to twenty-five percent overlap, but vendor defaults vary widely, so I tune against recall at k. Overlap exists because a fact near a boundary would otherwise be split across two chunks, and neither chunk's embedding would match a question about it. Bigger chunks give more context per hit, but the embedding averages the meaning and gets muddier. Smaller is more precise but fragmentary, and the answer lacks surroundings. And every chunk carries metadata (source, section, position), or you can't cite it."
       },
       {
         "q": "Diagnosis",
-        "t": "Two symptoms. The retrieved chunk is relevant but the answer is incomplete — chunk too small, or cut in the wrong place. The retrieved chunks are vaguely similar but not the right ones — too big, meaning diluted. I check with an eval, not by reading: on a golden question set, does the gold passage land in the top-k? That isolates chunking and retrieval from generation. Change the size, run again, compare. Chunk size is a knob I turn against a metric, not a feeling."
+        "t": "Two symptoms. The retrieved chunk is relevant but the answer is incomplete: the chunk is too small, or cut in the wrong place. The retrieved chunks are vaguely similar but not the right ones: they're too big and the meaning is diluted. I check with an eval, not by reading: on a golden question set, does the gold passage land in the top-k? That isolates chunking and retrieval from generation. Change the size, run again, compare. Chunk size is a parameter I tune against a metric, not by eye."
       }
     ],
-    "kill": "Quoting one magic number and stopping. And <b>\"chunking is a detail\"</b> — it's a common cause of bad RAG, because chunking decides what search can find, and the interviewer knows it."
+    "kill": "Quoting one number with no way to tune it, and stopping there. And <b>\"chunking is a detail\"</b>: it's a common cause of bad RAG, because chunking decides what search can find."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Чем больше кусок, тем точнее эмбеддинг.",
-        "Overlap нужен просто чтобы кусков было больше; контекст на границе не важен."
+        {
+          "s": "Без overlap факт у границы может разрезаться на два куска, и эмбеддинг ни одного из них не совпадёт с вопросом.",
+          "ok": true,
+          "why": "Каждая половина несёт только часть смысла. Перекрытие кладёт факт целиком хотя бы в один кусок."
+        },
+        {
+          "s": "Структурный chunking режет по заголовкам, абзацам и блокам кода, но куски при этом получаются разного размера.",
+          "ok": true,
+          "why": "Такая нарезка уважает смысл, но длинный раздел даёт огромный кусок. Поэтому сверху ставят потолок по размеру."
+        },
+        {
+          "s": "Fixed-size chunking режет текст каждые N токенов: это просто и предсказуемо, но мысль может оказаться разрезана пополам.",
+          "ok": true,
+          "why": "Граница куска ставится по счётчику токенов, а не по смыслу. Поэтому поверх обычно добавляют overlap."
+        },
+        {
+          "s": "Overlap между кусками нужен в первую очередь для того, чтобы увеличить число кусков в индексе.",
+          "ok": false,
+          "why": "Число кусков растёт как побочный эффект. Overlap нужен, чтобы контекст у границы куска не терялся."
+        },
+        {
+          "s": "Если найденный кусок релевантен, но ответ неполный, кусок, скорее всего, слишком мелкий или разрезан не в том месте.",
+          "ok": true,
+          "why": "Поиск сработал, но в кусок не попало окружение, нужное для ответа. Помогает крупнее кусок или нарезка по структуре."
+        },
+        {
+          "s": "Чем крупнее кусок, тем точнее его эмбеддинг, потому что модель видит больше контекста вокруг каждого факта.",
+          "ok": false,
+          "why": "Эмбеддинг крупного куска усредняет смысл нескольких тем и становится мутнее. Крупный кусок даёт больше контекста на попадание, но ищется хуже."
+        },
+        {
+          "s": "Нарезка по абзацам гарантирует, что любой кусок поместится в лимит входа модели эмбеддингов.",
+          "ok": false,
+          "why": "Большой абзац может не влезть: у text-embedding-3 лимит 8192 токена на вход. Поэтому структурную нарезку дополняют потолком по размеру."
+        },
+        {
+          "s": "Обычная отправная точка: куски по 256–512 токенов с перекрытием 10–25%, но значения по умолчанию у вендоров разные.",
+          "ok": true,
+          "why": "У Azure старт 512 токенов и 25% перекрытия, у OpenAI file search по умолчанию 800 и 400. Поэтому цифры подбирают по recall@k."
+        },
+        {
+          "s": "Источник и раздел можно не хранить вместе с куском, потому что для ответа модели нужен только текст куска.",
+          "ok": false,
+          "why": "Без метаданных ответ нельзя процитировать и нельзя показать, откуда взят факт. Источник, раздел и позицию хранят с каждым куском."
+        },
+        {
+          "s": "Проверка recall@k на золотом наборе изолирует chunking и retrieval от генерации, поэтому LLM-судья для неё не нужен.",
+          "ok": true,
+          "why": "Метрика сравнивает найденные куски с размеченными. Генерация в ней не участвует, поэтому результат детерминирован."
+        },
+        {
+          "s": "Если поиск находит похожие, но не те куски, значит куски слишком мелкие и их стоит объединить.",
+          "ok": false,
+          "why": "Похожие, но не те куски говорят о слишком крупной нарезке: смысл размылся. Мелкий кусок проявляется иначе, неполным ответом."
+        },
+        {
+          "s": "Размер куска достаточно один раз взять из рекомендации вендора, подбор по recall@k на своих данных почти ничего не меняет.",
+          "ok": false,
+          "why": "Значения по умолчанию у вендоров сильно расходятся. Размер подбирают по recall@k на своём золотом наборе, меняя один параметр за раз."
+        }
       ],
       "en": [
-        "The bigger the chunk, the more precise the embedding.",
-        "Overlap exists just to produce more chunks; boundary context doesn't matter."
+        {
+          "s": "Without overlap, a fact near a boundary can be split across two chunks, and neither chunk's embedding will match the question.",
+          "ok": true,
+          "why": "Each half carries only part of the meaning. Overlap puts the whole fact into at least one chunk."
+        },
+        {
+          "s": "Structural chunking cuts on headings, paragraphs and code blocks, but the chunks come out uneven in size.",
+          "ok": true,
+          "why": "It respects meaning, but a long section produces a huge chunk. That's why a size cap goes on top."
+        },
+        {
+          "s": "Fixed-size chunking cuts text every N tokens: it's simple and predictable, but a thought can end up split in half.",
+          "ok": true,
+          "why": "The chunk boundary is set by a token count, not by meaning. That's why overlap is usually added on top."
+        },
+        {
+          "s": "Overlap between chunks exists mainly to increase the number of chunks in the index.",
+          "ok": false,
+          "why": "The chunk count grows as a side effect. Overlap exists so the context at a chunk boundary isn't lost."
+        },
+        {
+          "s": "If the retrieved chunk is relevant but the answer is incomplete, the chunk is probably too small or cut in the wrong place.",
+          "ok": true,
+          "why": "Search worked, but the chunk lacks the surrounding text the answer needs. A larger chunk or structural splitting helps."
+        },
+        {
+          "s": "The bigger the chunk, the more precise its embedding, because the model sees more context around each fact.",
+          "ok": false,
+          "why": "A big chunk's embedding averages the meaning of several topics and gets muddier. It gives more context per hit, but it's harder to find."
+        },
+        {
+          "s": "Chunking by paragraph guarantees that every chunk fits within the embedding model's input limit.",
+          "ok": false,
+          "why": "A big paragraph may not fit: text-embedding-3 accepts at most 8,192 tokens per input. That's why structural chunking gets a size cap."
+        },
+        {
+          "s": "A common starting point is 256–512-token chunks with 10–25% overlap, but vendor defaults differ.",
+          "ok": true,
+          "why": "Azure suggests starting at 512 tokens with 25% overlap; OpenAI file search defaults to 800 and 400. So you tune the numbers against recall@k."
+        },
+        {
+          "s": "You don't need to store source and section with a chunk, because the model only needs the chunk text to answer.",
+          "ok": false,
+          "why": "Without metadata you can't cite the answer or show where a fact came from. Source, section and position are stored with every chunk."
+        },
+        {
+          "s": "Checking recall@k on a golden set isolates chunking and retrieval from generation, so it needs no LLM judge.",
+          "ok": true,
+          "why": "The metric compares retrieved chunks with labelled ones. Generation isn't involved, so the result is deterministic."
+        },
+        {
+          "s": "If search returns similar but wrong chunks, the chunks are too small and should be merged.",
+          "ok": false,
+          "why": "Similar but wrong chunks point to chunks that are too big: the meaning got diluted. Small chunks show up differently, as incomplete answers."
+        },
+        {
+          "s": "It's enough to take the chunk size from a vendor recommendation once; tuning it against recall@k on your own data changes little.",
+          "ok": false,
+          "why": "Vendor defaults differ widely. You tune the size against recall@k on your own golden set, changing one parameter at a time."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Обычная отправная точка — кусок в [[256-512|256–512]] токенов и перекрытие [[10-25%|10–25%]].",
-        "Overlap нужен, чтобы факт у [[границы|boundary]] не оказался разрезан на два куска.",
-        "Правильность chunking проверяю через [[recall@k|recall at k|recall]] на золотом наборе, а не чтением."
+        "Обычная отправная точка для chunking: куски по [[256-512|256–512]] токенов с перекрытием [[10-25%|10–25%]].",
+        "Overlap между кусками нужен, чтобы факт у [[границы|boundary]] не оказался разрезан на два куска.",
+        "Качество нарезки проверяют через [[recall@k|recall at k|recall]] на золотом наборе вопросов, а не чтением кусков."
       ],
       "en": [
-        "A common starting chunk is [[256-512|256–512]] tokens, with [[10-25%|10–25%]] overlap.",
-        "Overlap exists so a fact near a [[boundary]] isn't split across two chunks.",
-        "I check chunking with [[recall@k|recall at k|recall]] on a golden set, not by reading."
+        "A common starting point for chunking is [[256-512|256–512]] tokens per chunk with [[10-25%|10–25%]] overlap.",
+        "Overlap between chunks exists so a fact near a [[boundary]] isn't split across two chunks.",
+        "You check chunking quality with [[recall@k|recall at k|recall]] on a golden question set, not by reading chunks."
       ]
     }
   },

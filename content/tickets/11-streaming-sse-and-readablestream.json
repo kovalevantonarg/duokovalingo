@@ -38,11 +38,11 @@
     "a": [
       {
         "q": "On the wire",
-        "t": "It's a plain HTTP response with content-type text/event-stream that the server keeps open and writes to in chunks. Each event is a few lines — data: followed by JSON — separated by a blank line. One-way, server to client, no protocol upgrade, and since it's plain HTTP it gets through most proxies. A buffering proxy or an idle timeout can still break it, so servers send periodic comment pings and turn buffering off. WebSocket is bidirectional with socket state to manage, and mine is really request-response arriving in pieces. One catch: the built-in EventSource only does GET with no headers, so for LLM calls I use fetch with POST and read the body as a ReadableStream — same wire format, my own parser."
+        "t": "It's a plain HTTP response with content-type text/event-stream that the server keeps open and writes to in chunks. Each event is a few lines of the form data: followed by JSON, and events are separated by a blank line. One-way, server to client, no protocol upgrade, and since it's plain HTTP it gets through most proxies. A buffering proxy or an idle timeout can still break it, so servers send periodic comment pings and turn buffering off. WebSocket is bidirectional with socket state to manage, and mine is really request-response arriving in pieces. One catch: the built-in EventSource only does GET with no headers, so for LLM calls I use fetch with POST and read the body as a ReadableStream — same wire format, my own parser."
       },
       {
         "q": "The code",
-        "t": "fetch with POST and the request body, then res.body.getReader() and a TextDecoder. In a loop, reader.read() hands me bytes, I decode with stream: true — because a chunk can cut a multi-byte character in half — and append to a buffer. I split the buffer on blank lines, normalising CRLF endings first, take the data: line of each event, parse the JSON. With Anthropic that's message_start, then for each content block a content_block_start, content_block_delta events carrying text_delta, and content_block_stop, then message_delta with stop_reason and usage, then message_stop. Pings can arrive in between. Each delta gets appended to state, and I batch renders on requestAnimationFrame rather than setting state per token."
+        "t": "fetch with POST and the request body, then res.body.getReader() and a TextDecoder. In a loop, reader.read() hands me bytes, I decode with stream: true, because a chunk can cut a multi-byte character in half, and append to a buffer. I split the buffer on blank lines, normalising CRLF endings first, take the data: line of each event, parse the JSON. With Anthropic that's message_start, then for each content block a content_block_start, content_block_delta events carrying text_delta, and content_block_stop, then message_delta with stop_reason and usage, then message_stop. Pings can arrive in between. Each delta gets appended to state, and I batch renders on requestAnimationFrame rather than setting state per token."
       },
       {
         "q": "The drop",
@@ -52,14 +52,130 @@
     "kill": "<b>\"SSE is like WebSocket\"</b> — it isn't, it's an HTTP response that stays open. And <b>decoding without stream: true</b> — a chunk splits UTF-8 mid-character and non-English text turns to garbage, reliably during the demo."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "SSE — это двусторонний канал вроде WebSocket.",
-        "Общая задержка ответа при стриминге меньше, чем без него."
+        {
+          "s": "SSE — это обычный HTTP-ответ с content-type text/event-stream, который сервер держит открытым и дописывает частями.",
+          "ok": true,
+          "why": "Протокол не меняется, поэтому SSE проходит через большинство прокси, как обычный HTTP."
+        },
+        {
+          "s": "SSE — двусторонний канал вроде WebSocket, которому при подключении нужен апгрейд протокола.",
+          "ok": false,
+          "why": "SSE односторонний, от сервера к клиенту, и работает без апгрейда протокола. Двусторонний канал с состоянием сокета — это WebSocket."
+        },
+        {
+          "s": "Каждое событие SSE состоит из строк вида data: с JSON, а соседние события разделяются пустой строкой.",
+          "ok": true,
+          "why": "Поэтому парсер режет буфер по пустым строкам и из каждого события берёт строку data:."
+        },
+        {
+          "s": "Встроенный EventSource подходит для LLM-запросов, потому что умеет отправлять POST с телом и заголовком авторизации.",
+          "ok": false,
+          "why": "EventSource умеет только GET без своих заголовков. Поэтому для LLM делают fetch с POST и читают body как ReadableStream."
+        },
+        {
+          "s": "TextDecoder для потока можно вызывать без stream: true, потому что каждый сетевой чанк содержит только целые символы.",
+          "ok": false,
+          "why": "Чанк может разрезать многобайтовый символ UTF-8 пополам. Без stream: true кириллица на границе чанка превращается в мусор."
+        },
+        {
+          "s": "Буферизующий прокси или таймаут простоя могут сломать SSE, поэтому сервер шлёт ping-комментарии и отключает буферизацию.",
+          "ok": true,
+          "why": "Ping показывает, что соединение живо, а без буферизации события доходят до клиента сразу."
+        },
+        {
+          "s": "При разборе SSE буфер режут по пустым строкам, предварительно приведя переводы строк CRLF к единому виду.",
+          "ok": true,
+          "why": "Если не нормализовать CRLF, граница между событиями может не найтись."
+        },
+        {
+          "s": "Вызывать setState на каждую дельту текста — правильный способ рендерить стриминговый ответ в React.",
+          "ok": false,
+          "why": "Дельты копят и отдают в state не чаще раза за кадр через requestAnimationFrame, а не на каждый токен."
+        },
+        {
+          "s": "При обрыве соединения браузер присылает отдельное событие disconnect, по которому UI понимает, что ответ неполный.",
+          "ok": false,
+          "why": "Специального события обрыва нет. Обрыв видно по отклонённому reader.read() или по done, пришедшему раньше message_stop."
+        },
+        {
+          "s": "Обрыв стрима видно так: reader.read() отклоняется или done приходит раньше события message_stop.",
+          "ok": true,
+          "why": "UI при этом сохраняет частичный текст, помечает его как неполный и даёт retry."
+        },
+        {
+          "s": "Стриминг сокращает общее время генерации ответа, потому что модель работает быстрее, когда отдаёт токены сразу.",
+          "ok": false,
+          "why": "Стриминг улучшает время до первого токена. Общая задержка ответа от него не уменьшается."
+        },
+        {
+          "s": "Итоговое число выходных токенов в стриме Anthropic приходит только в событии message_delta, ближе к концу ответа.",
+          "ok": true,
+          "why": "Поэтому полная стоимость ответа неизвестна, пока стрим не закончится."
+        }
       ],
       "en": [
-        "SSE is a bidirectional channel like WebSocket.",
-        "Total response latency is lower with streaming than without."
+        {
+          "s": "SSE is an ordinary HTTP response with content-type text/event-stream that the server keeps open and writes to in chunks.",
+          "ok": true,
+          "why": "There's no protocol change, so SSE gets through most proxies like any HTTP response."
+        },
+        {
+          "s": "SSE is a bidirectional channel like WebSocket that needs a protocol upgrade when it connects.",
+          "ok": false,
+          "why": "SSE is one-way, server to client, with no protocol upgrade. The bidirectional channel with socket state is WebSocket."
+        },
+        {
+          "s": "Each SSE event consists of data: lines carrying JSON, and neighbouring events are separated by a blank line.",
+          "ok": true,
+          "why": "That's why the parser splits the buffer on blank lines and takes the data: line from each event."
+        },
+        {
+          "s": "The built-in EventSource suits LLM requests because it can send a POST with a body and an authorization header.",
+          "ok": false,
+          "why": "EventSource only does GET with no custom headers. So for LLM calls you use fetch with POST and read the body as a ReadableStream."
+        },
+        {
+          "s": "A TextDecoder for a stream can run without stream: true, because every network chunk contains only whole characters.",
+          "ok": false,
+          "why": "A chunk can split a multi-byte UTF-8 character in half. Without stream: true, non-English text at a chunk boundary turns to garbage."
+        },
+        {
+          "s": "A buffering proxy or an idle timeout can break SSE, so the server sends comment pings and turns buffering off.",
+          "ok": true,
+          "why": "Pings show the connection is alive, and with buffering off events reach the client immediately."
+        },
+        {
+          "s": "When parsing SSE, the buffer is split on blank lines after normalising CRLF line endings first.",
+          "ok": true,
+          "why": "Without normalising CRLF, the boundary between events may not be found."
+        },
+        {
+          "s": "Calling setState on every text delta is the right way to render a streaming answer in React.",
+          "ok": false,
+          "why": "Deltas are batched and pushed to state at most once per frame with requestAnimationFrame, not once per token."
+        },
+        {
+          "s": "When the connection drops, the browser fires a dedicated disconnect event that tells the UI the answer is incomplete.",
+          "ok": false,
+          "why": "There's no dedicated disconnect event. You see the drop when reader.read() rejects or done arrives before message_stop."
+        },
+        {
+          "s": "A dropped stream shows up as reader.read() rejecting or done arriving before the message_stop event.",
+          "ok": true,
+          "why": "The UI keeps the partial text, marks it incomplete and offers a retry."
+        },
+        {
+          "s": "Streaming cuts the total time to generate an answer, because the model runs faster when it sends tokens right away.",
+          "ok": false,
+          "why": "Streaming improves time to first token. Total response latency doesn't go down."
+        },
+        {
+          "s": "In an Anthropic stream, the final output token count arrives only in the message_delta event near the end of the answer.",
+          "ok": true,
+          "why": "That's why the full cost of an answer is unknown until the stream finishes."
+        }
       ]
     },
     "cloze": {

@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Transition или deferred",
-        "t": "Оба механизма делают под капотом одно и то же: помечают часть рендера как несрочную, чтобы React рендерил её в фоне и выбрасывал эту работу, если пришло более срочное обновление. Нажатие клавиши остаётся срочным — поле ввода должно управляться обычным state, и в документации React прямо сказано, что text input через transition (несрочное обновление) контролировать нельзя. Разница в том, кому принадлежит обновление. Если setState для тяжёлой части мой, я оборачиваю его в startTransition: setQuery остаётся срочным, setFilter уходит внутрь transition, и я получаю isPending, чтобы приглушить список. Если я получаю только значение, например через props, или сеттер (функция обновления) живёт в библиотеке, беру useDeferredValue(query) и отдаю отложенное значение списку. В обоих случаях медленный список должен быть обёрнут в memo, иначе он перерисовывается на каждое нажатие и выигрыша нет. В отличие от debounce (отложенного вызова) тут нет фиксированной задержки, всё подстраивается под устройство, но работы меньше не становится. Если рендер списка сам по себе занимает 200 мс, приоритеты его не ускорят, поэтому я сначала делаю виртуализацию."
+        "t": "Внутри оба механизма делают одно и то же: помечают часть рендера как несрочную, чтобы React рендерил её в фоне и выбрасывал эту работу, если пришло более срочное обновление. Нажатие клавиши остаётся срочным — поле ввода должно управляться обычным state, и в документации React прямо сказано, что text input через transition (несрочное обновление) контролировать нельзя. Разница в том, кому принадлежит обновление. Если setState для тяжёлой части мой, я оборачиваю его в startTransition: setQuery остаётся срочным, setFilter уходит внутрь transition, и я получаю isPending, чтобы приглушить список. Если я получаю только значение, например через props, или сеттер (функция обновления) живёт в библиотеке, беру useDeferredValue(query) и отдаю отложенное значение списку. В обоих случаях медленный список должен быть обёрнут в memo, иначе он перерисовывается на каждое нажатие и выигрыша нет. В отличие от debounce (отложенного вызова) тут нет фиксированной задержки, всё подстраивается под устройство, но работы меньше не становится. Если рендер списка сам по себе занимает 200 мс, приоритеты его не ускорят, поэтому я сначала делаю виртуализацию."
       },
       {
         "q": "Водопад Suspense",
@@ -52,14 +52,130 @@
     "kill": "<b>\"Server Components are just SSR\"</b> — SSR still hydrates and ships the component's JS; Server Components never hydrate and send a serialized payload. And <b>passing an onClick from a Server Component</b> fails because regular functions don't serialize."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Рекомендуемый способ сохранить отзывчивость ввода — обернуть setState самого поля ввода в startTransition.",
-        "Suspense показывает fallback, пока дочерний компонент загружает данные в useEffect."
+        {
+          "s": "Обновление, помеченное как transition, может быть прервано более срочным обновлением, например вводом с клавиатуры.",
+          "ok": true,
+          "why": "React рендерит transition в фоне и выбрасывает эту работу, если пришло срочное обновление. Поэтому ввод не ждёт тяжёлый рендер."
+        },
+        {
+          "s": "Чтобы поле поиска не лагало, React рекомендует обернуть setState самого поля ввода в startTransition.",
+          "ok": false,
+          "why": "Поле ввода нельзя контролировать через transition, его state должен оставаться срочным. В transition уходит только обновление тяжёлого списка."
+        },
+        {
+          "s": "useDeferredValue подходит, когда компонент получает значение только через props или сеттер живёт в сторонней библиотеке.",
+          "ok": true,
+          "why": "Если сеттер свой, его оборачивают в startTransition и получают isPending. Если есть только значение, откладывают само значение."
+        },
+        {
+          "s": "useDeferredValue ускоряет медленный список, даже если сам компонент списка не обёрнут в memo.",
+          "ok": false,
+          "why": "Без memo список перерисовывается на каждое нажатие вместе с родителем, и выигрыша нет. Оптимизация работает только вместе с memo."
+        },
+        {
+          "s": "useTransition делает тяжёлый рендер быстрее, поэтому список, который рендерится 200 мс, перестаёт тормозить.",
+          "ok": false,
+          "why": "Приоритеты не уменьшают объём работы, они только позволяют прервать её ради срочного обновления. Сам медленный рендер лечат виртуализацией."
+        },
+        {
+          "s": "В отличие от debounce, useDeferredValue не требует фиксированной задержки и подстраивается под скорость устройства.",
+          "ok": true,
+          "why": "На быстром устройстве отложенный рендер почти не отстаёт, на медленном отстаёт сильнее. Но объём работы при этом не уменьшается."
+        },
+        {
+          "s": "Suspense показывает fallback, пока дочерний компонент загружает данные в useEffect.",
+          "ok": false,
+          "why": "Suspense не видит загрузку в эффекте или обработчике. Он срабатывает, когда компонент приостанавливается через use(), lazy или библиотеку с поддержкой Suspense."
+        },
+        {
+          "s": "Лесенка при вложенных Suspense возникает, когда дети начинают свои запросы только после того, как разрешился запрос родителя.",
+          "ok": true,
+          "why": "Это fetch-on-render: три уровня дают три последовательных сетевых круга. Лечится предзагрузкой, когда все запросы стартуют в начале рендера."
+        },
+        {
+          "s": "Если на каждом рендере создавать новый промис и читать его через use(), Suspense один раз покажет fallback и затем отрисует данные.",
+          "ok": false,
+          "why": "Новый промис снова приостанавливает компонент, и fallback показывается бесконечно. Промис нужно кешировать или получать из Server Component."
+        },
+        {
+          "s": "Код Server Components не попадает в клиентский бандл, и в браузере они не проходят hydration.",
+          "ok": true,
+          "why": "Они выполняются только на сервере и присылают сериализованный RSC payload. SSR, наоборот, отправляет код компонента в браузер и гидрирует его."
+        },
+        {
+          "s": "Server Component может передать обычную функцию-обработчик onClick в Client Component через props.",
+          "ok": false,
+          "why": "Props через границу 'use client' должны сериализоваться, а обычные функции не сериализуются. Разрешены только Server Functions с 'use server'."
+        },
+        {
+          "s": "Директива 'use client' делает клиентским кодом сам модуль и всё, что он импортирует.",
+          "ok": true,
+          "why": "Поэтому 'use client' держат в листьях дерева: чем выше граница, тем больше кода уходит в бандл."
+        }
       ],
       "en": [
-        "The recommended way to keep typing responsive is to wrap the input's own setState in startTransition.",
-        "Suspense shows its fallback while a child component loads data in useEffect."
+        {
+          "s": "An update marked as a transition can be interrupted by a more urgent update, such as typing.",
+          "ok": true,
+          "why": "React renders a transition in the background and throws that work away when an urgent update arrives, so typing doesn't wait for the heavy render."
+        },
+        {
+          "s": "To keep a search input responsive, React recommends wrapping the input's own setState in startTransition.",
+          "ok": false,
+          "why": "A text input can't be controlled through a transition; its state has to stay urgent. Only the update for the heavy list goes into the transition."
+        },
+        {
+          "s": "useDeferredValue fits when the component only receives the value as a prop or the setter lives in a third-party library.",
+          "ok": true,
+          "why": "If you own the setter, you wrap it in startTransition and get isPending. If all you have is the value, you defer the value."
+        },
+        {
+          "s": "useDeferredValue speeds up a slow list even when the list component itself isn't wrapped in memo.",
+          "ok": false,
+          "why": "Without memo the list re-renders with its parent on every keystroke, so nothing is gained. The optimization only works together with memo."
+        },
+        {
+          "s": "useTransition makes heavy rendering faster, so a list that takes 200 ms to render stops feeling slow.",
+          "ok": false,
+          "why": "Priorities don't reduce the amount of work; they only let it be interrupted for urgent updates. A slow render itself is fixed with virtualization."
+        },
+        {
+          "s": "Unlike debouncing, useDeferredValue needs no fixed delay and adapts to the speed of the device.",
+          "ok": true,
+          "why": "On a fast device the deferred render barely lags, on a slow one it lags more. The amount of work stays the same."
+        },
+        {
+          "s": "Suspense shows its fallback while a child component is loading data in useEffect.",
+          "ok": false,
+          "why": "Suspense doesn't see fetching in an effect or an event handler. It activates when a component suspends through use(), lazy, or a Suspense-enabled library."
+        },
+        {
+          "s": "A staircase with nested Suspense happens when children start their fetches only after the parent's fetch resolves.",
+          "ok": true,
+          "why": "That's fetch-on-render: three levels mean three round trips back to back. The fix is preloading, so all requests start as rendering begins."
+        },
+        {
+          "s": "If you create a new promise on every render and read it with use(), Suspense shows the fallback once and then renders the data.",
+          "ok": false,
+          "why": "Each new promise suspends the component again, so the fallback shows forever. The promise has to be cached or come from a Server Component."
+        },
+        {
+          "s": "The code of Server Components never reaches the client bundle, and they don't hydrate in the browser.",
+          "ok": true,
+          "why": "They run only on the server and send a serialized RSC payload. SSR, by contrast, ships the component's code to the browser and hydrates it."
+        },
+        {
+          "s": "A Server Component can pass a regular onClick handler function to a Client Component through props.",
+          "ok": false,
+          "why": "Props crossing the 'use client' boundary must be serializable, and regular functions aren't. Only Server Functions marked 'use server' are allowed."
+        },
+        {
+          "s": "The 'use client' directive turns the module and everything it imports into client code.",
+          "ok": true,
+          "why": "That's why 'use client' goes at the leaves: the higher the boundary, the more code ends up in the bundle."
+        }
       ]
     },
     "cloze": {

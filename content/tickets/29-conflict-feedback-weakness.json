@@ -19,14 +19,14 @@
       },
       {
         "q": "Обратная связь",
-        "t": "Скелет: «В [ситуация] [кто] сказал мне, что [поведение] приводит к [влияние]. Сначала я [честная реакция]. Потом я начал [конкретное действие]. Через [срок] [тот же человек или метрика] показал [изменение]». Что сказали — конкретно, дословно или близко к тому, не «нужно расти». Первая реакция — честно, не «сразу согласился»: это подозрительно гладко. Что ты реально изменил в поведении — с наблюдаемым результатом, который можно проверить у той же стороны, что дала фидбэк. Плохой ответ — фидбэк без изменения поведения; ещё хуже — фидбэк, который на самом деле комплимент в маскировке («мне сказали, что я слишком дотошный»)."
+        "t": "Скелет: «В [ситуация] [кто] сказал мне, что [поведение] приводит к [влияние]. Сначала я [честная реакция]. Потом я начал [конкретное действие]. Через [срок] [тот же человек или метрика] показал [изменение]». Что сказали: конкретно, дословно или близко к тому, а не «нужно расти». Первую реакцию опиши честно, «сразу согласился» звучит подозрительно гладко. Что ты реально изменил в поведении и какой результат это дало, причём такой, который может подтвердить тот же человек, что дал фидбэк. Плохой ответ: фидбэк без изменения поведения. Ещё хуже фидбэк, который на самом деле комплимент в маскировке («мне сказали, что я слишком дотошный»)."
       },
       {
         "q": "Слабость",
-        "t": "Без клише («перфекционист», «слишком много работаю») — это читается как отказ отвечать на вопрос. Скелет: «Моя реальная слабость — [ограничение — например, склонность закапываться в детали до проверки общей гипотезы, или наоборот — двигаться быстро и потом чинить края]. Это идёт от [причина]. Поэтому я [механизм компенсации — например, лимит времени или чеклист]; в [ситуация] это сработало так: [результат]». Настоящая слабость — конкретная и с механизмом компенсации, который ты реально используешь, не «работаю над этим» без деталей. Формула: реальное ограничение → откуда оно (не оправдание, а причина) → механизм, которым ты его обходишь, с примером, где он сработал."
+        "t": "Клише вроде «перфекционист» или «слишком много работаю» звучат как отказ отвечать на вопрос. Скелет: «Моя реальная слабость: [ограничение, например склонность закапываться в детали до проверки общей гипотезы или, наоборот, привычка двигаться быстро и потом чинить края]. Это идёт от [причина]. Поэтому я [механизм компенсации, например лимит времени или чеклист]; в [ситуация] это сработало так: [результат]». Настоящая слабость конкретная и идёт с механизмом компенсации, который ты реально используешь, не «работаю над этим» без деталей. Формула: реальное ограничение → откуда оно (не оправдание, а причина) → механизм, которым ты его обходишь, с примером, где он сработал."
       }
     ],
-    "kill": "Конфликт без реального несогласия («мы разошлись, но потом договорились» без сути разногласия) — интервьюер не может оценить, был ли ты прав или просто уступчив. И слабость-комплимент — интервьюеры слышат это с первого года на собеседованиях, и доверие падает сразу."
+    "kill": "Конфликт без реального несогласия («мы разошлись, но потом договорились» без сути разногласия): интервьюер не может оценить, был ли ты прав или просто уступчив. И слабость-комплимент: интервьюеры слышат её постоянно, и доверие сразу падает."
   },
   "en": {
     "topic": "Conflict, feedback, weakness",
@@ -42,36 +42,152 @@
       },
       {
         "q": "Feedback",
-        "t": "Skeleton: \"In [situation], [who] told me that [behavior] was causing [impact]. At first I [honest reaction]. Then I started [specific action]. After [time], [the same person or a metric] showed [the change].\" What was said — specific, close to verbatim, not 'I need to grow'. Your first reaction — honestly, not 'I immediately agreed': that's suspiciously smooth. What you actually changed in behavior — with an observable result the same person who gave the feedback could confirm. A weak answer is feedback with no behavior change; worse is feedback that's secretly a compliment in disguise ('I was told I'm too thorough')."
+        "t": "Skeleton: \"In [situation], [who] told me that [behavior] was causing [impact]. At first I [honest reaction]. Then I started [specific action]. After [time], [the same person or a metric] showed [the change].\" What was said: specific, close to verbatim, not 'I need to grow'. Describe your first reaction honestly; 'I immediately agreed' sounds suspiciously smooth. What you actually changed in behavior, with an observable result the person who gave the feedback could confirm. A weak answer is feedback with no behavior change; worse is feedback that's secretly a compliment in disguise ('I was told I'm too thorough')."
       },
       {
         "q": "Weakness",
-        "t": "No clichés ('perfectionist', 'work too hard') — that reads as refusing to answer the question. Skeleton: \"My real weakness is [limitation — e.g. a tendency to dig into details before validating the overall hypothesis, or the opposite, moving fast and fixing edges after]. It comes from [reason]. So I [compensating mechanism — e.g. a time limit or a checklist]; in [situation] it worked like this: [result].\" A real weakness is specific and comes with a compensating mechanism you actually use, not 'working on it' with no detail. Formula: the real limitation → where it comes from (a reason, not an excuse) → the mechanism you use to work around it, with an example where it worked."
+        "t": "Clichés like 'perfectionist' or 'I work too hard' read as refusing to answer the question. Skeleton: \"My real weakness is [limitation, e.g. a tendency to dig into details before validating the overall hypothesis, or the opposite, moving fast and fixing edges after]. It comes from [reason]. So I [compensating mechanism, e.g. a time limit or a checklist]; in [situation] it worked like this: [result].\" A real weakness is specific and comes with a compensating mechanism you actually use, not 'working on it' with no detail. Formula: the real limitation → where it comes from (a reason, not an excuse) → the mechanism you use to work around it, with an example where it worked."
       }
     ],
-    "kill": "A conflict with no real disagreement in it ('we disagreed but then agreed' with no substance) — the interviewer can't tell if you were right or just agreeable. And a weakness that's secretly a compliment — interviewers have heard that since their first year of interviewing, so you lose credibility instantly."
+    "kill": "A conflict with no real disagreement in it ('we disagreed but then agreed' with no substance): the interviewer can't tell if you were right or just agreeable. And a weakness that's secretly a compliment: interviewers hear it all the time, so you lose credibility instantly."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Лучший ответ на «твоя слабость» — назвать сильную сторону в замаскированном виде.",
-        "История про конфликт сильнее без описания сути разногласия."
+        {
+          "s": "В истории о конфликте Situation должна описывать технический или процессный вопрос, а не личную неприязнь к коллеге.",
+          "ok": true,
+          "why": "Интервьюер оценивает, умеешь ли ты спорить по существу. Спор о библиотеке, архитектуре или приоритетах это показывает, личная обида нет."
+        },
+        {
+          "s": "Историю о конфликте, в которой тебя в итоге переубедили, лучше не рассказывать, потому что она показывает слабую позицию.",
+          "ok": false,
+          "why": "Это тоже сильный ответ, если ты объясняешь, что именно изменило твоё мнение. Он показывает, что ты слушал контраргумент."
+        },
+        {
+          "s": "История о конфликте звучит профессиональнее, если не раскрывать суть разногласия и сразу перейти к тому, как вы договорились.",
+          "ok": false,
+          "why": "Без сути разногласия интервьюер не может оценить, был ли ты прав или просто уступчив. Нужно назвать обе позиции и лучший аргумент другой стороны."
+        },
+        {
+          "s": "В части Action интервьюер ждёт данных и проверки, например прототипа или метрики, а не эмоциональных аргументов.",
+          "ok": true,
+          "why": "Сильный Action показывает, что спор решали фактами. Ещё он показывает, что ты слушал контраргумент, а не ждал своей очереди говорить."
+        },
+        {
+          "s": "Для вопроса о конфликте подходит формат STAR: Situation, Task, Action и Result, уложенные примерно в 90 секунд.",
+          "ok": true,
+          "why": "Жёсткая структура не даёт утонуть в предыстории. В Task стоит объяснить, почему твоя позиция не была очевидной победой по умолчанию."
+        },
+        {
+          "s": "Ответ на вопрос о слабости надёжнее строить на сильной стороне, например на дотошности, поданной как недостаток.",
+          "ok": false,
+          "why": "Слабость-комплимент интервьюеры слышат постоянно, и доверие сразу падает. Нужно назвать реальное ограничение."
+        },
+        {
+          "s": "В истории о фидбэке главное — близко к тексту передать критику, а описывать изменения в поведении после неё необязательно.",
+          "ok": false,
+          "why": "Фидбэк без изменения поведения считается плохим ответом. Нужно сказать, что ты сделал иначе и какой наблюдаемый результат это дало."
+        },
+        {
+          "s": "В истории о жёстком фидбэке лучше честно описать первую реакцию, чем говорить, что ты сразу согласился.",
+          "ok": true,
+          "why": "Почти никто не принимает жёсткую критику без внутреннего сопротивления. «Сразу согласился» звучит подозрительно гладко."
+        },
+        {
+          "s": "Фраза «я работаю над этой слабостью» без деталей подходит, если сама слабость названа честно и конкретно.",
+          "ok": false,
+          "why": "Нужен механизм компенсации, который ты реально используешь, например лимит времени или чеклист. И пример, где он сработал."
+        },
+        {
+          "s": "Изменение после фидбэка звучит убедительнее, когда его может подтвердить тот же человек, который дал критику, или метрика.",
+          "ok": true,
+          "why": "Такой результат проверяемый. Интервьюер видит, что изменение заметили со стороны, а не только ты сам."
+        },
+        {
+          "s": "Сильный ответ о слабости называет реальное ограничение, его причину и механизм, которым ты его обходишь, с примером.",
+          "ok": true,
+          "why": "Причина объясняет, откуда ограничение, но не служит оправданием. Механизм с примером показывает, что ты с ним уже справляешься."
+        },
+        {
+          "s": "Историю для поведенческого вопроса можно придумать, если она правдоподобна и аккуратно уложена в структуру STAR.",
+          "ok": false,
+          "why": "Историю нужно брать из реального опыта. STAR помогает рассказать реальный случай коротко, но не заменяет его."
+        }
       ],
       "en": [
-        "The best answer to 'what's your weakness' is a strength in disguise.",
-        "A conflict story is stronger without describing what the actual disagreement was about."
+        {
+          "s": "In a conflict story, the Situation should describe a technical or process question, not personal dislike of a coworker.",
+          "ok": true,
+          "why": "The interviewer is checking whether you can argue on substance. A dispute about a library, architecture or priorities shows that; a personal grudge doesn't."
+        },
+        {
+          "s": "A conflict story where you ended up being convinced is better left out, because it shows a weak position.",
+          "ok": false,
+          "why": "That's also a strong answer if you explain what specifically changed your mind. It shows you actually listened to the counter-argument."
+        },
+        {
+          "s": "A conflict story sounds more professional if you skip the substance of the disagreement and go straight to how you agreed.",
+          "ok": false,
+          "why": "Without the substance the interviewer can't tell if you were right or just agreeable. Name both positions and the other side's best argument."
+        },
+        {
+          "s": "In the Action part, the interviewer expects data and a test, such as a prototype or a metric, rather than emotional arguments.",
+          "ok": true,
+          "why": "A strong Action shows the dispute was settled with facts. It also shows you listened to the counter-argument instead of waiting for your turn to talk."
+        },
+        {
+          "s": "A conflict question fits the STAR format: Situation, Task, Action and Result, delivered in about 90 seconds.",
+          "ok": true,
+          "why": "A strict structure keeps you out of the backstory. In Task, explain why your position wasn't an obvious default win."
+        },
+        {
+          "s": "An answer about your weakness is safer when built on a strength, such as thoroughness presented as a flaw.",
+          "ok": false,
+          "why": "Interviewers hear the compliment-as-weakness all the time, and credibility drops at once. You need to name a real limitation."
+        },
+        {
+          "s": "In a feedback story, the main thing is to quote the criticism closely; describing how your behavior changed afterwards is optional.",
+          "ok": false,
+          "why": "Feedback with no behavior change is a weak answer. You need to say what you did differently and what observable result it produced."
+        },
+        {
+          "s": "In a story about hard feedback, it's better to describe your first reaction honestly than to say you agreed right away.",
+          "ok": true,
+          "why": "Almost nobody takes hard criticism without some inner resistance. 'I agreed right away' sounds suspiciously smooth."
+        },
+        {
+          "s": "Saying 'I'm working on this weakness' without details is fine as long as the weakness itself is named honestly and specifically.",
+          "ok": false,
+          "why": "You need a compensating mechanism you actually use, such as a time limit or a checklist, plus an example where it worked."
+        },
+        {
+          "s": "A change after feedback is more convincing when the person who gave the criticism, or a metric, can confirm it.",
+          "ok": true,
+          "why": "That result can be checked. The interviewer sees that the change was noticed from outside, not only by you."
+        },
+        {
+          "s": "A strong answer about a weakness names a real limitation, its cause, and the mechanism you use to work around it, with an example.",
+          "ok": true,
+          "why": "The cause explains where the limitation comes from without serving as an excuse. The mechanism plus an example shows you already handle it."
+        },
+        {
+          "s": "A story for a behavioral question can be made up as long as it's plausible and fits neatly into the STAR structure.",
+          "ok": false,
+          "why": "The story has to come from real experience. STAR helps you tell a real case briefly; it doesn't replace it."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Слабость без [[механизма компенсации|способа с этим справляться]] — это не ответ, а уклонение.",
-        "Фидбэк без [[изменения поведения|конкретного действия]] — это просто история, не рост.",
-        "Конфликт: Situation — Task — Action — [[Result]]."
+        "Ответ о слабости без [[механизма компенсации|способа с этим справляться]] интервьюер воспринимает как уклонение от вопроса.",
+        "История о фидбэке без [[изменения поведения|конкретного действия]] не показывает, что ты чему-то научился.",
+        "Историю о конфликте строят по STAR: Situation, Task, Action и [[Result]]."
       ],
       "en": [
-        "A weakness with no [[compensating mechanism|way of coping with it]] is a dodge, not an answer.",
-        "Feedback without a [[behavior change|concrete action]] is just a story, not growth.",
-        "Conflict: Situation — Task — Action — [[Result]]."
+        "An answer about a weakness with no [[compensating mechanism|way of coping with it]] comes across as dodging the question.",
+        "A feedback story without a [[behavior change|concrete action]] doesn't show that you learned anything.",
+        "A conflict story follows STAR: Situation, Task, Action and [[Result]]."
       ]
     }
   },

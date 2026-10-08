@@ -23,7 +23,7 @@
       },
       {
         "q": "Понижение",
-        "t": "Сначала эвал, потом понижение. Собираю маленький golden set для этого шага, прогоняю обе модели, сравниваю по метрике шага — точность извлечения, faithfulness, что там важно — и считаю разницу в цене. Понижаю, только если качество держится в допуске. Оставляю эскалацию: если дешёвая модель не уверена или валидация не прошла, шаг уходит наверх. Понижать по ощущениям нельзя — потом не поймёшь, откуда просела точность."
+        "t": "Сначала эвал, потом понижение. Собираю маленький golden set для этого шага, прогоняю обе модели, сравниваю по метрике шага (точность извлечения, faithfulness или то, что важно именно здесь) и считаю разницу в цене. Понижаю, только если качество держится в допуске. Оставляю эскалацию: если дешёвая модель не уверена или валидация не прошла, шаг уходит наверх. Понижать по ощущениям нельзя: потом не поймёшь, откуда просела точность."
       }
     ],
     "kill": "<b>«Просто бери самую сильную»</b> — это ответ человека, который не платил за API. Противоположная ошибка — <b>понижать по цене без эвала</b>: качество упало, а ты об этом узнаёшь от пользователей."
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Choosing",
-        "t": "My default is Sonnet, the mid tier: the best balance of quality, price and latency, and that's what I build on until proven otherwise. Haiku is for high-volume simple operations — classification, field extraction, distilling pages — where it's fastest and cheaper by a small multiple, not an order of magnitude. The top tiers, Opus and above, are for hard reasoning, long agentic tasks, and anywhere the answer's quality is the product. The lineup shifts, so I think in tiers and check current pricing. Using the smartest model everywhere means paying for intelligence most steps don't need."
+        "t": "My default is Sonnet, the mid tier: the best balance of quality, price and latency, and that's what I build on until proven otherwise. Haiku is for high-volume simple operations (classification, field extraction, distilling pages), where it's fastest and cheaper by a small multiple, not an order of magnitude. The top tiers, Opus and above, are for hard reasoning, long agentic tasks, and anywhere the answer's quality is the product. The lineup shifts, so I think in tiers and check current pricing. Using the smartest model everywhere means paying for intelligence most steps don't need."
       },
       {
         "q": "Routing",
@@ -46,32 +46,148 @@
       },
       {
         "q": "Downgrading",
-        "t": "Eval first, downgrade second. I build a small golden set for that step, run both models, compare on the step's metric — extraction accuracy, faithfulness, whatever matters there — and measure the cost delta. I downgrade only if quality holds within tolerance. I keep an escalation path: if the cheap model is unsure or validation fails, the step goes up a tier. You never downgrade on vibes, because later you can't tell where the accuracy went."
+        "t": "Eval first, downgrade second. I build a small golden set for that step, run both models, compare on the step's metric (extraction accuracy, faithfulness, whatever matters for that step) and measure the cost delta. I downgrade only if quality holds within tolerance. I keep an escalation path: if the cheap model is unsure or validation fails, the step goes up a tier. Downgrading on gut feeling is a mistake: later you can't tell where the accuracy went."
       }
     ],
     "kill": "<b>\"Just use the strongest model\"</b> is the answer of someone who has never paid an API bill. The opposite mistake is <b>downgrading on price with no eval</b>: quality drops and you find out from users."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Лучшая стратегия — самая сильная модель на каждом шаге.",
-        "Деньги в агенте всегда уходят в основном на модель, которая пишет финальный ответ."
+        {
+          "s": "Перед понижением модели на шаге нужно прогнать обе модели на golden set этого шага и сравнить их по метрике шага.",
+          "ok": true,
+          "why": "Метрика зависит от шага: точность извлечения, faithfulness и так далее. Понижают, только если качество держится в допуске."
+        },
+        {
+          "s": "До роутинга в research-агенте самой большой статьёй счёта часто бывают cache writes одних и тех же сырых страниц.",
+          "ok": true,
+          "why": "Большие страницы снова и снова записываются в кэш дорогой модели. Сжатие их дешёвой моделью убирает эту статью."
+        },
+        {
+          "s": "В типичном агенте большая часть счёта приходится на модель, которая пишет финальный ответ пользователю.",
+          "ok": false,
+          "why": "В агентах обычно доминирует вход: история и сырые страницы пересылаются на каждом шаге. Экономить надо на модели, которая читает этот объём."
+        },
+        {
+          "s": "Запись в кэш при prompt caching почти ничего не стоит, поэтому в счёте агента её можно не учитывать.",
+          "ok": false,
+          "why": "Cache writes тарифицируются отдельно и дороже обычного входа. До роутинга они часто оказываются самой большой долей счёта."
+        },
+        {
+          "s": "В research-агенте Haiku может сжимать сырые страницы до того, как их прочитает Sonnet, и это снижает стоимость входа.",
+          "ok": true,
+          "why": "Дорогая модель получает короткую выжимку вместо двадцати тысяч символов мусора, а читать объём поручено дешёвой модели."
+        },
+        {
+          "s": "Чтобы понизить модель на шаге, достаточно сравнить цены и вручную проверить пару запросов, отдельный eval не нужен.",
+          "ok": false,
+          "why": "Без eval на golden set просадку качества замечают пользователи, а ты не можешь понять, на каком шаге упала точность."
+        },
+        {
+          "s": "Sonnet, средний уровень линейки Claude, разумно брать по умолчанию: у него лучший баланс качества, цены и задержки.",
+          "ok": true,
+          "why": "Пока eval не показал, что шагу хватит Haiku или нужен Opus, Sonnet даёт приемлемое качество без переплаты."
+        },
+        {
+          "s": "При понижении модели оставляют эскалацию: если дешёвая модель не уверена или валидация не прошла, шаг уходит на уровень выше.",
+          "ok": true,
+          "why": "Эскалация страхует редкие трудные случаи, а основной поток при этом идёт через дешёвую модель."
+        },
+        {
+          "s": "Самую сильную модель стоит ставить на каждый шаг агента, потому что она реже ошибается и окупает свою цену.",
+          "ok": false,
+          "why": "Большинству шагов, вроде классификации или извлечения полей, такой интеллект не нужен. Ты платишь за него на каждом вызове без выигрыша в качестве."
+        },
+        {
+          "s": "Haiku дешевле Sonnet на порядок, поэтому перевод массового шага на Haiku обычно снижает его цену в десятки раз.",
+          "ok": false,
+          "why": "Haiku дешевле в разы, а не на порядок: по текущему прайсу примерно вдвое за токен. Экономия реальная, но не десятикратная."
+        },
+        {
+          "s": "У моделей Claude выходной токен стоит в несколько раз дороже входного токена той же модели.",
+          "ok": true,
+          "why": "По прайсу выход примерно в пять раз дороже входа. Но в агентах входных токенов намного больше, поэтому вход всё равно доминирует."
+        },
+        {
+          "s": "Для длинных агентных задач и сложных рассуждений лучше брать Haiku: он быстрее, а качество на таких задачах почти не отличается.",
+          "ok": false,
+          "why": "Haiku хорош для массовых простых операций. Длинные агентные задачи и сложные рассуждения отдают верхним уровням, Opus и выше."
+        }
       ],
       "en": [
-        "The best strategy is the strongest model on every step.",
-        "The money in an agent always goes mostly to the model that writes the final answer."
+        {
+          "s": "Before downgrading a step's model, you run both models on that step's golden set and compare them on the step's metric.",
+          "ok": true,
+          "why": "The metric depends on the step: extraction accuracy, faithfulness and so on. You downgrade only if quality stays within tolerance."
+        },
+        {
+          "s": "Before routing, the biggest item in a research agent's bill is often cache writes of the same raw pages.",
+          "ok": true,
+          "why": "Large pages keep getting written into the expensive model's cache. Having a cheap model distill them removes that line item."
+        },
+        {
+          "s": "In a typical agent, most of the bill comes from the model that writes the final answer to the user.",
+          "ok": false,
+          "why": "In agents input volume usually dominates: history and raw pages are resent at every step. The saving is in the model that reads that bulk."
+        },
+        {
+          "s": "With prompt caching, cache writes cost almost nothing, so you can ignore them when reading an agent's bill.",
+          "ok": false,
+          "why": "Cache writes are billed separately and above the normal input price. Before routing they are often the biggest share of the bill."
+        },
+        {
+          "s": "In a research agent, Haiku can distill raw pages before Sonnet reads them, which cuts the cost of input tokens.",
+          "ok": true,
+          "why": "The expensive model gets a short summary instead of twenty thousand characters of noise, and the cheap model does the bulk reading."
+        },
+        {
+          "s": "To downgrade a step's model, it's enough to compare prices and check a couple of requests by hand; no separate eval is needed.",
+          "ok": false,
+          "why": "Without an eval on a golden set, users notice the quality drop first, and you can't tell which step lost accuracy."
+        },
+        {
+          "s": "Sonnet, the mid tier of the Claude lineup, is a sensible default because it balances quality, price and latency best.",
+          "ok": true,
+          "why": "Until an eval shows a step can use Haiku or needs Opus, Sonnet gives acceptable quality without overpaying."
+        },
+        {
+          "s": "When you downgrade a model, you keep an escalation path: if the cheap model is unsure or validation fails, the step goes up a tier.",
+          "ok": true,
+          "why": "Escalation covers the rare hard cases, while the main flow still goes through the cheap model."
+        },
+        {
+          "s": "You should put the strongest model on every agent step, because it makes fewer mistakes and pays for its price.",
+          "ok": false,
+          "why": "Most steps, like classification or field extraction, don't need that intelligence. You pay for it on every call with no gain in quality."
+        },
+        {
+          "s": "Haiku is an order of magnitude cheaper than Sonnet, so moving a bulk step to Haiku usually cuts its cost tenfold or more.",
+          "ok": false,
+          "why": "Haiku is cheaper by a small multiple, not an order of magnitude: about half per token at current prices. The saving is real, but not tenfold."
+        },
+        {
+          "s": "For Claude models, an output token costs several times more than an input token of the same model.",
+          "ok": true,
+          "why": "Per the price list, output is about five times dearer than input. In agents there are far more input tokens, so input still dominates."
+        },
+        {
+          "s": "For long agentic tasks and hard reasoning, Haiku is the better pick: it's faster and quality on such tasks barely differs.",
+          "ok": false,
+          "why": "Haiku is good for high-volume simple operations. Long agentic tasks and hard reasoning go to the top tiers, Opus and above."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "По умолчанию — [[Sonnet]]; [[Haiku]] — для массовых простых шагов; Opus — где качество и есть продукт.",
-        "Роутинг: дешёвая модель [[ужимает|дистиллирует|сжимает]] страницы до того, как их видит дорогая.",
-        "Понижаешь модель только после [[эвала|eval|evaluation]] на golden set."
+        "По умолчанию я беру [[Sonnet]], для массовых простых шагов [[Haiku]], а Opus оставляю там, где качество ответа и есть продукт.",
+        "При роутинге дешёвая модель [[сжимает|дистиллирует|ужимает]] сырые страницы до того, как их прочитает дорогая модель.",
+        "Понижать модель на шаге можно только после [[эвала|eval|evaluation|оценки]] обеих моделей на golden set этого шага."
       ],
       "en": [
-        "Default is [[Sonnet]]; [[Haiku]] for bulk simple steps; Opus where quality is the product.",
-        "Routing: a cheap model [[distills|shrinks|summarises]] pages before the expensive one sees them.",
-        "You downgrade a model only after an [[eval|evaluation]] on a golden set."
+        "By default I use [[Sonnet]], [[Haiku]] for bulk simple steps, and Opus where the quality of the answer is the product.",
+        "With routing, a cheap model [[distills|shrinks|summarises|compresses]] raw pages before the expensive model reads them.",
+        "You downgrade a step's model only after an [[eval|evaluation]] of both models on that step's golden set."
       ]
     }
   },

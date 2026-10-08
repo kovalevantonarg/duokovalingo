@@ -1,85 +1,42 @@
-// True/False game: sentences from the reference answers plus the ticket's lies.
+// True/False game over the tickets' curated statements (content/tickets: drills.tf).
 import { finish, sheet, wireSheet } from "../screens/verdict.js";
 import { beep } from "../sound.js";
 import { state } from "../state.js";
 import { tk } from "../store.js";
-import { exitRound, kbd, mkQ, other, roundFrame, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
+import { exitRound, kbd, mkQ, roundFrame, rtop, setCombo, setProg, ui, wireQuit } from "../ui.js";
 import { $, codify, esc, shuffle } from "../util.js";
 
-export const splitS = (x) =>
-  x
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-export const okS = (s) => {
-  const w = s.split(/\s+/).length;
-  return (
-    w >= 8 &&
-    w <= 28 &&
-    /^[A-ZА-ЯЁ]/.test(s) &&
-    !/^(Поэтому|Потому|И |А |Плюс|Отсюда|So |And |But |Because|Which|That's|Plus|Then )/.test(s)
-  );
-};
-
-export function sentences(t) {
-  return t[state.lang].a.flatMap((a) => splitS(a.t)).filter(okS);
-}
-
-// true statements with a twin in the other language: same paragraph, nearest position. Any sentence of that paragraph is still true.
-export function trueQs(t) {
-  const o = other(),
-    out = [];
-  t[state.lang].a.forEach((a, p) => {
-    const A = splitS(a.t),
-      B = splitS((t[o].a[p] || { t: "" }).t);
-    A.forEach((x, k) => {
-      if (!okS(x)) return;
-      let tw = null;
-      if (B.length) {
-        const j = A.length > 1 && B.length > 1 ? Math.round((k / (A.length - 1)) * (B.length - 1)) : 0;
-        for (let d = 0; d < B.length && !tw; d++) {
-          for (const c of [j - d, j + d]) if (!tw && B[c] && okS(B[c])) tw = B[c];
-        }
-        tw = tw || B[Math.min(j, B.length - 1)];
-      }
-      out.push(mkQ({ [state.lang]: x, [o]: tw || x }, t, true));
-    });
+/** A ticket's curated true/false statements (drills.tf): each one standalone, with a short "why". */
+export function tfQs(t) {
+  const tf = window.DRILLS[t.n]?.tf;
+  if (!tf) return [];
+  return tf.ru.map((q, k) => {
+    const x = mkQ({ ru: q.s, en: tf.en[k]?.s }, t, q.ok);
+    x.W = { ru: q.why, en: tf.en[k]?.why };
+    return x;
   });
-  return out;
 }
-
-export const liesQs = (t) => {
-  const d = window.DRILLS[t.n] || {};
-  return (d.lies?.[state.lang] || []).map((x, k) =>
-    mkQ({ ru: d.lies.ru?.[k], en: d.lies.en?.[k] }, t, false),
-  );
-};
 
 export const clozeQs = (t) => {
   const d = window.DRILLS[t.n] || {};
   return (d.cloze?.[state.lang] || []).map((x, k) => mkQ({ ru: d.cloze.ru?.[k], en: d.cloze.en?.[k] }, t));
 };
 
+/** n statements over the given tickets, about half false, spread evenly across the tickets. */
 export function buildTF(ns, n = 10) {
-  const ts = ns.map(tk).filter(Boolean);
-  if (!ts.length) return [];
-  const pool = [];
-  for (const t of ts) {
-    liesQs(t).forEach((q) => pool.push(q));
-    shuffle(trueQs(t))
-      .slice(0, 6)
-      .forEach((q) => pool.push(q));
-  }
-  const secs = new Set(ts.map((t) => t.sec));
-  const extra = shuffle(window.TICKETS.filter((t) => secs.has(t.sec) && !ts.includes(t))).slice(0, 3);
-  for (const t of extra)
-    liesQs(t)
-      .slice(0, 1)
-      .forEach((q) => pool.push(q));
-  const f = shuffle(pool.filter((p) => !p.ok)).slice(0, Math.ceil(n * 0.4));
-  const tr = shuffle(pool.filter((p) => p.ok)).slice(0, n - f.length);
-  return shuffle(f.concat(tr));
+  const per = ns
+    .map(tk)
+    .filter(Boolean)
+    .map((t) => {
+      const qs = tfQs(t);
+      const f = shuffle(qs.filter((q) => !q.ok)),
+        tr = shuffle(qs.filter((q) => q.ok));
+      return shuffle(f.flatMap((q, i) => [q, tr[i]]).filter(Boolean)); // alternate so any prefix is balanced
+    });
+  const out = [];
+  for (let i = 0; out.length < n && per.some((p) => p[i]); i++)
+    for (const p of per) if (p[i] && out.length < n) out.push(p[i]);
+  return shuffle(out);
 }
 
 export function tfScreen(title, q, i, n) {
@@ -111,7 +68,7 @@ export function runTF(qs, onDone, title, acc) {
         ok,
         title: ok ? ui().resok : ui().resbad,
         sub: q.ok ? ui().true : ui().false,
-        text: "",
+        text: q.W ? codify(q.W[state.lang] || q.W.ru || "") : "",
         q,
         btn: ok ? "green" : "red",
         btnLabel: ui().next,
@@ -126,7 +83,7 @@ export function runTF(qs, onDone, title, acc) {
         moreOpen = true;
         open();
       };
-      if (moreOpen || (!ok && !redraw)) m.click();
+      if (moreOpen || (!ok && !redraw && !q.W)) m.click();
     };
     const answer = (v) => {
       if (ans !== null) return;

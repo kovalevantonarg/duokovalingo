@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Комбинаторы",
-        "t": "Promise.all отдаёт все результаты в том порядке, в каком промисы были переданы и отклоняется, как только отклонился первый промис (Promise). Беру его, когда нужно всё, и одна ошибка делает результат бесполезным. allSettled никогда не отклоняется. Он ждёт все промисы и отдаёт для каждого статус и значение или причину. Это то, что нужно для частичных результатов, например когда я параллельно опрашиваю несколько источников для поиска. race завершается тем, что завершилось первым, успехом или ошибкой, поэтому это классический приём для таймаута (ограничения по времени). any отдаёт первый успех и отклоняется, с AggregateError, только если упали все. Это удобно для запросов к дублирующим зеркалам. Что упускают: ни один из них ничего не отменяет. Когда all отклонился или race выбрал победителя, остальные операции продолжают работать, занимают сеть и могут ещё упасть позже. race с таймаутом просто перестаёт ждать, а запрос всё ещё в полёте. Если я хочу остановить проигравших, я передаю им AbortSignal и сам вызываю abort."
+        "t": "Promise.all отдаёт все результаты в том порядке, в каком промисы были переданы, и отклоняется, как только отклонился первый промис (Promise). Беру его, когда нужны все результаты и одна ошибка делает целое бесполезным. allSettled никогда не отклоняется. Он ждёт все промисы и отдаёт для каждого статус и значение или причину. Это то, что нужно для частичных результатов, например когда я параллельно опрашиваю несколько источников для поиска. race завершается тем, что завершилось первым, успехом или ошибкой, поэтому это классический приём для таймаута (ограничения по времени). any отдаёт первый успех и отклоняется, с AggregateError, только если упали все. Это удобно для запросов к дублирующим зеркалам. Что упускают: ни один из них ничего не отменяет. Когда all отклонился или race выбрал победителя, остальные операции продолжают работать, занимают сеть и могут ещё упасть позже. race с таймаутом просто перестаёт ждать, а запрос всё ещё в полёте. Если я хочу остановить проигравших, я передаю им AbortSignal и сам вызываю abort."
       },
       {
         "q": "Кнопка Stop",
-        "t": "На каждую генерацию я создаю AbortController и передаю его signal в fetch или в вызов SDK. Anthropic TypeScript SDK принимает signal в опциях запроса, а у его стрима (потокового ответа) есть метод abort. Кнопка Stop вызывает abort. Тогда fetch отклоняется с AbortError, а если я уже читаю тело ответа, ожидающее чтение тоже отклоняется, и цикл чтения выходит. Отмену я считаю нормальным исходом, а не поводом показать ошибку, и оставляю частичный текст, который пользователь уже видел. Про что забывают — сервер. Отмена в браузере закрывает соединение, но мой обработчик маршрута всё ещё получает поток от модели и платит за токены, если он не слушает сигнал отмены запроса и не отменяет свой вызов к модели. Я бы проверил, что фреймворк (Next.js или другой) действительно поднимает этот сигнал при разрыве. Для таймаутов (ограничений по времени) беру AbortSignal.timeout: он отменяет с TimeoutError, и его можно отличить от остановки пользователем. AbortSignal.any объединяет оба сигнала в один. Оба в Baseline (поддержке всеми основными браузерами) с 2024 года. В React я ещё отменяю в функции очистки эффекта, так что переключение чата тоже отменяет стрим."
+        "t": "На каждую генерацию я создаю AbortController и передаю его signal в fetch или в вызов SDK. Anthropic TypeScript SDK принимает signal в опциях запроса, а у его стрима (потокового ответа) есть метод abort. Кнопка Stop вызывает abort. Тогда fetch отклоняется с AbortError, а если я уже читаю тело ответа, ожидающее чтение тоже отклоняется, и цикл чтения выходит. Отмену я считаю нормальным исходом, а не поводом показать ошибку, и оставляю частичный текст, который пользователь уже видел. Про сервер часто забывают. Отмена в браузере закрывает соединение, но мой обработчик маршрута всё ещё получает поток от модели и платит за токены, если он не слушает сигнал отмены запроса и не отменяет свой вызов к модели. Я бы проверил, что фреймворк (Next.js или другой) действительно поднимает этот сигнал при разрыве. Для таймаутов (ограничений по времени) беру AbortSignal.timeout: он отменяет с TimeoutError, и его можно отличить от остановки пользователем. AbortSignal.any объединяет оба сигнала в один. Оба в Baseline (поддержке всеми основными браузерами) с 2024 года. В React я ещё отменяю в функции очистки эффекта, так что переключение чата тоже отменяет стрим."
       },
       {
         "q": "Лимиты и повторы",
-        "t": "Во-первых, я не отправляю сто сразу. Promise.all над сотней fetch запускает их все немедленно, ведь запрос стартует в момент вызова fetch: промис (Promise) — это не отложенная задача, а квитанция на уже начатую работу. Я ставлю ограничитель параллельности: пул (набор) из, скажем, пяти воркеров (обработчиков), которые берут задачи из общей очереди, или библиотеку вроде p-limit. Во-вторых, повторы с экспоненциальной задержкой и jitter (случайным разбросом). Задержка удваивается с каждой попыткой, с потолком, и я добавляю к ней случайность, чтобы сто клиентов, упавших одновременно, не повторяли синхронно. В-третьих, повторяю только то, что может пройти при повторе. Это сетевые ошибки, 408, 429 и 5xx, особенно 502, 503 и 504, а SDK Anthropic по умолчанию повторяет ещё и 409 Conflict. На 429 учитываю Retry-After, если сервер его прислал. Остальные 4xx, вроде 400, 401 или 422, значат, что неправ мой запрос, и повтор только сжигает квоту. Я ограничиваю число попыток и общее время, а неидемпотентные вызовы (те, что нельзя безопасно повторить) повторяю только с ключом идемпотентности. И наконец, у каждого промиса должен быть обработчик. Необработанное отклонение это ошибка в консоли и событие unhandledrejection в браузере, а в Node начиная с 15-й версии по умолчанию падает весь процесс."
+        "t": "Во-первых, я не отправляю сто сразу. Promise.all над сотней fetch запускает их все немедленно, ведь запрос стартует в момент вызова fetch: промис (Promise) не откладывает работу, а представляет уже начатую операцию. Я ставлю ограничитель параллельности: пул (набор) из, скажем, пяти воркеров (обработчиков), которые берут задачи из общей очереди, или библиотеку вроде p-limit. Во-вторых, повторы с экспоненциальной задержкой и jitter (случайным разбросом). Задержка удваивается с каждой попыткой, с потолком, и я добавляю к ней случайность, чтобы сто клиентов, упавших одновременно, не повторяли синхронно. В-третьих, повторяю только то, что может пройти при повторе. Это сетевые ошибки, 408, 429 и 5xx, особенно 502, 503 и 504, а SDK Anthropic по умолчанию повторяет ещё и 409 Conflict. На 429 учитываю Retry-After, если сервер его прислал. Остальные 4xx, вроде 400, 401 или 422, значат, что неправ мой запрос, и повтор только сжигает квоту. Я ограничиваю число попыток и общее время, а неидемпотентные вызовы (те, что нельзя безопасно повторить) повторяю только с ключом идемпотентности. И наконец, у каждого промиса должен быть обработчик. Необработанное отклонение это ошибка в консоли и событие unhandledrejection в браузере, а в Node начиная с 15-й версии по умолчанию падает весь процесс."
       }
     ],
-    "kill": "<b>«Promise.race отменяет более медленные запросы»</b> — он только перестаёт их ждать, они продолжают работать. Для отмены нужен AbortSignal, который надо передать в операцию и самому вызвать abort."
+    "kill": "<b>«Promise.race отменяет более медленные запросы»</b> неверно: он только перестаёт их ждать, а запросы продолжают работать. Для отмены нужен AbortSignal, который надо передать в операцию и самому вызвать abort."
   },
   "en": {
     "topic": "Async, failure and cancellation",
@@ -49,29 +49,145 @@
         "t": "First, I don't fire a hundred at once. Promise.all over a hundred fetches starts all of them immediately, because the request starts when fetch is called and a promise isn't a lazy task. I use a concurrency limiter, a pool of say five workers pulling from a shared queue, or a library like p-limit. Second, retries with exponential backoff and jitter. The delay doubles each attempt up to a cap, and I randomize it so a hundred clients that failed together don't retry in lockstep. Third, I only retry what can succeed on retry. That's network errors, 408, 429 and 5xx, especially 502, 503 and 504, and Anthropic's SDK retries 409 Conflict by default too. On 429 I honor Retry-After if the server sends it. Other 4xx like 400, 401 or 422 mean my request is wrong, so retrying just burns quota. I cap attempts and total time, and I only retry non-idempotent calls when there's an idempotency key. Finally, every promise needs a handler. An unhandled rejection is a console error and an unhandledrejection event in the browser, and in Node since version 15 it crashes the process by default."
       }
     ],
-    "kill": "<b>\"Promise.race cancels the slower requests\"</b> — it only stops you waiting, they keep running. Cancelling takes an AbortSignal you pass in and abort yourself."
+    "kill": "<b>\"Promise.race cancels the slower requests\"</b> is wrong: it only stops you waiting, and the requests keep running. Cancelling takes an AbortSignal you pass in and abort yourself."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Когда Promise.all отклоняется, остальные промисы автоматически отменяются.",
-        "400 Bad Request стоит повторять с экспоненциальной задержкой, потому что сервер может восстановиться."
+        {
+          "s": "Когда Promise.all отклоняется, оставшиеся промисы автоматически отменяются, и их сетевые запросы прерываются.",
+          "ok": false,
+          "why": "Комбинаторы ничего не отменяют. Остальные операции продолжают работать и занимать сеть, для отмены нужен AbortSignal."
+        },
+        {
+          "s": "Promise.all возвращает результаты в том порядке, в каком промисы были переданы, и отклоняется при первом же отклонении.",
+          "ok": true,
+          "why": "Порядок результатов не зависит от того, какой промис завершился раньше. Его берут, когда нужны все результаты и одна ошибка делает целое бесполезным."
+        },
+        {
+          "s": "Promise.allSettled не отклоняется и отдаёт для каждого промиса статус вместе со значением или причиной ошибки.",
+          "ok": true,
+          "why": "Поэтому allSettled подходит для частичных результатов. Например, когда параллельно опрашиваешь несколько источников для поиска."
+        },
+        {
+          "s": "Promise.race с таймаутом прерывает медленный запрос, если таймер срабатывает раньше ответа сервера.",
+          "ok": false,
+          "why": "race только перестаёт ждать, а запрос остаётся в полёте. Чтобы его остановить, нужно передать в fetch AbortSignal и вызвать abort."
+        },
+        {
+          "s": "Когда пользователь нажал Stop и fetch в браузере отменён, серверный обработчик маршрута автоматически перестаёт тратить токены модели.",
+          "ok": false,
+          "why": "Разрыв закрывает соединение, но обработчик продолжает читать поток от модели. Он остановится, только если слушает сигнал отмены запроса и отменяет свой вызов к модели."
+        },
+        {
+          "s": "Promise.any отклоняется с AggregateError только тогда, когда отклонились все переданные ему промисы.",
+          "ok": true,
+          "why": "any отдаёт первый успешный результат и игнорирует ошибки остальных, пока есть шанс на успех. Это удобно для запросов к дублирующим зеркалам."
+        },
+        {
+          "s": "AbortSignal.timeout отменяет операцию с TimeoutError, поэтому таймаут можно отличить от остановки пользователем.",
+          "ok": true,
+          "why": "Ручной abort даёт AbortError, а таймаут даёт TimeoutError. AbortSignal.any объединяет оба сигнала в один."
+        },
+        {
+          "s": "Promise.all над сотней вызовов fetch отправляет запросы по очереди, поэтому сам по себе ограничивает нагрузку на API.",
+          "ok": false,
+          "why": "Запрос стартует в момент вызова fetch, так что все сто уходят сразу. Нагрузку ограничивают пулом воркеров или библиотекой вроде p-limit."
+        },
+        {
+          "s": "Jitter в экспоненциальной задержке нужен, чтобы клиенты, упавшие одновременно, не отправляли повторы синхронно.",
+          "ok": true,
+          "why": "Задержка удваивается с каждой попыткой до потолка, а случайный разброс разносит повторы во времени. Без него сто клиентов ударят по API одновременно."
+        },
+        {
+          "s": "Ответ 400 Bad Request стоит повторять с экспоненциальной задержкой, потому что сервер может успеть восстановиться.",
+          "ok": false,
+          "why": "400, 401 или 422 означают, что неправ сам запрос, и повтор только сжигает квоту. Повторяют сетевые ошибки, 408, 429 и 5xx."
+        },
+        {
+          "s": "В Node.js начиная с 15-й версии необработанное отклонение промиса по умолчанию только выводит предупреждение в консоль.",
+          "ok": false,
+          "why": "С Node 15 необработанное отклонение по умолчанию роняет весь процесс. В браузере это ошибка в консоли и событие unhandledrejection."
+        },
+        {
+          "s": "Неидемпотентный вызов API безопасно повторять только вместе с ключом идемпотентности.",
+          "ok": true,
+          "why": "Ключ позволяет серверу узнать повтор и не выполнить действие дважды. Без ключа повтор, например, создания заказа может создать дубликат."
+        }
       ],
       "en": [
-        "When Promise.all rejects, the remaining promises are cancelled automatically.",
-        "A 400 Bad Request is worth retrying with exponential backoff because the server may recover."
+        {
+          "s": "When Promise.all rejects, the remaining promises are cancelled automatically and their network requests are aborted.",
+          "ok": false,
+          "why": "Combinators don't cancel anything. The other operations keep running and using the network; cancelling takes an AbortSignal."
+        },
+        {
+          "s": "Promise.all returns results in the order the promises were passed in, and rejects on the very first rejection.",
+          "ok": true,
+          "why": "The order of results doesn't depend on which promise finished first. It fits when you need every result and one failure makes the whole useless."
+        },
+        {
+          "s": "Promise.allSettled doesn't reject and returns a status for each promise together with its value or rejection reason.",
+          "ok": true,
+          "why": "That makes allSettled the fit for partial results, for example when you query several retrieval sources in parallel."
+        },
+        {
+          "s": "Promise.race with a timeout aborts the slow request if the timer fires before the server responds.",
+          "ok": false,
+          "why": "race just stops waiting, and the request stays in flight. To stop it, pass an AbortSignal to fetch and call abort."
+        },
+        {
+          "s": "When the user presses Stop and the browser's fetch is aborted, the server route handler automatically stops spending model tokens.",
+          "ok": false,
+          "why": "The disconnect closes the connection, but the handler keeps reading the model stream. It stops only if it listens to the request's abort signal and cancels its upstream call."
+        },
+        {
+          "s": "Promise.any rejects with an AggregateError only when every promise passed to it has rejected.",
+          "ok": true,
+          "why": "any resolves with the first success and ignores other failures while success is still possible. That suits requests to redundant mirrors."
+        },
+        {
+          "s": "AbortSignal.timeout aborts the operation with a TimeoutError, so a timeout can be told apart from a user stop.",
+          "ok": true,
+          "why": "A manual abort gives an AbortError, while the timeout gives a TimeoutError. AbortSignal.any combines both signals into one."
+        },
+        {
+          "s": "Promise.all over a hundred fetch calls sends the requests one after another, so it limits the load on the API by itself.",
+          "ok": false,
+          "why": "A request starts the moment fetch is called, so all hundred go out at once. You limit load with a worker pool or a library like p-limit."
+        },
+        {
+          "s": "Jitter in exponential backoff keeps clients that failed at the same time from retrying in lockstep.",
+          "ok": true,
+          "why": "The delay doubles each attempt up to a cap, and the randomness spreads retries out in time. Without it, a hundred clients hit the API at once."
+        },
+        {
+          "s": "A 400 Bad Request is worth retrying with exponential backoff, because the server may recover in the meantime.",
+          "ok": false,
+          "why": "400, 401 or 422 mean the request itself is wrong, and retrying just burns quota. You retry network errors, 408, 429 and 5xx."
+        },
+        {
+          "s": "Since Node.js 15, an unhandled promise rejection by default only prints a warning to the console.",
+          "ok": false,
+          "why": "Since Node 15 an unhandled rejection crashes the whole process by default. In the browser it's a console error plus an unhandledrejection event."
+        },
+        {
+          "s": "A non-idempotent API call is safe to retry only together with an idempotency key.",
+          "ok": true,
+          "why": "The key lets the server recognise a retry and not act twice. Without it, retrying something like order creation can create a duplicate."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "Promise.[[any]] отдаёт первый успех и отклоняется с [[AggregateError]], только если упали все.",
         "Чтобы отменить fetch, я передаю ему signal от [[AbortController]] и вызываю abort.",
-        "Повторы делаю с экспоненциальной [[задержкой|паузой]] и [[jitter|случайным разбросом]] — для 408, 429, 5xx и сетевых ошибок."
+        "Повторы для 408, 429, 5xx и сетевых ошибок делают с экспоненциальной [[задержкой|паузой]] и [[jitter|случайным разбросом]]."
       ],
       "en": [
         "Promise.[[any]] resolves with the first success and rejects with an [[AggregateError]] only if all fail.",
         "To cancel a fetch, I pass it the signal from an [[AbortController]] and call abort.",
-        "Retries use exponential [[backoff|back-off]] with [[jitter|randomization]], for 408, 429, 5xx and network errors."
+        "Retries for 408, 429, 5xx and network errors use exponential [[backoff|back-off]] with [[jitter|randomization]]."
       ]
     }
   },

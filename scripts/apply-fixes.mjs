@@ -2,7 +2,7 @@
 // Applies a batch of reviewed text edits to content/tickets/*.json, then rebuilds the app bundles.
 // Usage: node scripts/apply-fixes.mjs fixes.json
 //   fixes.json = { "answers": [{ "n": 1, "where": "ru.a[1]" | "en.kill", "old": "exact text", "new": "replacement" }],
-//                  "drills":  [{ "n": 1, "kind": "lies" | "cloze" | "steps", "lang": "ru", "i": 2, "new": "..." }] }
+//                  "drills":  [{ "n": 1, "kind": "cloze" | "steps", "lang": "ru", "i": 2, "new": "..." }] }
 // Every "old" must be found verbatim, or the script stops without writing anything.
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";

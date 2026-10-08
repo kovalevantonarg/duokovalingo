@@ -19,11 +19,11 @@
       },
       {
         "q": "Почему KV",
-        "t": "Потому что токен смотрит только назад, и его K и V зависят только от него самого и от того, что было до него, и никогда — от того, что придёт после. Значит, посчитав их однажды, можно хранить: они не изменятся. А Q нужен ровно один раз, в момент обработки своего токена, и хранить его незачем — отсюда и название KV cache, а не QKV. Префиксность следует оттуда же: если поменять токен на пятой позиции, все, кто идёт после, находятся уже в другом контексте, и их K и V другие. А то, что было до пятого, не затронуто вообще. Это, кстати, общий закон — кэшируется то, что зависит только от прошлого, ровно как useMemo или инкрементальная сборка."
+        "t": "Потому что токен смотрит только назад, и его K и V зависят только от него самого и от того, что было до него, и никогда — от того, что придёт после. Значит, посчитав их однажды, можно хранить: они не изменятся. А Q нужен ровно один раз, в момент обработки своего токена, и хранить его незачем — отсюда и название KV cache, а не QKV. Префиксность следует оттуда же: если поменять токен на пятой позиции, все, кто идёт после, находятся уже в другом контексте, и их K и V другие. А то, что было до пятого, не затронуто вообще. Это общий принцип: кэшировать можно то, что зависит только от прошлого, как в useMemo или инкрементальной сборке."
       },
       {
         "q": "Prompt caching",
-        "t": "KV cache внутри одного запроса работает всегда, автоматически и бесплатно, но живёт ровно один запрос: ответ отдан, состояние выброшено. Prompt caching его не выбрасывает, а держит между запросами — механизм тот же, другая область жизни. Хранение стоит провайдеру памяти, поэтому запись при стандартном времени жизни примерно на четверть дороже обычного входа, а чтение стоит десятую часть входа или меньше, в зависимости от модели — сверяюсь с текущим прайсом. Ephemeral (временный) — это минимум пять минут жизни с бесплатным продлением при каждом попадании, есть и более дорогой вариант на час. Попадания всё равно не гарантированы: префикс меняется, запись истекает. Отсюда правило: код обязан работать одинаково при нуле попаданий, кэш — это оптимизация цены, а не часть логики."
+        "t": "KV cache внутри одного запроса работает всегда, автоматически и бесплатно, но живёт ровно один запрос: ответ отдан, состояние выброшено. Prompt caching держит это состояние между запросами: механизм тот же, меняется только время жизни. Хранение стоит провайдеру памяти, поэтому запись при стандартном времени жизни примерно на четверть дороже обычного входа, а чтение стоит десятую часть входа или меньше, в зависимости от модели — сверяюсь с текущим прайсом. Ephemeral (временный) — это минимум пять минут жизни с бесплатным продлением при каждом попадании, есть и более дорогой вариант на час. Попадания всё равно не гарантированы: префикс меняется, запись истекает. Отсюда правило: код обязан работать одинаково при нуле попаданий, кэш — это оптимизация цены, а не часть логики."
       }
     ],
     "kill": "<b>«Кэш чтобы не платить дважды»</b> — мелко. Правильно: продление жизни KV-состояния между запросами, поэтому запись с наценкой, а чтение почти даром."
@@ -42,7 +42,7 @@
       },
       {
         "q": "Why KV",
-        "t": "Because a token only looks backwards, its K and V depend only on itself and on what came before it, and never on what comes after. So once you've computed them you can store them — they won't change. Q is needed exactly once, at the moment its own token is processed, so there's nothing worth keeping — which is why it's called a KV cache and not a QKV cache. Prefix-only follows from the same thing: change the token at position five and everything after it sits in a different context, so their K and V differ, while everything before five is untouched. It's a general law, really — you can cache whatever depends only on the past, exactly like useMemo or an incremental build."
+        "t": "Because a token only looks backwards, its K and V depend only on itself and on what came before it, and never on what comes after. So once you've computed them you can store them — they won't change. Q is needed exactly once, at the moment its own token is processed, so there's nothing worth keeping — which is why it's called a KV cache and not a QKV cache. Prefix-only follows from the same thing: change the token at position five and everything after it sits in a different context, so their K and V differ, while everything before five is untouched. It's a general principle: you can cache whatever depends only on the past, like useMemo or an incremental build."
       },
       {
         "q": "Prompt caching",
@@ -52,25 +52,141 @@
     "kill": "<b>\"Caching so you don't pay twice\"</b> is too shallow. It's persisting KV state across requests — which is why writes carry a premium and reads are nearly free."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Кэшируют Q, потому что запрос повторяется чаще всего.",
-        "Prompt caching — это чтобы не платить за один и тот же текст дважды, и на этом всё."
+        {
+          "s": "Для каждого токена attention считает три вектора: запрос Q, ключ K и значение V.",
+          "ok": true,
+          "why": "Q описывает, что токен ищет, K делает токен находимым, а V несёт содержимое, которое токен передаёт дальше."
+        },
+        {
+          "s": "В attention вектор V сравнивают со всеми ключами K, а полученными весами взвешивают запросы Q.",
+          "ok": false,
+          "why": "Сравнивают Q со всеми K, получают веса релевантности и этими весами взвешивают V."
+        },
+        {
+          "s": "В KV cache хранят и Q, потому что запрос текущего токена повторяется на каждом следующем шаге генерации.",
+          "ok": false,
+          "why": "Q нужен один раз, когда обрабатывается его собственный токен. Поэтому кэш называется KV, а не QKV."
+        },
+        {
+          "s": "K и V токена зависят только от него и от предыдущих токенов, поэтому их можно посчитать один раз и хранить.",
+          "ok": true,
+          "why": "Токен смотрит только назад, и то, что придёт после него, его K и V не меняет."
+        },
+        {
+          "s": "Кэш attention работает только по префиксу: изменение токена в середине меняет K и V всех токенов после него.",
+          "ok": true,
+          "why": "Токены после изменённого оказываются в другом контексте. Всё, что было до изменения, остаётся в кэше."
+        },
+        {
+          "s": "Если поменять токен в середине промпта, кэш теряет только этот токен, а K и V остальных токенов сохраняются.",
+          "ok": false,
+          "why": "Токены после изменённого оказываются в другом контексте, и их K и V нужно считать заново. Сохраняется только префикс до изменения."
+        },
+        {
+          "s": "Prompt caching и KV cache — разные механизмы: prompt caching хранит готовые ответы модели на повторяющиеся запросы.",
+          "ok": false,
+          "why": "Prompt caching использует тот же KV-кэш, только хранит его между запросами. Готовые ответы он не хранит."
+        },
+        {
+          "s": "KV cache внутри одного запроса работает автоматически и бесплатно, но его состояние выбрасывается после ответа.",
+          "ok": true,
+          "why": "Prompt caching использует тот же механизм, только хранит состояние между запросами."
+        },
+        {
+          "s": "Запись в prompt cache при стандартном времени жизни стоит примерно на четверть дороже обычного входа, а чтение около десятой части.",
+          "ok": true,
+          "why": "Хранение KV-состояния стоит провайдеру памяти, отсюда наценка на запись. Точные цены зависят от модели."
+        },
+        {
+          "s": "Запись в prompt cache стоит как обычный вход, а вся экономия появляется за счёт бесплатного чтения.",
+          "ok": false,
+          "why": "Запись дороже обычного входа примерно на четверть при стандартном времени жизни. Чтение не бесплатное, а стоит около десятой части входа."
+        },
+        {
+          "s": "Если префикс промпта не менялся, попадание в prompt cache гарантировано, и код может на него рассчитывать.",
+          "ok": false,
+          "why": "Запись может истечь или быть вытеснена, поэтому попадания не гарантированы. Код обязан работать одинаково и при нуле попаданий."
+        },
+        {
+          "s": "Ephemeral-кэш живёт минимум пять минут и бесплатно продлевается при каждом попадании, а за доплату есть вариант на час.",
+          "ok": true,
+          "why": "Время жизни отсчитывается заново при каждом попадании. Часовой вариант дороже при записи."
+        }
       ],
       "en": [
-        "Q gets cached because the query repeats most often.",
-        "Prompt caching is just so you don't pay for the same text twice, nothing more."
+        {
+          "s": "For every token, attention computes three vectors: a query Q, a key K and a value V.",
+          "ok": true,
+          "why": "Q describes what the token is looking for, K makes it findable, and V carries the content it passes along."
+        },
+        {
+          "s": "In attention the V vector is compared with every key K, and the resulting weights are applied to the queries Q.",
+          "ok": false,
+          "why": "Q is compared with every K, that gives relevance weights, and those weights are applied to the Vs."
+        },
+        {
+          "s": "The KV cache also stores Q, because the current token's query repeats on every later generation step.",
+          "ok": false,
+          "why": "Q is needed once, while its own token is processed. That's why it's called a KV cache and not a QKV cache."
+        },
+        {
+          "s": "A token's K and V depend only on that token and the ones before it, so they can be computed once and stored.",
+          "ok": true,
+          "why": "A token only looks backwards, so nothing that comes after it changes its K and V."
+        },
+        {
+          "s": "The attention cache is prefix-only: changing a token in the middle changes the K and V of every token after it.",
+          "ok": true,
+          "why": "Tokens after the change now sit in a different context. Everything before the change stays cached."
+        },
+        {
+          "s": "Changing a token in the middle of the prompt invalidates only that token, and the K and V of the rest stay cached.",
+          "ok": false,
+          "why": "Tokens after the change sit in a different context, so their K and V must be recomputed. Only the prefix before the change survives."
+        },
+        {
+          "s": "Prompt caching and the KV cache are different mechanisms: prompt caching stores the model's finished answers to repeated requests.",
+          "ok": false,
+          "why": "Prompt caching uses the same KV cache, just kept across requests. It doesn't store finished answers."
+        },
+        {
+          "s": "The KV cache inside a single request works automatically and for free, but its state is thrown away after the answer.",
+          "ok": true,
+          "why": "Prompt caching uses the same mechanism and keeps the state between requests."
+        },
+        {
+          "s": "At the default lifetime a prompt cache write costs about a quarter more than normal input, and a read about a tenth of it.",
+          "ok": true,
+          "why": "Keeping KV state costs the provider memory, hence the write premium. Exact prices depend on the model."
+        },
+        {
+          "s": "A prompt cache write costs the same as normal input, and all the savings come from free reads.",
+          "ok": false,
+          "why": "A write costs about a quarter more than normal input at the default lifetime. Reads aren't free; they cost about a tenth of input."
+        },
+        {
+          "s": "If the prompt prefix hasn't changed, a prompt cache hit is guaranteed and code can rely on it.",
+          "ok": false,
+          "why": "An entry can expire or be evicted, so hits aren't guaranteed. Code must behave the same with zero cache hits."
+        },
+        {
+          "s": "An ephemeral cache entry lives at least five minutes and is refreshed free on every hit, with a pricier one-hour option.",
+          "ok": true,
+          "why": "The lifetime restarts on every hit. The one-hour option costs more to write."
+        }
       ]
     },
     "cloze": {
       "ru": [
         "K и V токена зависят только от него и от того, что [[до|перед|раньше]] него — поэтому их можно сохранить.",
-        "[[Q]] каждый раз новый: он сравнивает текущий токен с постоянными K/V.",
+        "Вектор [[Q]] нужен только при обработке своего токена, поэтому его не кэшируют.",
         "Prompt caching продлевает жизнь [[KV]]-состояния между запросами: запись дороже, чтение почти [[бесплатно|даром]]."
       ],
       "en": [
         "A token's K and V depend only on itself and what came [[before]] it — so they can be stored.",
-        "[[Q]] is fresh every time: it compares the current token against the fixed K/V.",
+        "The [[Q]] vector is needed only while its own token is processed, so it isn't cached.",
         "Prompt caching persists [[KV]] state across requests: writes cost more, reads are nearly [[free]]."
       ]
     }

@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Generics и условия",
-        "t": "Я бы написал getProperty<T, K extends keyof T>(obj: T, key: K): T[K]. Ограничение на K значит, что компилируются только реальные ключи, а indexed access (доступ к типу по индексу) T[K] возвращает точный тип свойства. Так что getProperty(user, 'id') вернёт number, а не объединение всех значений. Ограничение описывает минимум, который нужен generic-у (обобщённому типу): T extends { id: string } требует строковый id и ничего сверх. Conditional types (условные типы) — это if системы типов: T extends U ? X : Y. Сюрприз тут в дистрибутивности (распределении по членам объединения). Когда T это голый параметр типа и я передаю объединение, условие применяется к каждому члену отдельно, а результаты объединяются. Поэтому ToArray<string | number> даёт string[] | number[], а не (string | number)[]. Если мне это не нужно, я оборачиваю обе стороны в квадратные скобки: [T] extends [U]. infer позволяет вытащить тип из шаблона, например T extends Promise<infer V> ? V : T. Примерно так устроены ReturnType и Awaited, только Awaited ещё рекурсивно разворачивает вложенные промисы."
+        "t": "Я бы написал getProperty<T, K extends keyof T>(obj: T, key: K): T[K]. Ограничение на K значит, что компилируются только реальные ключи, а indexed access (доступ к типу по индексу) T[K] возвращает точный тип свойства. Так что getProperty(user, 'id') вернёт number, а не объединение всех значений. Ограничение описывает минимум, который нужен generic-у (обобщённому типу): T extends { id: string } требует строковый id и ничего сверх. Conditional types (условные типы) работают как if на уровне типов: T extends U ? X : Y. Неочевидная часть здесь — дистрибутивность (распределении по членам объединения). Когда T это голый параметр типа и я передаю объединение, условие применяется к каждому члену отдельно, а результаты объединяются. Поэтому ToArray<string | number> даёт string[] | number[], а не (string | number)[]. Если мне это не нужно, я оборачиваю обе стороны в квадратные скобки: [T] extends [U]. infer позволяет вытащить тип из шаблона, например T extends Promise<infer V> ? V : T. Примерно так устроены ReturnType и Awaited, только Awaited ещё рекурсивно разворачивает вложенные промисы."
       },
       {
         "q": "Mapped и utility",
@@ -23,10 +23,10 @@
       },
       {
         "q": "satisfies против as",
-        "t": "Аннотация типа, const config: Config = ..., проверяет значение, но дальше переменная просто Config: литеральная информация потеряна, и каждый опциональный ключ выглядит как возможно undefined. as Config — это type assertion (утверждение типа). Оно не проверяет, что объект полный, и ругается, только когда ни один тип нельзя привести к другому, так что недостающее поле компилируется. satisfies Config, появившийся в TS 4.9, проверяет значение против типа, но сохраняет выведенный тип: я получаю и ошибку на опечатке, и точные литеральные ключи потом. as const делает всё readonly и литеральным. Так я превращаю массив имён маршрутов или вариантов модели в объединение через typeof arr[number]. Комбинация as const satisfies Config — мой выбор по умолчанию для конфигов. Про type gymnastics (акробатику на типах) моё правило — читаемость для следующего человека. Если типу нужны три вложенных условия с infer и комментарий, который его объясняет, и это код приложения, а не библиотеки, я пишу тип явно или генерирую его из схемы. Хитрые типы дают сообщения об ошибках, которые никто не может прочесть, и замедляют компилятор."
+        "t": "Аннотация типа, const config: Config = ..., проверяет значение, но дальше переменная просто Config: литеральная информация потеряна, и каждый опциональный ключ выглядит как возможно undefined. as Config — это type assertion (утверждение типа). Оно не проверяет, что объект полный, и ругается, только когда ни один тип нельзя привести к другому, так что недостающее поле компилируется. satisfies Config, появившийся в TS 4.9, проверяет значение против типа, но сохраняет выведенный тип: я получаю и ошибку на опечатке, и точные литеральные ключи потом. as const делает всё readonly и литеральным. Так я превращаю массив имён маршрутов или вариантов модели в объединение через typeof arr[number]. Комбинация as const satisfies Config — мой выбор по умолчанию для конфигов. Для type gymnastics (акробатики на типах) у меня одно правило: тип должен легко прочитать следующий человек. Если типу нужны три вложенных условия с infer и комментарий, который его объясняет, и это код приложения, а не библиотеки, я пишу тип явно или генерирую его из схемы. Хитрые типы дают сообщения об ошибках, которые никто не может прочесть, и замедляют компилятор."
       }
     ],
-    "kill": "<b>«Extract — это просто пересечение»</b> — он фильтрует члены объединения по совместимости. И попытка заглушить ошибку в конфиге через <b>as Config</b>: это непроверяемое утверждение, а проверяемая версия — satisfies."
+    "kill": "<b>«Extract — это просто пересечение»</b> неверно: он фильтрует члены объединения по совместимости. Вторая ошибка: заглушить ошибку в конфиге через <b>as Config</b>. Это непроверяемое утверждение, а проверяемая версия — satisfies."
   },
   "en": {
     "topic": "Generics and type-level programming",
@@ -49,17 +49,133 @@
         "t": "A type annotation, const config: Config = ..., checks the value, but afterwards the variable is just Config. Literal information is gone and every optional key looks possibly undefined. as Config is a type assertion. It doesn't check that the object is complete; it only errors when neither type could be converted to the other, so a missing field compiles fine. satisfies Config, added in TS 4.9, checks the value against the type but keeps the inferred type, so I get the error on a typo and the precise literal keys afterwards. as const makes everything readonly and literal. That's how I turn an array of route names or model options into a union with typeof arr[number]. as const satisfies Config is my default for config objects. On type gymnastics, my rule is readability for the next person. If a type needs three nested conditionals with infer and a comment explaining it, and it's application code rather than a library, I write the type out or generate it from a schema. Clever types produce error messages nobody can read, and they slow the compiler down."
       }
     ],
-    "kill": "<b>\"Extract is just an intersection\"</b> — it filters union members by assignability. Also reaching for <b>as Config</b> to silence a config error: that's an unchecked assertion, and satisfies is the checked version."
+    "kill": "<b>\"Extract is just an intersection\"</b> is wrong: it filters union members by assignability. The second mistake is reaching for <b>as Config</b> to silence a config error. That's an unchecked assertion; satisfies is the checked version."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Обёртка обеих сторон в квадратные скобки, [T] extends [U], как раз и заставляет условный тип распределяться по каждому члену объединения.",
-        "Запись const config = {...} as Config заставляет TypeScript проверить, что все обязательные поля Config на месте."
+        {
+          "s": "Сигнатура getProperty<T, K extends keyof T>(obj: T, key: K): T[K] для любого ключа возвращает объединение типов всех значений объекта.",
+          "ok": false,
+          "why": "K выводится как литеральный тип конкретного ключа, поэтому T[K] даёт тип одного свойства. Объединение всех значений получилось бы при T[keyof T]."
+        },
+        {
+          "s": "В getProperty<T, K extends keyof T> ограничение на K пропускает только реальные ключи, а T[K] возвращает точный тип свойства.",
+          "ok": true,
+          "why": "keyof T не даёт передать несуществующий ключ, а indexed access T[K] берёт тип именно этого свойства. Для 'id' функция вернёт number."
+        },
+        {
+          "s": "Условный тип распределяется по объединению, когда проверяемый тип — голый параметр типа, поэтому ToArray<string | number> даёт string[] | number[].",
+          "ok": true,
+          "why": "Условие применяется к каждому члену объединения отдельно, а результаты объединяются. Чтобы получить (string | number)[], распределение нужно выключить."
+        },
+        {
+          "s": "Обёртка обеих сторон условного типа в квадратные скобки, [T] extends [U], включает распределение по каждому члену объединения.",
+          "ok": false,
+          "why": "Скобки распределение выключают: параметр перестаёт быть голым. Тогда условие проверяет объединение целиком."
+        },
+        {
+          "s": "Ключевое слово infer позволяет условному типу вытащить тип из шаблона, и примерно так устроены ReturnType и Awaited.",
+          "ok": true,
+          "why": "Например, T extends Promise<infer V> ? V : T достаёт тип значения промиса. Awaited вдобавок рекурсивно разворачивает вложенные промисы."
+        },
+        {
+          "s": "Partial и Readonly встроены в компилятор как особые конструкции, и через mapped type их выразить нельзя.",
+          "ok": false,
+          "why": "Оба — обычные mapped types: перебор ключей { [K in keyof T]: ... } с модификатором ? или readonly. Минус перед модификатором снимает его и даёт Required."
+        },
+        {
+          "s": "Extract<string | number, 'a'> даёт never, а пересечение (string | number) & 'a' даёт тип 'a'.",
+          "ok": true,
+          "why": "Extract оставляет члены объединения, которые присваиваются в 'a', а ни string, ни number туда не присваиваются. Поэтому Extract — фильтр, а не пересечение."
+        },
+        {
+          "s": "Omit, применённый к размеченному объединению, обрабатывает каждый вариант отдельно, поэтому сужение по тегу продолжает работать.",
+          "ok": false,
+          "why": "Omit не дистрибутивный и оставляет только общие ключи, так что сужение пропадает. Помогает дистрибутивная версия: T extends unknown ? Omit<T, K> : never."
+        },
+        {
+          "s": "Запись const config = {...} as Config заставляет TypeScript проверить, что все обязательные поля Config на месте.",
+          "ok": false,
+          "why": "as — это type assertion, оно не проверяет полноту объекта. Ошибка будет, только если ни один тип нельзя привести к другому, так что недостающее поле компилируется."
+        },
+        {
+          "s": "Аннотация const config: Config проверяет значение, но после неё литеральная информация теряется, и переменная имеет просто тип Config.",
+          "ok": true,
+          "why": "Каждый опциональный ключ после аннотации выглядит как возможно undefined. Точные литеральные ключи сохраняет satisfies."
+        },
+        {
+          "s": "Оператор satisfies, появившийся в TypeScript 4.9, проверяет значение против типа и при этом сохраняет выведенный тип.",
+          "ok": true,
+          "why": "Получаешь и ошибку на опечатке, и точные литеральные ключи потом. Для конфигов удобна комбинация as const satisfies Config."
+        },
+        {
+          "s": "Сложные условные типы с вложенным infer в коде приложения ничего не стоят, потому что все типы стираются при компиляции.",
+          "ok": false,
+          "why": "Такие типы дают сообщения об ошибках, которые никто не может прочесть, и замедляют компилятор. В коде приложения тип лучше написать явно или сгенерировать из схемы."
+        }
       ],
       "en": [
-        "Wrapping both sides in brackets, [T] extends [U], is what makes a conditional type distribute over each union member.",
-        "Writing const config = {...} as Config makes TypeScript verify that every required field of Config is present."
+        {
+          "s": "The signature getProperty<T, K extends keyof T>(obj: T, key: K): T[K] returns a union of all the object's value types for any key.",
+          "ok": false,
+          "why": "K is inferred as the literal type of the specific key, so T[K] gives one property's type. A union of all values would come from T[keyof T]."
+        },
+        {
+          "s": "In getProperty<T, K extends keyof T>, the constraint on K allows only real keys, and T[K] returns the exact property type.",
+          "ok": true,
+          "why": "keyof T stops you from passing a key that doesn't exist, and the indexed access T[K] takes the type of that exact property. For 'id' it returns number."
+        },
+        {
+          "s": "A conditional type distributes over a union when the checked type is a naked type parameter, so ToArray<string | number> gives string[] | number[].",
+          "ok": true,
+          "why": "The condition runs on each union member separately, and the results are unioned. To get (string | number)[], you have to switch distribution off."
+        },
+        {
+          "s": "Wrapping both sides of a conditional type in brackets, [T] extends [U], turns on distribution over each union member.",
+          "ok": false,
+          "why": "The brackets switch distribution off: the parameter is no longer naked. The condition then checks the union as a whole."
+        },
+        {
+          "s": "The infer keyword lets a conditional type pull a type out of a pattern, and that's roughly how ReturnType and Awaited are built.",
+          "ok": true,
+          "why": "For example, T extends Promise<infer V> ? V : T extracts a promise's value type. Awaited also unwraps nested promises recursively."
+        },
+        {
+          "s": "Partial and Readonly are built into the compiler as special constructs and can't be expressed as a mapped type.",
+          "ok": false,
+          "why": "Both are ordinary mapped types: iterating keys { [K in keyof T]: ... } with a ? or readonly modifier. A minus before the modifier removes it and gives Required."
+        },
+        {
+          "s": "Extract<string | number, 'a'> is never, while the intersection (string | number) & 'a' is the type 'a'.",
+          "ok": true,
+          "why": "Extract keeps the union members assignable to 'a', and neither string nor number is. That's why Extract is a filter, not an intersection."
+        },
+        {
+          "s": "Omit applied to a discriminated union handles each member separately, so narrowing on the tag keeps working.",
+          "ok": false,
+          "why": "Omit isn't distributive and keeps only the common keys, so narrowing is lost. The fix is a distributive version: T extends unknown ? Omit<T, K> : never."
+        },
+        {
+          "s": "Writing const config = {...} as Config makes TypeScript check that every required field of Config is present.",
+          "ok": false,
+          "why": "as is a type assertion and doesn't check that the object is complete. It errors only when neither type converts to the other, so a missing field compiles."
+        },
+        {
+          "s": "The annotation const config: Config checks the value, but afterwards the literal information is lost and the variable is just Config.",
+          "ok": true,
+          "why": "After the annotation every optional key looks possibly undefined. satisfies is what keeps the precise literal keys."
+        },
+        {
+          "s": "The satisfies operator, added in TypeScript 4.9, checks a value against a type while keeping the inferred type.",
+          "ok": true,
+          "why": "You get the error on a typo and the precise literal keys afterwards. For configs, as const satisfies Config works well."
+        },
+        {
+          "s": "Complex conditional types with nested infer cost nothing in application code, because all types are erased at compile time.",
+          "ok": false,
+          "why": "Such types produce error messages nobody can read and slow the compiler down. In application code it's better to write the type out or generate it from a schema."
+        }
       ]
     },
     "cloze": {

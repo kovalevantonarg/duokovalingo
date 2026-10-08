@@ -15,7 +15,7 @@
     "a": [
       {
         "q": "Компоненты",
-        "t": "Браузер никогда не ходит в модель напрямую — ключ утечёт, и контроля нет. Браузер ходит в мой API route. Сервер принимает новое сообщение пользователя и id разговора, сам восстанавливает историю из базы, добавляет system prompt, вызывает провайдера со stream: true и проксирует SSE клиенту. По завершении сохраняет ответ ассистента вместе с usage. Клиент делает fetch с POST, читает ReadableStream, дописывает дельты. Историю клиент не присылает: доверять клиентской истории нельзя ни по цене, ни по безопасности — её подменят."
+        "t": "Браузер никогда не ходит в модель напрямую: ключ утечёт, и контроля нет. Браузер ходит в мой API route. Сервер принимает новое сообщение пользователя и id разговора, сам восстанавливает историю из базы, добавляет system prompt, вызывает провайдера со stream: true и проксирует SSE клиенту. По завершении сохраняет ответ ассистента вместе с usage. Клиент делает fetch с POST, читает ReadableStream, дописывает дельты. Историю клиент не присылает: доверять клиентской истории нельзя ни по цене, ни по безопасности — её подменят."
       },
       {
         "q": "Состояние",
@@ -23,7 +23,7 @@
       },
       {
         "q": "Отказы",
-        "t": "Стоп — через AbortController, и сервер тоже прерывает вызов к провайдеру, чтобы не платить за то, что уже никто не читает. Обрыв — частичный текст остаётся на экране с пометкой, retry шлёт тот же id сообщения пользователя, чтобы сервер не сохранил его второй раз. Ошибки различаю: 429 — backoff и повтор, перегрузка провайдера — повтор, слишком длинный запрос — честно сказать пользователю. Логирую request id, время до первого токена, общее время, stop_reason, usage и модель. Именно по этим полям потом разбираешь «почему тормозит»."
+        "t": "Стоп — через AbortController, и сервер тоже прерывает вызов к провайдеру, чтобы не платить за то, что уже никто не читает. При обрыве частичный текст остаётся на экране с пометкой, а retry шлёт тот же id сообщения пользователя, чтобы сервер не сохранил его второй раз. Ошибки различаю: при 429 делаю backoff и повтор, при перегрузке провайдера тоже повторяю, а про слишком длинный запрос честно говорю пользователю. Логирую request id, время до первого токена, общее время, stop_reason, usage и модель. Именно по этим полям потом разбираешь «почему тормозит»."
       }
     ],
     "kill": "<b>Ключ API в браузере</b> — дисквалификация. И <b>перерендер всего markdown на каждый токен</b> — чат начнёт лагать на длинных ответах, и это увидят на демо."
@@ -38,11 +38,11 @@
     "a": [
       {
         "q": "Components",
-        "t": "The browser never talks to the model directly — the key leaks and you have no control. The browser calls my API route. The server takes the new user message and a conversation id, rebuilds the history from the database itself, adds the system prompt, calls the provider with stream: true, and proxies the SSE to the client. On completion it persists the assistant message along with usage. The client does a POST fetch, reads the ReadableStream, appends deltas. The client never sends history: you can't trust client-supplied history for cost or for safety — it'll get tampered with."
+        "t": "The browser never talks to the model directly: the key leaks and you have no control. The browser calls my API route. The server takes the new user message and a conversation id, rebuilds the history from the database itself, adds the system prompt, calls the provider with stream: true, and proxies the SSE to the client. On completion it persists the assistant message along with usage. The client does a POST fetch, reads the ReadableStream, appends deltas. The client never sends history: you can't trust client-supplied history for cost or for safety, because it'll get tampered with."
       },
       {
         "q": "State",
-        "t": "An array of messages, each with a status: pending, streaming, done, error. Partial text appends to the streaming message's content, and I batch renders on requestAnimationFrame rather than per token. Markdown renders incrementally, with one caveat: an unclosed code fence mid-stream breaks the layout, so that needs handling. The user's message shows optimistically right away. Auto-scroll to the bottom only if the user hasn't scrolled up. Cost and tokens per message come from usage at the end. Trimming a long history happens on the server — sliding window or summary — and the client doesn't know about it."
+        "t": "An array of messages, each with a status: pending, streaming, done, error. Partial text appends to the streaming message's content, and I batch renders on requestAnimationFrame rather than per token. Markdown renders incrementally, with one caveat: an unclosed code fence mid-stream breaks the layout, so that needs handling. The user's message shows optimistically right away. Auto-scroll to the bottom only if the user hasn't scrolled up. Cost and tokens per message come from usage at the end. Trimming a long history happens on the server (sliding window or summary), and the client doesn't know about it."
       },
       {
         "q": "Failures",
@@ -52,26 +52,142 @@
     "kill": "<b>API key in the browser</b> — disqualifying. And <b>re-rendering all the markdown on every token</b> — the chat starts to lag on long answers, and it shows during the demo."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Браузер может ходить в API модели напрямую, если ключ спрятать в env-переменную фронтенда.",
-        "Клиент присылает всю историю, серверу так проще."
+        {
+          "s": "Сервер восстанавливает историю разговора из базы по id, потому что клиентской истории нельзя доверять ни по цене, ни по безопасности.",
+          "ok": true,
+          "why": "Так сервер сам решает, что уходит в модель: добавляет system prompt и при необходимости обрезает старые сообщения."
+        },
+        {
+          "s": "Обрезку длинной истории лучше делать на клиенте, чтобы сервер получал уже готовое окно сообщений.",
+          "ok": false,
+          "why": "История живёт на сервере, и обрезает её сервер: скользящим окном или саммари. Клиент об этом не знает."
+        },
+        {
+          "s": "Сервер стримингового чата вызывает провайдера со stream: true и проксирует клиенту поток событий SSE.",
+          "ok": true,
+          "why": "Провайдер отдаёт ответ server-sent events, а сервер пересылает их браузеру, не раскрывая ключ."
+        },
+        {
+          "s": "При нажатии «Стоп» достаточно отменить fetch в браузере, серверу не нужно отдельно прерывать вызов к провайдеру.",
+          "ok": false,
+          "why": "Если сервер не прервёт вызов, провайдер продолжит генерацию и выставит счёт за текст, который никто не прочтёт."
+        },
+        {
+          "s": "Ключ API можно безопасно положить в публичную env-переменную фронтенда, например NEXT_PUBLIC_, и звать модель из браузера.",
+          "ok": false,
+          "why": "Значения NEXT_PUBLIC_ встраиваются в JavaScript-бандл при сборке. Ключ из такой переменной виден любому, кто откроет DevTools."
+        },
+        {
+          "s": "Клиент чата может присылать серверу всю историю разговора, и сервер может передавать её модели как есть.",
+          "ok": false,
+          "why": "Клиентскую историю могут подменить, а длинная история раздувает цену. Сервер принимает только новое сообщение и id разговора."
+        },
+        {
+          "s": "Браузер не должен вызывать API модели напрямую, потому что секретный ключ окажется в коде, доступном пользователю.",
+          "ok": true,
+          "why": "Всё, что попало в браузер, может прочитать пользователь. Ключ живёт на сервере, а браузер ходит в твой API route."
+        },
+        {
+          "s": "При инкрементальном рендере markdown незакрытый блок кода посреди потока ломает разметку, и это нужно обрабатывать отдельно.",
+          "ok": true,
+          "why": "Модель открыла блок тремя обратными кавычками, а закрывающих ещё нет. Парсер считает кодом весь остальной текст."
+        },
+        {
+          "s": "Retry после обрыва отправляет тот же id сообщения пользователя, чтобы сервер не сохранил это сообщение второй раз.",
+          "ok": true,
+          "why": "Сервер видит знакомый id и не создаёт дубликат в истории. Частичный ответ при этом остаётся на экране с пометкой."
+        },
+        {
+          "s": "Markdown стримящегося ответа надёжнее перерендеривать целиком на каждый пришедший токен.",
+          "ok": false,
+          "why": "Полный перерендер на каждый токен заставляет чат лагать на длинных ответах. Рендер батчат через requestAnimationFrame."
+        },
+        {
+          "s": "В стриминговом чате логируют request id, время до первого токена, общее время, stop_reason, usage и модель.",
+          "ok": true,
+          "why": "По этим полям потом разбирают жалобу «тормозит»: медленный первый токен и медленная генерация чинятся по-разному."
+        },
+        {
+          "s": "Ошибку 429 и ошибку слишком длинного запроса обрабатывают одинаково: backoff и повторная отправка того же запроса.",
+          "ok": false,
+          "why": "429 означает rate limit, и повтор с backoff помогает. Слишком длинный запрос при повторе снова упадёт, об этом честно говорят пользователю."
+        }
       ],
       "en": [
-        "The browser can call the model API directly if the key is hidden in a frontend env variable.",
-        "The client sends the whole history; it's simpler for the server."
+        {
+          "s": "The server rebuilds the conversation history from the database by id, because client history can't be trusted for cost or safety.",
+          "ok": true,
+          "why": "That way the server decides what goes to the model: it adds the system prompt and trims old messages when needed."
+        },
+        {
+          "s": "Trimming a long history is best done on the client, so the server receives a ready-made window of messages.",
+          "ok": false,
+          "why": "History lives on the server, and the server trims it with a sliding window or a summary. The client doesn't know about it."
+        },
+        {
+          "s": "The server of a streaming chat calls the provider with stream: true and proxies the SSE event stream to the client.",
+          "ok": true,
+          "why": "The provider returns the answer as server-sent events, and the server forwards them to the browser without exposing the key."
+        },
+        {
+          "s": "When the user clicks Stop, cancelling the fetch in the browser is enough; the server doesn't need to abort the provider call.",
+          "ok": false,
+          "why": "If the server doesn't abort the call, the provider keeps generating and bills you for text nobody will read."
+        },
+        {
+          "s": "You can safely put the API key in a public frontend env variable, such as NEXT_PUBLIC_, and call the model from the browser.",
+          "ok": false,
+          "why": "NEXT_PUBLIC_ values are inlined into the JavaScript bundle at build time. A key in such a variable is visible to anyone who opens DevTools."
+        },
+        {
+          "s": "The chat client can send the server the whole conversation history, and the server can pass it to the model as is.",
+          "ok": false,
+          "why": "Client-supplied history can be tampered with, and a long history inflates cost. The server takes only the new message and the conversation id."
+        },
+        {
+          "s": "The browser shouldn't call the model API directly, because the secret key would end up in code the user can read.",
+          "ok": true,
+          "why": "Anything that reaches the browser can be read by the user. The key lives on the server, and the browser calls your API route."
+        },
+        {
+          "s": "With incremental markdown rendering, an unclosed code fence mid-stream breaks the layout and needs separate handling.",
+          "ok": true,
+          "why": "The model has opened a fence with three backticks but hasn't closed it yet. The parser treats all the remaining text as code."
+        },
+        {
+          "s": "A retry after a dropped stream sends the same user-message id, so the server doesn't save that message twice.",
+          "ok": true,
+          "why": "The server sees a known id and doesn't create a duplicate in the history. The partial answer stays on screen with a marker."
+        },
+        {
+          "s": "It's more reliable to re-render the whole markdown of a streaming answer on every incoming token.",
+          "ok": false,
+          "why": "Re-rendering everything on every token makes the chat lag on long answers. Renders are batched with requestAnimationFrame."
+        },
+        {
+          "s": "In a streaming chat you log the request id, time to first token, total time, stop_reason, usage and model.",
+          "ok": true,
+          "why": "These fields are what you use to investigate a \"it's slow\" complaint: a slow first token and slow generation have different fixes."
+        },
+        {
+          "s": "A 429 and a request-too-long error are handled the same way: back off and resend the same request.",
+          "ok": false,
+          "why": "429 is a rate limit, and retrying with backoff helps. A request that is too long will fail again, so you tell the user honestly."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Ключ API живёт только на [[сервере|server|бэкенде]]; браузер ходит в мой [[API route|роут]].",
-        "Историю восстанавливает [[сервер]] по id разговора — клиентской истории нельзя доверять.",
-        "Рендер батчу через [[requestAnimationFrame|rAF]], а не на каждый токен."
+        "Ключ API хранится только на [[сервере|server|бэкенде]], а браузер ходит в мой [[API route|роут]].",
+        "Историю чата восстанавливает [[сервер|server|бэкенд]] по id разговора, потому что клиентской истории нельзя доверять.",
+        "Рендер стримящегося ответа батчат через [[requestAnimationFrame|rAF]], а не делают на каждый токен."
       ],
       "en": [
-        "The API key lives only on the [[server|backend]]; the browser calls my [[API route|route]].",
-        "The [[server]] rebuilds history from the conversation id — client history can't be trusted.",
-        "I batch renders on [[requestAnimationFrame|rAF]], not per token."
+        "The API key is stored only on the [[server|backend]], and the browser calls my [[API route|route]].",
+        "The chat history is rebuilt by the [[server|backend]] from the conversation id, because client history can't be trusted.",
+        "Renders of a streaming answer are batched with [[requestAnimationFrame|rAF]] rather than done per token."
       ]
     },
     "steps": {

@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Поиск",
-        "t": "Сначала измеряю, потом трогаю. Инструментирую каждый вызов: модель, input, output и cache-токены, фича, пользователь. Группирую по фиче и модели — почти всегда доминирует один шаг. Смотрю структуру: output в несколько раз дороже input за токен, по текущим прайсам Claude и OpenAI примерно в пять раз, но в агентах обычно доминирует input из-за пересылки истории. Ищу типовые причины: цикл без потолка, растущая история, многословные ответы, дорогая модель на массовом шаге. Пока нет разбивки по шагам, любое «давайте оптимизируем» — это гадание."
+        "t": "Сначала измеряю, потом трогаю. Инструментирую каждый вызов: модель, input, output и cache-токены, фича, пользователь. Группирую по фиче и модели: почти всегда доминирует один шаг. Смотрю структуру: output в несколько раз дороже input за токен, по текущим прайсам Claude и OpenAI примерно в пять раз, но в агентах обычно доминирует input из-за пересылки истории. Ищу типовые причины: цикл без потолка, растущая история, многословные ответы, дорогая модель на массовом шаге. Пока нет разбивки по шагам, любая оптимизация делается вслепую."
       },
       {
         "q": "Лестница",
-        "t": "Роутинг моделей — самый большой рычаг: у Claude Opus дороже Haiku за токен примерно в четыре раза, а самый дорогой уровень — примерно в десять раз дороже Haiku; у OpenAI разрыв между флагманом и самой маленькой моделью — на порядок и больше. Цены двигаются, поэтому сверяюсь с текущим прайсом, но массовым шагам флагман редко нужен. Prompt caching на статичном префиксе: запись дороже, чтение — около десятой части цены. Короче выходы: max_tokens, сжатый формат, структура вместо прозы. Сжатие входов: дешёвая модель пересказывает страницы до того, как их прочитает дорогая. Обрезка истории — окно или саммари. Batch API — половина цены, если результат не нужен сразу. Семантический кэш для повторных вопросов. Prompt compression — в последнюю очередь, это уже мелкая доводка. Порядок — по соотношению усилия к эффекту."
+        "t": "Роутинг моделей — самый большой рычаг. У Claude Opus дороже Haiku за токен примерно в четыре раза, а самый дорогой уровень примерно в десять раз. У OpenAI разрыв между флагманом и самой маленькой моделью составляет порядок и больше. Цены двигаются, поэтому сверяюсь с текущим прайсом, но массовым шагам флагман редко нужен. Prompt caching на статичном префиксе: запись дороже, чтение — около десятой части цены. Короче выходы: max_tokens, сжатый формат, структура вместо прозы. Сжатие входов: дешёвая модель пересказывает страницы до того, как их прочитает дорогая. Обрезка истории: окно или саммари. Batch API — половина цены, если результат не нужен сразу. Семантический кэш для повторных вопросов. Prompt compression оставляю напоследок, это уже мелкая доводка. Порядок — по соотношению усилия к эффекту."
       },
       {
         "q": "Не чинит",
-        "t": "Кэширование чинит пересылку, а не объём. Если в модель летит двадцать тысяч символов сырого HTML, кэш делает дешёвой вторую отправку, но первая и каждая новая страница стоят полную цену. Типичная картина в агенте, который читает сырые страницы: включение кэша заметно снижает счёт, и после этого большой долей счёта становятся cache writes. Следующий шаг тогда не кэш, а роутинг: дешёвая модель ужимает страницы до того, как их видит дорогая. И ещё: кэшу нужен стабильный префикс — timestamp в начале system prompt ломает его полностью, и это видно только по цифрам."
+        "t": "Кэширование чинит пересылку, а не объём. Если в модель летит двадцать тысяч символов сырого HTML, кэш делает дешёвой вторую отправку, но первая и каждая новая страница стоят полную цену. Типичная картина в агенте, который читает сырые страницы: включение кэша заметно снижает счёт, и после этого большой долей счёта становятся cache writes. Следующий шаг тогда не кэш, а роутинг: дешёвая модель ужимает страницы до того, как их видит дорогая. И ещё: кэшу нужен стабильный префикс. Например, timestamp в начале system prompt ломает его полностью, и это видно только по цифрам."
       }
     ],
-    "kill": "<b>«Возьмите модель подешевле»</b> как весь ответ, без измерений. И утверждать, что <b>кэш решает всё</b> — интервьюер спросит про первую отправку."
+    "kill": "<b>«Возьмите модель подешевле»</b> как весь ответ, без измерений. И утверждать, что <b>кэш решает всё</b>: интервьюер спросит про первую отправку."
   },
   "en": {
     "topic": "Design: LLM product economics",
@@ -38,40 +38,156 @@
     "a": [
       {
         "q": "Finding it",
-        "t": "Measure first, touch second. I instrument every call: model, input, output and cache tokens, feature, user. Group by feature and model — one step almost always dominates. Look at the structure: output costs several times more per token than input, about five times on current Claude and OpenAI price lists, but in agents input usually dominates because of history resends. Then the usual suspects: a loop with no cap, a growing history, verbose outputs, an expensive model on a bulk step. Without a per-step breakdown, any talk of optimising is guessing."
+        "t": "Measure first, touch second. I instrument every call: model, input, output and cache tokens, feature, user. Group by feature and model: one step almost always dominates. Look at the structure: output costs several times more per token than input, about five times on current Claude and OpenAI price lists, but in agents input usually dominates because of history resends. Then the usual suspects: a loop with no cap, a growing history, verbose outputs, an expensive model on a bulk step. Without a per-step breakdown, any talk of optimising is guessing."
       },
       {
         "q": "The ladder",
-        "t": "Model routing is the biggest lever: on Claude, Opus costs about four times Haiku per token and the top tier about ten times Haiku; at OpenAI the gap between the flagship and the smallest model is an order of magnitude or more. Prices move, so I check the current list, but bulk steps rarely need a flagship. Prompt caching on the static prefix: writes cost more, reads are about a tenth of the price. Shorter outputs: max_tokens, a terse format, structure instead of prose. Input distillation: a cheap model summarises pages before the expensive one reads them. History trimming — window or summary. The batch API — half price when the result isn't needed immediately. A semantic cache for repeated questions. Prompt compression last; that's marginal tuning. The order is effort against impact."
+        "t": "Model routing is the biggest lever: on Claude, Opus costs about four times Haiku per token and the top tier about ten times Haiku; at OpenAI the gap between the flagship and the smallest model is an order of magnitude or more. Prices move, so I check the current list, but bulk steps rarely need a flagship. Prompt caching on the static prefix: writes cost more, reads are about a tenth of the price. Shorter outputs: max_tokens, a terse format, structure instead of prose. Input distillation: a cheap model summarises pages before the expensive one reads them. History trimming: window or summary. The batch API — half price when the result isn't needed immediately. A semantic cache for repeated questions. Prompt compression last; that's marginal tuning. The order is effort against impact."
       },
       {
         "q": "Can't fix",
-        "t": "Caching fixes resending, not volume. If twenty thousand characters of raw HTML go into the model, the cache makes the second send cheap, but the first send and every new page still cost full price. The typical picture in an agent that reads raw pages: turning on caching cuts the bill noticeably, and then cache writes become a large share of the bill. The next step isn't more caching, it's routing — a cheap model shrinks the pages before the expensive one sees them. One more: caching needs a stable prefix. A timestamp at the top of the system prompt breaks it entirely, and you only see it in the numbers."
+        "t": "Caching fixes resending, not volume. If twenty thousand characters of raw HTML go into the model, the cache makes the second send cheap, but the first send and every new page still cost full price. The typical picture in an agent that reads raw pages: turning on caching cuts the bill noticeably, and then cache writes become a large share of the bill. The next step isn't more caching, it's routing: a cheap model shrinks the pages before the expensive one sees them. One more: caching needs a stable prefix. A timestamp at the top of the system prompt breaks it entirely, and you only see it in the numbers."
       }
     ],
-    "kill": "<b>\"Use a cheaper model\"</b> as the whole answer, with no measurement. And claiming <b>caching solves everything</b> — the interviewer will ask about the first send."
+    "kill": "<b>\"Use a cheaper model\"</b> as the whole answer, with no measurement. And claiming <b>caching solves everything</b>: the interviewer will ask about the first send."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Prompt caching решает проблему больших входов целиком.",
-        "Первый шаг оптимизации — сжать системный промпт."
+        {
+          "s": "Первый шаг при росте счёта за LLM — сжать системный промпт, потому что он отправляется в каждом вызове.",
+          "ok": false,
+          "why": "Сначала измеряют, где деньги. Prompt compression стоит в конце лестницы рычагов, это мелкая доводка."
+        },
+        {
+          "s": "Prompt compression даёт самую большую экономию, поэтому его стоит делать раньше роутинга моделей.",
+          "ok": false,
+          "why": "Самый большой рычаг — роутинг: разница в цене между уровнями моделей кратная. Prompt compression стоит в конце лестницы."
+        },
+        {
+          "s": "У Claude Opus примерно в четыре раза дороже Haiku за входной токен, поэтому роутинг массовых шагов заметно снижает счёт.",
+          "ok": true,
+          "why": "Самый дорогой уровень Claude дороже Haiku примерно в десять раз. Массовым шагам флагман редко нужен."
+        },
+        {
+          "s": "В агентах основную часть счёта обычно дают выходные токены, потому что они в несколько раз дороже входных.",
+          "ok": false,
+          "why": "Выход дороже за токен, но в агентах на каждом шаге заново пересылается история. Поэтому обычно доминирует вход."
+        },
+        {
+          "s": "Если после включения кэша большой долей счёта стали cache writes, следующий шаг — роутинг: дешёвая модель сжимает страницы.",
+          "ok": true,
+          "why": "Кэш не уменьшает объём новых страниц. Сжатие дешёвой моделью уменьшает то, что вообще попадает в дорогую модель."
+        },
+        {
+          "s": "Если сгруппировать расходы на LLM по фиче и модели, обычно оказывается, что основную часть счёта даёт один шаг.",
+          "ok": true,
+          "why": "Поэтому оптимизировать надо именно этот шаг, а не размазывать усилия по всему продукту."
+        },
+        {
+          "s": "Типовые причины роста счёта за LLM: цикл агента без потолка, растущая история, многословные ответы и дорогая модель на массовом шаге.",
+          "ok": true,
+          "why": "Каждую из них видно в разбивке по шагам: растёт число вызовов, вход, выход или цена за токен."
+        },
+        {
+          "s": "Timestamp в начале system prompt не мешает prompt caching, потому что кэш сравнивает смысл префикса, а не байты.",
+          "ok": false,
+          "why": "Попадание в кэш требует побайтно одинакового префикса. Timestamp в начале меняет префикс в каждом запросе, и кэш не срабатывает вообще."
+        },
+        {
+          "s": "С prompt caching первая отправка новой страницы стоит около десятой части обычной цены входа.",
+          "ok": false,
+          "why": "Десятую часть стоит чтение из кэша. Первая отправка — это запись в кэш, и она дороже обычного входа: 1,25× или 2× в зависимости от TTL."
+        },
+        {
+          "s": "Чтобы найти причину роста счёта за LLM, каждый вызов инструментируют: модель, input, output и cache-токены, фичу и пользователя.",
+          "ok": true,
+          "why": "Без такой разбивки непонятно, какой шаг дорожает. Любая оптимизация до неё делается вслепую."
+        },
+        {
+          "s": "Batch API даёт скидку 50% на входные и выходные токены для шагов, которым не нужен ответ сразу.",
+          "ok": true,
+          "why": "Запросы обрабатываются асинхронно. Такую скидку дают и Anthropic, и OpenAI."
+        },
+        {
+          "s": "Prompt caching решает проблему больших входов целиком: с кэшем объём входа почти не влияет на счёт.",
+          "ok": false,
+          "why": "Кэш удешевляет повторную отправку того же префикса. Первая отправка и каждая новая страница стоят полную цену, а запись в кэш даже дороже."
+        }
       ],
       "en": [
-        "Prompt caching solves the large-input problem completely.",
-        "The first optimisation step is to compress the system prompt."
+        {
+          "s": "The first step when an LLM bill grows is to compress the system prompt, because it's sent with every call.",
+          "ok": false,
+          "why": "First you measure where the money goes. Prompt compression sits at the bottom of the ladder; it's marginal tuning."
+        },
+        {
+          "s": "Prompt compression gives the biggest savings, so it should come before model routing.",
+          "ok": false,
+          "why": "The biggest lever is routing: price differences between model tiers are multiples. Prompt compression comes last on the ladder."
+        },
+        {
+          "s": "On Claude, Opus costs about four times as much as Haiku per input token, so routing bulk steps cuts the bill noticeably.",
+          "ok": true,
+          "why": "Claude's top tier costs about ten times as much as Haiku. Bulk steps rarely need a flagship."
+        },
+        {
+          "s": "In agents, output tokens usually make up most of the bill, because they cost several times more than input tokens.",
+          "ok": false,
+          "why": "Output is dearer per token, but agents resend the history at every step. So input usually dominates."
+        },
+        {
+          "s": "If cache writes become a large share of the bill after enabling caching, the next step is routing: a cheap model distills the pages.",
+          "ok": true,
+          "why": "Caching doesn't shrink the volume of new pages. Distilling with a cheap model reduces what reaches the expensive model at all."
+        },
+        {
+          "s": "If you group LLM spend by feature and model, one step usually turns out to account for most of the bill.",
+          "ok": true,
+          "why": "So you optimise that step, instead of spreading effort across the whole product."
+        },
+        {
+          "s": "Typical reasons an LLM bill grows: an agent loop with no cap, a growing history, verbose outputs and an expensive model on a bulk step.",
+          "ok": true,
+          "why": "Each one shows up in the per-step breakdown: more calls, more input, more output, or a higher price per token."
+        },
+        {
+          "s": "A timestamp at the top of the system prompt doesn't affect prompt caching, because the cache compares the prefix's meaning, not its bytes.",
+          "ok": false,
+          "why": "A cache hit needs a byte-for-byte identical prefix. A timestamp at the top changes the prefix on every request, so the cache never hits."
+        },
+        {
+          "s": "With prompt caching, the first send of a new page costs about a tenth of the normal input price.",
+          "ok": false,
+          "why": "A tenth is the price of a cache read. The first send is a cache write, which costs more than normal input: 1.25× or 2× depending on the TTL."
+        },
+        {
+          "s": "To find why an LLM bill grew, you instrument every call: model, input, output and cache tokens, feature and user.",
+          "ok": true,
+          "why": "Without that breakdown you can't tell which step is getting expensive. Any optimisation before it is guesswork."
+        },
+        {
+          "s": "The Batch API gives a 50% discount on input and output tokens for steps that don't need the result right away.",
+          "ok": true,
+          "why": "Requests are processed asynchronously. Both Anthropic and OpenAI offer this discount."
+        },
+        {
+          "s": "Prompt caching solves the large-input problem completely: with a cache, input volume barely affects the bill.",
+          "ok": false,
+          "why": "A cache makes resending the same prefix cheap. The first send and every new page cost full price, and cache writes cost even more."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Сначала [[измеряю|инструментирую|measure]], потом трогаю: модель, токены, фича, пользователь на каждый вызов.",
-        "Самый большой рычаг — [[роутинг|routing]] моделей: массовым шагам флагман редко нужен.",
-        "Кэш чинит [[пересылку|resending]], а не объём; timestamp в начале system prompt [[ломает|убивает]] кэш."
+        "Когда счёт за LLM вырос, сначала [[измеряют|инструментируют|measure]] каждый вызов (модель, токены, фича, пользователь) и только потом оптимизируют.",
+        "Самый большой рычаг экономии — [[роутинг|routing]] моделей, потому что массовым шагам флагман редко нужен.",
+        "Prompt caching удешевляет [[пересылку|повторную отправку|resending]] того же префикса, а timestamp в начале system prompt [[ломает|сбрасывает|убивает]] кэш."
       ],
       "en": [
-        "[[Measure|Instrument]] first, touch second: model, tokens, feature, user on every call.",
-        "The biggest lever is model [[routing]]: bulk steps rarely need the flagship.",
-        "Caching fixes [[resending]], not volume; a timestamp at the top of the system prompt [[breaks|kills]] the cache."
+        "When an LLM bill grows, you first [[measure|instrument]] every call (model, tokens, feature, user) and only then optimise.",
+        "The biggest cost lever is model [[routing]], because bulk steps rarely need a flagship.",
+        "Prompt caching makes [[resending]] the same prefix cheap, and a timestamp at the top of the system prompt [[breaks|kills]] the cache."
       ]
     },
     "steps": {

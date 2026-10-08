@@ -19,7 +19,7 @@
       },
       {
         "q": "Метрики",
-        "t": "Cosine смотрит только на угол между векторами, игнорируя длину. Dot product учитывает и длину. Если векторы нормализованы до единичной длины — а большинство провайдеров возвращают именно такие, — это одно и то же, и dot product просто дешевле. Размерности: у OpenAI text-embedding-3-small — тысяча пятьсот тридцать шесть, у их же -large можно до трёх тысяч семидесяти двух; у моделей Voyage 4 по умолчанию тысяча двадцать четыре, а поддерживаются от двухсот пятидесяти шести до двух тысяч сорока восьми. Больше измерений — тоньше различия, но дороже хранить и медленнее искать; некоторые модели позволяют усекать вектор. Храню в Postgres с pgvector и индексом HNSW — на умеренном масштабе отдельная векторная база не нужна."
+        "t": "Cosine смотрит только на угол между векторами, игнорируя длину. Dot product учитывает и длину. Если векторы нормализованы до единичной длины (а большинство провайдеров возвращают именно такие), это одно и то же, и dot product просто дешевле. Размерности: у OpenAI text-embedding-3-small — тысяча пятьсот тридцать шесть, у их же -large можно до трёх тысяч семидесяти двух; у моделей Voyage 4 по умолчанию тысяча двадцать четыре, а поддерживаются от двухсот пятидесяти шести до двух тысяч сорока восьми. Больше измерений — тоньше различия, но дороже хранить и медленнее искать; некоторые модели позволяют усекать вектор. Храню в Postgres с pgvector и индексом HNSW: на умеренном масштабе отдельная векторная база не нужна."
       },
       {
         "q": "Промахи",
@@ -42,7 +42,7 @@
       },
       {
         "q": "Metrics",
-        "t": "Cosine looks only at the angle between vectors and ignores length. Dot product includes length. If the vectors are normalised to unit length — and most providers return them that way — the two are identical, and dot product is simply cheaper. Dimensions: OpenAI's text-embedding-3-small is fifteen thirty-six, their -large goes up to three thousand seventy-two; the Voyage 4 models default to ten twenty-four and support two fifty-six up to two thousand forty-eight. More dimensions, finer distinctions, but more storage and slower search; some models let you truncate the vector. I store in Postgres with pgvector and an HNSW index — at moderate scale a separate vector database isn't justified."
+        "t": "Cosine looks only at the angle between vectors and ignores length. Dot product includes length. If the vectors are normalised to unit length (and most providers return them that way), the two are identical, and dot product is simply cheaper. Dimensions: OpenAI's text-embedding-3-small is fifteen thirty-six, their -large goes up to three thousand seventy-two; the Voyage 4 models default to ten twenty-four and support two fifty-six up to two thousand forty-eight. More dimensions, finer distinctions, but more storage and slower search; some models let you truncate the vector. I store in Postgres with pgvector and an HNSW index: at moderate scale a separate vector database isn't justified."
       },
       {
         "q": "Misses",
@@ -52,26 +52,142 @@
     "kill": "<b>\"Embeddings understand meaning\"</b> without adding \"relative to their training data\". And treating cosine and dot product as different on normalised vectors: there they give the same result."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Запрос и документы можно эмбеддить любыми двумя несвязанными моделями — расстояния всё равно сопоставимы.",
-        "Cosine и dot product дают разные результаты на нормализованных векторах."
+        {
+          "s": "Запрос и документы можно эмбеддить двумя любыми несвязанными моделями, расстояния между их векторами всё равно сопоставимы.",
+          "ok": false,
+          "why": "У несвязанных моделей разные пространства, и расстояния между ними бессмысленны. Исключение — семейства, обученные в общем пространстве, как Voyage 4."
+        },
+        {
+          "s": "Все модели эмбеддингов кодируют запрос и документ одинаково, поэтому отдельный режим для запросов нигде не нужен.",
+          "ok": false,
+          "why": "Запрос и документ — тексты разной природы. У Voyage и Cohere есть параметр input_type с отдельными режимами для запроса и документа."
+        },
+        {
+          "s": "Эмбеддинг — это вектор из тысячи с лишним чисел, и тексты со схожим смыслом получают близкие векторы.",
+          "ok": true,
+          "why": "Энкодер обучают так, чтобы похожие по смыслу тексты оказывались рядом. Например, у text-embedding-3-small 1536 чисел."
+        },
+        {
+          "s": "Чем больше измерений у эмбеддинга, тем быстрее поиск, потому что векторы лучше разделяются в пространстве.",
+          "ok": false,
+          "why": "Больше измерений дают более тонкие различия, но векторы дороже хранить и поиск по ним медленнее."
+        },
+        {
+          "s": "Cosine similarity учитывает только угол между векторами, а dot product учитывает ещё и длину векторов.",
+          "ok": true,
+          "why": "Поэтому на ненормализованных векторах метрики могут расходиться: длинный вектор выигрывает по dot product за счёт длины."
+        },
+        {
+          "s": "У OpenAI text-embedding-3-small по умолчанию 1536 измерений, а text-embedding-3-large поддерживает до 3072.",
+          "ok": true,
+          "why": "У large размерность можно уменьшить параметром dimensions. Модели Voyage 4 по умолчанию дают 1024."
+        },
+        {
+          "s": "При доменном сдвиге помогает доменная модель эмбеддингов или реранкер, который читает запрос и документ вместе.",
+          "ok": true,
+          "why": "Доменная модель, например voyage-law-2, обучена на текстах нужной области. Реранкер видит запрос и документ одновременно и оценивает их точнее."
+        },
+        {
+          "s": "Модель эмбеддингов, обученная на общем вебе, без доработок одинаково хорошо ищет по юридическим и медицинским текстам.",
+          "ok": false,
+          "why": "Это доменный сдвиг: на специальных текстах расстояния теряют смысл. Помогают доменная модель или реранкер."
+        },
+        {
+          "s": "На умеренном масштабе эмбеддинги можно хранить в Postgres с pgvector и индексом HNSW без отдельной векторной базы.",
+          "ok": true,
+          "why": "pgvector поддерживает индексы HNSW и IVFFlat. Векторы типа vector индексируются до 2000 измерений, для 3072 нужен halfvec или усечение."
+        },
+        {
+          "s": "Расстояние между эмбеддингами отражает близость смысла так, как её выучила модель на своих данных обучения.",
+          "ok": true,
+          "why": "Это не абсолютная истина о смысле. На текстах, далёких от данных обучения, расстояния становятся менее надёжными."
+        },
+        {
+          "s": "Семантический поиск надёжно различает коды ошибок вроде 4017 и 4071, поэтому гибрид с BM25 для идентификаторов не нужен.",
+          "ok": false,
+          "why": "Для эмбеддинга такие коды почти одинаковы по смыслу и оказываются рядом. Точное совпадение строки находит лексический поиск BM25."
+        },
+        {
+          "s": "Cosine similarity и dot product дают разный порядок результатов даже на векторах, нормализованных до единичной длины.",
+          "ok": false,
+          "why": "У векторов длины 1 dot product равен косинусу угла, поэтому порядок совпадает. Dot product при этом считается быстрее."
+        }
       ],
       "en": [
-        "Query and documents can be embedded with any two unrelated models; distances are still comparable.",
-        "Cosine and dot product give different results on normalised vectors."
+        {
+          "s": "Query and documents can be embedded with any two unrelated models; the distances between their vectors are still comparable.",
+          "ok": false,
+          "why": "Unrelated models have different spaces, and distances across them mean nothing. The exception is families trained in a shared space, like Voyage 4."
+        },
+        {
+          "s": "Every embedding model encodes queries and documents the same way, so no model needs a separate mode for queries.",
+          "ok": false,
+          "why": "Queries and documents are different kinds of text. Voyage and Cohere have an input_type parameter with separate query and document modes."
+        },
+        {
+          "s": "An embedding is a vector of a thousand-odd numbers, and texts with similar meaning get vectors that sit close together.",
+          "ok": true,
+          "why": "The encoder is trained so that texts with similar meaning land close together. For example, text-embedding-3-small produces 1,536 numbers."
+        },
+        {
+          "s": "The more dimensions an embedding has, the faster the search, because the vectors are better separated in space.",
+          "ok": false,
+          "why": "More dimensions give finer distinctions, but the vectors cost more to store and search over them is slower."
+        },
+        {
+          "s": "Cosine similarity looks only at the angle between vectors, while dot product also takes their length into account.",
+          "ok": true,
+          "why": "So on unnormalised vectors the metrics can disagree: a long vector wins on dot product because of its length."
+        },
+        {
+          "s": "OpenAI's text-embedding-3-small has 1,536 dimensions by default, and text-embedding-3-large goes up to 3,072.",
+          "ok": true,
+          "why": "For large, the dimensions parameter can shorten the vector. The Voyage 4 models default to 1,024."
+        },
+        {
+          "s": "For domain shift, a domain-specific embedding model or a reranker that reads the query and document together helps.",
+          "ok": true,
+          "why": "A domain model such as voyage-law-2 is trained on texts from that field. A reranker sees query and document at once and scores them more precisely."
+        },
+        {
+          "s": "An embedding model trained on the general web searches legal and medical texts just as well without any changes.",
+          "ok": false,
+          "why": "That's domain shift: on specialist texts distances lose meaning. A domain model or a reranker helps."
+        },
+        {
+          "s": "At moderate scale you can store embeddings in Postgres with pgvector and an HNSW index, without a separate vector database.",
+          "ok": true,
+          "why": "pgvector supports HNSW and IVFFlat indexes. The vector type indexes up to 2,000 dimensions; 3,072 needs halfvec or truncation."
+        },
+        {
+          "s": "The distance between embeddings reflects semantic closeness as the model learned it from its training data.",
+          "ok": true,
+          "why": "It isn't absolute truth about meaning. On texts far from the training data, distances become less reliable."
+        },
+        {
+          "s": "Semantic search reliably tells error codes like 4017 and 4071 apart, so hybrid search with BM25 isn't needed for identifiers.",
+          "ok": false,
+          "why": "To an embedding such codes mean almost the same thing and sit side by side. Lexical BM25 search finds the exact string match."
+        },
+        {
+          "s": "Cosine similarity and dot product rank results differently even on vectors normalised to unit length.",
+          "ok": false,
+          "why": "For unit-length vectors the dot product equals the cosine of the angle, so the ranking is the same. Dot product is just faster to compute."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Запрос и документы обычно эмбеддятся [[одной|одной и той же|той же]] моделью — несвязанные модели делают расстояния бессмысленными.",
-        "На [[нормализованных|единичных]] векторах cosine и dot product — одно и то же, dot просто дешевле.",
-        "Точные идентификаторы семантика не различает — добавляю гибрид с [[BM25]]."
+        "Запрос и документы обычно эмбеддят [[одной|одной и той же|той же]] моделью, потому что расстояния между векторами несвязанных моделей бессмысленны.",
+        "На [[нормализованных|единичных]] векторах cosine и dot product дают одинаковый результат, но dot product считается быстрее.",
+        "Точные идентификаторы вроде кодов ошибок семантический поиск не различает, поэтому добавляют гибрид с [[BM25]]."
       ],
       "en": [
-        "Query and documents are normally embedded with the [[same]] model — unrelated models make distances meaningless.",
-        "On [[normalised|unit|normalized]] vectors cosine and dot product are identical; dot is just cheaper.",
-        "Semantics can't separate exact identifiers — I add hybrid search with [[BM25]]."
+        "Query and documents are normally embedded with the [[same]] model, because distances between vectors from unrelated models mean nothing.",
+        "On [[normalised|unit|normalized]] vectors cosine and dot product give the same result, but dot product is cheaper to compute.",
+        "Semantic search can't tell exact identifiers like error codes apart, so you add hybrid search with [[BM25]]."
       ]
     }
   },

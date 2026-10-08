@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Порядок вывода",
-        "t": "Выведется A, E, C, D, B. Весь скрипт это одна задача, поэтому A и E печатаются синхронно, пока работает стек вызовов. setTimeout ставит в очередь макрозадачу, а then и queueMicrotask ставят микрозадачи. Когда стек опустел, браузер выполняет всю очередь микрозадач до конца, в порядке постановки. Поэтому сначала C, потом D. Потом браузер может отрисовать кадр, и только после этого берёт следующую задачу, то есть таймер. Поэтому B последний. Модель у меня в голове такая: одна задача, потом все микрозадачи, потом, возможно, отрисовка, потом следующая задача. Отрисовка не гарантирована на каждом круге. Браузер рисует примерно с частотой обновления экрана и пропускает этот шаг, если ничего не изменилось или вкладка скрыта. Функции из requestAnimationFrame выполняются внутри этого шага, прямо перед пересчётом стилей, layout (расчётом геометрии) и paint (отрисовкой пикселей). Ловушка — думать, что setTimeout с нулём означает «сейчас». Это после текущей задачи, всех микрозадач и хотя бы одного оборота цикла, а для глубоко вложенных таймеров браузер ставит минимум около четырёх миллисекунд."
+        "t": "Выведется A, E, C, D, B. Весь скрипт это одна задача, поэтому A и E печатаются синхронно, пока работает стек вызовов. setTimeout ставит в очередь макрозадачу, а then и queueMicrotask ставят микрозадачи. Когда стек опустел, браузер выполняет всю очередь микрозадач до конца, в порядке постановки. Поэтому сначала C, потом D. Потом браузер может отрисовать кадр, и только после этого берёт следующую задачу, то есть таймер. Поэтому B последний. Модель у меня в голове такая: одна задача, потом все микрозадачи, потом, возможно, отрисовка, потом следующая задача. Отрисовка не гарантирована на каждом круге. Браузер рисует примерно с частотой обновления экрана и пропускает этот шаг, если ничего не изменилось или вкладка скрыта. Функции из requestAnimationFrame выполняются внутри этого шага, прямо перед пересчётом стилей, layout (расчётом геометрии) и paint (отрисовкой пикселей). Частая ошибка — думать, что setTimeout с нулём означает «сейчас». На деле он выполнится после текущей задачи, всех микрозадач и хотя бы одного оборота цикла, а для глубоко вложенных таймеров браузер ставит минимум около четырёх миллисекунд."
       },
       {
         "q": "Лаг при стриминге",
-        "t": "Каждый чанк (кусок ответа) из потокового ответа приходит отдельной задачей, и на каждый мы заново разбираем всю растущую markdown-строку и перерисовываем всё сообщение. К концу длинного ответа это легко больше 50 миллисекунд на чанк, то есть long task (длинная задача). Нажатие клавиши, пришедшее во время long task, ждёт её окончания, а потом ещё и следующего кадра. Это задержка ввода, и она прямо бьёт по INP (Interaction to Next Paint, время от взаимодействия до следующей отрисовки). INP заменил FID в Core Web Vitals (ключевых метриках Google) в марте 2024 года, хороший порог — 200 миллисекунд. Чиню слоями. Во-первых, перестаю перерисовывать на каждый токен. Складываю чанки в буфер и сбрасываю не чаще раза за кадр, через requestAnimationFrame. Во-вторых, делаю разбор инкрементальным. Готовые блоки кэширую, заново разбираю только последний незакрытый блок. В-третьих, помечаю обновление сообщения как несрочное через startTransition или useDeferredValue, чтобы React мог прервать его ради нажатия клавиши. Если разбор и подсветка всё равно тяжёлые, выношу их в Web Worker (фоновый поток), а главный поток только применяет результат."
+        "t": "Каждый чанк (кусок ответа) из потокового ответа приходит отдельной задачей, и на каждый мы заново разбираем всю растущую markdown-строку и перерисовываем всё сообщение. К концу длинного ответа это легко больше 50 миллисекунд на чанк, то есть long task (длинная задача). Нажатие клавиши, пришедшее во время long task, ждёт её окончания, а потом ещё и следующего кадра. Это задержка ввода, и она напрямую ухудшает INP (Interaction to Next Paint, время от взаимодействия до следующей отрисовки). INP заменил FID в Core Web Vitals (ключевых метриках Google) в марте 2024 года, хороший порог — 200 миллисекунд. Чиню слоями. Во-первых, перестаю перерисовывать на каждый токен. Складываю чанки в буфер и сбрасываю не чаще раза за кадр, через requestAnimationFrame. Во-вторых, делаю разбор инкрементальным. Готовые блоки кэширую, заново разбираю только последний незакрытый блок. В-третьих, помечаю обновление сообщения как несрочное через startTransition или useDeferredValue, чтобы React мог прервать его ради нажатия клавиши. Если разбор и подсветка всё равно тяжёлые, выношу их в Web Worker (фоновый поток), а главный поток только применяет результат."
       },
       {
         "q": "Зависание на промисах",
         "t": "Потому что async не значит «отдать управление браузеру». Обработчик уже выполненного промиса (Promise) это микрозадача, а цикл событий выполняет очередь микрозадач полностью, прежде чем рисовать или брать следующую задачу. Если каждая микрозадача ставит следующую, например рекурсивная цепочка then или цикл, который ждёт через await уже готовые значения, очередь не пустеет, пока цепочка не кончится, а бесконечная не кончается никогда. Нет отрисовки, нет обработки ввода, нет таймеров. Страница висит так же, как от while (true). У setTimeout такой проблемы нет: каждый вызов это отдельная задача, и между ними браузер успевает отрисовать кадр. Поэтому, когда я режу тяжёлую работу на куски, я отдаю управление через настоящую границу задачи. Классический способ — await new Promise(r => setTimeout(r, 0)). scheduler.yield лучше, потому что продолжение встаёт в начало очереди, а не в конец. Но, насколько я знаю, он есть в Chromium и Firefox, а в Safari пока нет, так что я проверяю его наличие и откатываюсь на setTimeout. А по-настоящему вычислительную работу, вроде разбора большого файла или токенизации, я лучше вынесу в Web Worker (фоновый поток), чем буду резать."
       }
     ],
-    "kill": "<b>«setTimeout(fn, 0) выполнится сразу после текущей строки»</b> — нет, он выполнится после текущей задачи, всех микрозадач и, возможно, отрисовки. И <b>«асинхронный код не может заблокировать страницу»</b> неверно: бесконечная цепочка микрозадач вешает её так же, как while (true)."
+    "kill": "<b>«setTimeout(fn, 0) выполнится сразу после текущей строки»</b> неверно: он выполнится после текущей задачи, всех микрозадач и, возможно, отрисовки. Так же неверно <b>«асинхронный код не может заблокировать страницу»</b>: бесконечная цепочка микрозадач вешает её так же, как while (true)."
   },
   "en": {
     "topic": "Event loop in depth",
@@ -49,17 +49,133 @@
         "t": "Because async doesn't mean yielding to the browser. The callback of a resolved promise is a microtask, and the event loop drains the microtask queue completely before it renders or takes the next task. If each microtask queues another one, like a recursive then chain or a loop that awaits already-resolved values, the queue doesn’t empty until the chain ends, and an endless one never does. No paint, no input handling, no timers. The page is frozen exactly as if I'd written while (true). setTimeout doesn't have this problem, because each callback is a separate task and the browser gets a chance to render between them. So when I chunk heavy work, I yield across a real task boundary. The classic way is await new Promise(r => setTimeout(r, 0)). scheduler.yield is better, because the continuation goes to the front of the line instead of the back. But as far as I know it's in Chromium and Firefox and not in Safari yet, so I feature-detect it and fall back to setTimeout. For truly CPU-bound work, like parsing a big file or tokenizing, I'd rather move it to a Web Worker than slice it."
       }
     ],
-    "kill": "<b>\"setTimeout(fn, 0) runs right after the current line\"</b> — no, it runs after the current task, every queued microtask and possibly a render. And <b>\"async code can't block the page\"</b> is wrong: an endless microtask chain freezes it as hard as while (true)."
+    "kill": "<b>\"setTimeout(fn, 0) runs right after the current line\"</b> is wrong: it runs after the current task, every queued microtask and possibly a render. So is <b>\"async code can't block the page\"</b>: an endless microtask chain freezes it as hard as while (true)."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Браузер отрисовывает кадр после каждой задачи, так что у каждого вызова setTimeout своя отрисовка.",
-        "await уже выполненного промиса в цикле даёт браузеру отрисовать кадр между итерациями."
+        {
+          "s": "Колбэки then и queueMicrotask попадают в одну очередь микрозадач и выполняются в порядке постановки.",
+          "ok": true,
+          "why": "Поэтому then, поставленный раньше queueMicrotask, печатает первым. Обе микрозадачи выполнятся раньше колбэка setTimeout."
+        },
+        {
+          "s": "Браузер отрисовывает кадр после каждой выполненной задачи, поэтому у каждого колбэка setTimeout есть своя отрисовка.",
+          "ok": false,
+          "why": "Отрисовка не гарантирована на каждом обороте цикла. Браузер рисует примерно с частотой обновления экрана и пропускает этот шаг, если ничего не изменилось или вкладка скрыта."
+        },
+        {
+          "s": "Колбэки requestAnimationFrame выполняются внутри шага отрисовки, прямо перед пересчётом стилей, layout и paint.",
+          "ok": true,
+          "why": "Поэтому rAF подходит для изменений, которые должны попасть в ближайший кадр. Если браузер пропускает отрисовку, колбэки rAF тоже ждут."
+        },
+        {
+          "s": "setTimeout с задержкой 0 выполняется сразу после текущей строки кода, раньше уже поставленных в очередь микрозадач.",
+          "ok": false,
+          "why": "Колбэк таймера — это отдельная задача. Она выполнится после текущей задачи, всех микрозадач и хотя бы одного оборота цикла."
+        },
+        {
+          "s": "Для глубоко вложенных таймеров браузеры выставляют минимальную задержку около четырёх миллисекунд, даже если передан ноль.",
+          "ok": true,
+          "why": "Это ограничение срабатывает, когда таймеры многократно ставят друг друга. Ещё одна причина, по которой setTimeout(fn, 0) не означает «сейчас»."
+        },
+        {
+          "s": "Задача, которая выполняется дольше 50 миллисекунд, считается long task и задерживает обработку нажатий клавиш.",
+          "ok": true,
+          "why": "Пока задача занимает главный поток, событие ввода ждёт в очереди. Эта задержка входит в INP."
+        },
+        {
+          "s": "Нажатие клавиши во время long task прерывает её выполнение, и обработчик ввода запускается без ожидания.",
+          "ok": false,
+          "why": "Задачу прервать нельзя: нажатие ждёт её окончания, а потом ещё и следующего кадра. Это и есть задержка ввода, которая бьёт по INP."
+        },
+        {
+          "s": "Чтобы убрать лаг ввода при стриминге ответа LLM, markdown лучше перерисовывать на каждый токен, чтобы каждый кадр был маленьким.",
+          "ok": false,
+          "why": "Перерисовка на каждый токен и создаёт long tasks. Чанки складывают в буфер и сбрасывают не чаще раза за кадр через requestAnimationFrame."
+        },
+        {
+          "s": "startTransition и useDeferredValue помечают обновление сообщения как несрочное, и React может прервать его ради нажатия клавиши.",
+          "ok": true,
+          "why": "Срочным остаётся ввод в поле, а перерисовка длинного сообщения уступает ему. Тяжёлый разбор при этом можно ещё и вынести в Web Worker."
+        },
+        {
+          "s": "await уже выполненного промиса внутри цикла даёт браузеру отрисовать кадр между итерациями этого цикла.",
+          "ok": false,
+          "why": "Продолжение после await — это микрозадача, а очередь микрозадач выполняется целиком до отрисовки. Такой цикл не отдаёт управление браузеру."
+        },
+        {
+          "s": "Бесконечная цепочка промисов не может заморозить страницу, потому что асинхронный код не блокирует главный поток.",
+          "ok": false,
+          "why": "Если каждая микрозадача ставит следующую, очередь не пустеет. Нет отрисовки, ввода и таймеров, страница висит так же, как от while (true)."
+        },
+        {
+          "s": "После scheduler.yield продолжение встаёт в начало очереди задач, а после setTimeout(r, 0) оно встаёт в конец.",
+          "ok": true,
+          "why": "Обе функции отдают управление через настоящую границу задачи. scheduler.yield есть не во всех браузерах, поэтому его наличие проверяют и откатываются на setTimeout."
+        }
       ],
       "en": [
-        "The browser renders a frame after every single task, so each setTimeout callback gets its own paint.",
-        "Awaiting an already-resolved promise in a loop gives the browser a chance to paint between iterations."
+        {
+          "s": "then and queueMicrotask callbacks go into the same microtask queue and run in the order they were queued.",
+          "ok": true,
+          "why": "So a then queued before a queueMicrotask logs first. Both microtasks run before the setTimeout callback."
+        },
+        {
+          "s": "The browser renders a frame after every completed task, so each setTimeout callback gets its own paint.",
+          "ok": false,
+          "why": "Rendering isn't guaranteed on every turn of the loop. The browser renders roughly at the display refresh rate and skips the step if nothing changed or the tab is hidden."
+        },
+        {
+          "s": "requestAnimationFrame callbacks run inside the rendering step, right before style recalculation, layout and paint.",
+          "ok": true,
+          "why": "That's why rAF suits changes that should land in the next frame. If the browser skips rendering, rAF callbacks wait too."
+        },
+        {
+          "s": "setTimeout with a 0 delay runs right after the current line of code, before any microtasks already in the queue.",
+          "ok": false,
+          "why": "A timer callback is a separate task. It runs after the current task, all microtasks and at least one turn of the loop."
+        },
+        {
+          "s": "For deeply nested timers, browsers enforce a minimum delay of about four milliseconds even when zero is passed.",
+          "ok": true,
+          "why": "The clamp kicks in when timers repeatedly schedule each other. One more reason setTimeout(fn, 0) doesn't mean 'now'."
+        },
+        {
+          "s": "A task that runs for more than 50 milliseconds counts as a long task and delays handling of key presses.",
+          "ok": true,
+          "why": "While the task holds the main thread, the input event waits in the queue. That delay counts toward INP."
+        },
+        {
+          "s": "A key press during a long task interrupts it, and the input handler runs without waiting.",
+          "ok": false,
+          "why": "A task can't be interrupted: the key press waits until it ends, and then for the next frame too. That's the input delay that hurts INP."
+        },
+        {
+          "s": "To remove input lag while an LLM response streams, it's better to re-render the markdown on every token so each frame stays small.",
+          "ok": false,
+          "why": "Re-rendering per token is what creates the long tasks. Buffer the chunks and flush at most once per frame with requestAnimationFrame."
+        },
+        {
+          "s": "startTransition and useDeferredValue mark the message update as non-urgent, so React can interrupt it for a keystroke.",
+          "ok": true,
+          "why": "Typing in the input stays urgent, and the long message re-render yields to it. Heavy parsing can also move to a Web Worker."
+        },
+        {
+          "s": "Awaiting an already-resolved promise inside a loop lets the browser paint a frame between the loop's iterations.",
+          "ok": false,
+          "why": "The continuation after await is a microtask, and the microtask queue drains completely before rendering. Such a loop never yields to the browser."
+        },
+        {
+          "s": "An endless promise chain can't freeze the page, because asynchronous code doesn't block the main thread.",
+          "ok": false,
+          "why": "If each microtask queues another one, the queue never empties. No paint, no input, no timers: the page freezes as if you wrote while (true)."
+        },
+        {
+          "s": "After scheduler.yield the continuation goes to the front of the task queue, while after setTimeout(r, 0) it goes to the back.",
+          "ok": true,
+          "why": "Both yield across a real task boundary. scheduler.yield isn't in every browser, so you feature-detect it and fall back to setTimeout."
+        }
       ]
     },
     "cloze": {

@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Структурная типизация",
-        "t": "TypeScript использует structural typing (структурную типизацию). Значение подходит под тип, если у него есть все обязательные свойства этого типа, и их типы совместимы. Имя типа не важно, лишние свойства допустимы. Поэтому если я сначала кладу объект в переменную, а потом передаю её, поле с опечаткой — просто лишнее свойство, и всё компилируется. Исключение — excess property checking (проверка лишних свойств). Когда я передаю свежий объектный литерал прямо в вызов, компилятор считает лишние ключи ошибкой, потому что больше ни у кого нет ссылки на этот литерал. Отсюда и разница: одна и та же опечатка ловится в одном месте и не ловится в другом. Ловушка, за которой я слежу, это опциональные поля: опечатка в опциональном ключе, переданном через переменную, обычно молча проходит. Исключение — когда у объекта нет ни одного общего свойства с типом из одних опциональных полей: это ловит weak type check (проверка «слабых» типов). Когда мне нужна номинальная семантика, например чтобы не путать UserId и OrderId, которые оба строки, я использую branded type (помеченный тип): строку, пересечённую с уникальным свойством-меткой."
+        "t": "TypeScript использует structural typing (структурную типизацию). Значение подходит под тип, если у него есть все обязательные свойства этого типа, и их типы совместимы. Имя типа не важно, лишние свойства допустимы. Поэтому если я сначала кладу объект в переменную, а потом передаю её, поле с опечаткой — просто лишнее свойство, и всё компилируется. Исключение — excess property checking (проверка лишних свойств). Когда я передаю свежий объектный литерал прямо в вызов, компилятор считает лишние ключи ошибкой, потому что больше ни у кого нет ссылки на этот литерал. Отсюда и разница: одна и та же опечатка ловится в одном месте и не ловится в другом. Отдельно слежу за опциональными полями: опечатка в опциональном ключе, переданном через переменную, обычно молча проходит. Исключение — когда у объекта нет ни одного общего свойства с типом из одних опциональных полей: это ловит weak type check (проверка «слабых» типов). Когда мне нужна номинальная семантика, например чтобы не путать UserId и OrderId, которые оба строки, я использую branded type (помеченный тип): строку, пересечённую с уникальным свойством-меткой."
       },
       {
         "q": "any, unknown, never",
-        "t": "any выключает проверку, и он заразен. Всё, что я читаю из any, тоже any, так что один JSON.parse может незаметно расползтись по кодовой базе. unknown — честная версия. Он принимает любое значение, но пока я его не сузил, сделать с ним ничего нельзя. Это правильный тип для всего, что приходит снаружи: распарсенный JSON, ошибка в catch, данные из postMessage. never — пустой тип, у него нет значений. Это тип возврата функции, которая всегда бросает исключение, и то, что остаётся от объединения, когда все его варианты исключены проверками. Чтобы из unknown получить полезный тип, я делаю narrowing (сужение типа): typeof для примитивов, помня, что typeof null это 'object'; instanceof для классов, который ломается между realm-ами (отдельными JS-окружениями, например iframe); in для проверки ключа; сравнение с литералами. Для переиспользуемых проверок пишу type guard (функцию-проверку типа), которая возвращает x is T, или assertion function (функцию-утверждение) с asserts x is T, которая вместо false бросает ошибку. Подвох в том, что компилятор слепо верит телу такой функции. Если проверка неверная, я просто соврал, только в несколько шагов."
+        "t": "any выключает проверку, и он заразен. Всё, что я читаю из any, тоже any, так что один JSON.parse может незаметно расползтись по кодовой базе. unknown — безопасная альтернатива. Он принимает любое значение, но пока я его не сузил, сделать с ним ничего нельзя. Это правильный тип для всего, что приходит снаружи: распарсенный JSON, ошибка в catch, данные из postMessage. never — пустой тип, у него нет значений. Это тип возврата функции, которая всегда бросает исключение, и то, что остаётся от объединения, когда все его варианты исключены проверками. Чтобы из unknown получить полезный тип, я делаю narrowing (сужение типа): typeof для примитивов, помня, что typeof null это 'object'; instanceof для классов, который ломается между realm-ами (отдельными JS-окружениями, например iframe); in для проверки ключа; сравнение с литералами. Для переиспользуемых проверок пишу type guard (функцию-проверку типа), которая возвращает x is T, или assertion function (функцию-утверждение) с asserts x is T, которая вместо false бросает ошибку. Подвох в том, что компилятор слепо верит телу такой функции. Если проверка неверная, тип тоже будет неверным, и компилятор этого не заметит."
       },
       {
         "q": "Размеченные объединения",
-        "t": "В мешке опциональных полей, скажем status плюс необязательные data и error, тип разрешает состояния, которых не бывает: загрузка с данными и ошибкой одновременно или успех без данных. И каждый потребитель проверяет всё на null. Discriminated union (размеченное объединение) делает каждое состояние отдельным вариантом с общим литеральным тегом: status 'loading' без полей, 'success' с data, 'error' с error. Когда я делаю switch по status, TypeScript сужает тип в каждой ветке, и data существует только там, где она реально есть. Для исчерпывающей проверки я добавляю ветку default, где присваиваю значение переменной типа never. Если кто-то позже добавит состояние 'cancelled', эта строка перестанет компилироваться и укажет на каждый switch, который надо обновить. Ровно так я описываю состояние сообщения в чате со стримингом (потоковой выдачей ответа): streaming, done, error и aborted несут разные поля. Одна оговорка про runtime (время выполнения): если данные приходят снаружи, ветка never должна залогировать и пропустить неизвестное значение, а не уронить приложение."
+        "t": "В типе из набора опциональных полей, скажем status плюс необязательные data и error, тип разрешает состояния, которых не бывает: загрузка с данными и ошибкой одновременно или успех без данных. И каждый потребитель проверяет всё на null. Discriminated union (размеченное объединение) делает каждое состояние отдельным вариантом с общим литеральным тегом: status 'loading' без полей, 'success' с data, 'error' с error. Когда я делаю switch по status, TypeScript сужает тип в каждой ветке, и data существует только там, где она реально есть. Для исчерпывающей проверки я добавляю ветку default, где присваиваю значение переменной типа never. Если кто-то позже добавит состояние 'cancelled', эта строка перестанет компилироваться и укажет на каждый switch, который надо обновить. Ровно так я описываю состояние сообщения в чате со стримингом (потоковой выдачей ответа): streaming, done, error и aborted несут разные поля. Одна оговорка про runtime (время выполнения): если данные приходят снаружи, ветка never должна залогировать и пропустить неизвестное значение, а не уронить приложение."
       }
     ],
-    "kill": "<b>«unknown — это почти any»</b> — any выключает проверку, а unknown заставляет сначала сузить тип. Следом идёт <b>«TypeScript всегда запрещает лишние свойства»</b>, хотя он делает это только для свежих объектных литералов."
+    "kill": "<b>«unknown — это почти any»</b>: на деле any выключает проверку, а unknown заставляет сначала сузить тип. Вторая частая ошибка: <b>«TypeScript всегда запрещает лишние свойства»</b>, хотя он делает это только для свежих объектных литералов."
   },
   "en": {
     "topic": "Type system core: narrowing and unions",
@@ -42,24 +42,140 @@
       },
       {
         "q": "any / unknown / never",
-        "t": "any switches the checker off, and it's contagious. Anything I read off an any is also any, so one JSON.parse can quietly spread through a codebase. unknown is the honest version. It accepts any value, but I can't do anything with it until I narrow it. That's the right type for anything from outside: parsed JSON, errors in a catch clause, postMessage data. never is the empty type, no value has it. It's the return type of a function that always throws, and it's what's left of a union after every member has been eliminated by checks. To get from unknown to something usable, I narrow: typeof for primitives, remembering typeof null is 'object'; instanceof for classes, which breaks across realms like iframes; in for checking a key; equality against literals. For reusable checks I write a type guard that returns x is T, or an assertion function with asserts x is T that throws instead of returning false. The catch is that the compiler trusts the guard's body blindly. If the check is wrong, I've just lied with extra steps."
+        "t": "any switches the checker off, and it's contagious. Anything I read off an any is also any, so one JSON.parse can quietly spread through a codebase. unknown is the safe alternative. It accepts any value, but I can't do anything with it until I narrow it. That's the right type for anything from outside: parsed JSON, errors in a catch clause, postMessage data. never is the empty type, no value has it. It's the return type of a function that always throws, and it's what's left of a union after every member has been eliminated by checks. To get from unknown to something usable, I narrow: typeof for primitives, remembering typeof null is 'object'; instanceof for classes, which breaks across realms like iframes; in for checking a key; equality against literals. For reusable checks I write a type guard that returns x is T, or an assertion function with asserts x is T that throws instead of returning false. The catch is that the compiler trusts the guard's body blindly. If the check is wrong, the type is wrong too, and the compiler won't notice."
       },
       {
         "q": "Discriminated unions",
-        "t": "With a bag of optional fields, say status plus optional data and optional error, the type allows states that can't exist: loading with data and an error at the same time, or success with no data. And every consumer has to null-check everything. A discriminated union makes each state its own member with a shared literal tag: status 'loading' with no fields, 'success' with data, 'error' with error. When I switch on status, TypeScript narrows each branch, so data only exists where it's actually there. For exhaustiveness I add a default branch that assigns the value to a variable typed never. If someone adds a 'cancelled' state later, that line stops compiling and points at every switch that needs updating. I model chat message state in a streaming UI exactly like this: streaming, done, error and aborted each carry different fields. One caveat at runtime: if the data comes from outside, the never branch should log and skip the unknown value, not crash the app."
+        "t": "With a type made of optional fields, say status plus optional data and optional error, the type allows states that can't exist: loading with data and an error at the same time, or success with no data. And every consumer has to null-check everything. A discriminated union makes each state its own member with a shared literal tag: status 'loading' with no fields, 'success' with data, 'error' with error. When I switch on status, TypeScript narrows each branch, so data only exists where it's actually there. For exhaustiveness I add a default branch that assigns the value to a variable typed never. If someone adds a 'cancelled' state later, that line stops compiling and points at every switch that needs updating. I model chat message state in a streaming UI exactly like this: streaming, done, error and aborted each carry different fields. One caveat at runtime: if the data comes from outside, the never branch should log and skip the unknown value, not crash the app."
       }
     ],
-    "kill": "<b>\"unknown is basically any\"</b> — any switches checking off, unknown forces you to narrow first. Close second: <b>\"TypeScript always rejects extra properties\"</b>, when it only does that for fresh object literals."
+    "kill": "<b>\"unknown is basically any\"</b>: in fact any switches checking off, while unknown forces you to narrow first. The second common mistake is <b>\"TypeScript always rejects extra properties\"</b>, when it only does that for fresh object literals."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "TypeScript сообщает о лишних свойствах всегда, когда у объекта есть ключи, которых нет в целевом типе, даже если объект передан через переменную.",
-        "Компилятор проверяет тело пользовательского type guard вида x is User, поэтому неверная проверка внутри даст ошибку компиляции."
+        {
+          "s": "TypeScript сообщает об ошибке из-за лишнего свойства, даже если объект сначала положили в переменную, а потом передали в функцию.",
+          "ok": false,
+          "why": "Проверка лишних свойств срабатывает только на свежем объектном литерале. Через переменную поле с опечаткой проходит как обычное лишнее свойство."
+        },
+        {
+          "s": "В TypeScript значение подходит под тип, если у него есть все обязательные свойства с совместимыми типами, а имя типа роли не играет.",
+          "ok": true,
+          "why": "Это структурная типизация: сравнивается форма, а не имя. Лишние свойства при этом допустимы."
+        },
+        {
+          "s": "Проверка лишних свойств срабатывает на свежем объектном литерале, потому что больше ни у кого нет ссылки на этот литерал.",
+          "ok": true,
+          "why": "Лишний ключ в литерале никто не сможет прочитать, поэтому компилятор считает его ошибкой. Скорее всего это опечатка."
+        },
+        {
+          "s": "Чтобы компилятор не путал UserId и OrderId, которые оба строки, достаточно объявить для них два разных type-алиаса над string.",
+          "ok": false,
+          "why": "Типизация структурная, и два алиаса над string взаимозаменяемы. Нужен branded type: строка, пересечённая с уникальным свойством-меткой."
+        },
+        {
+          "s": "Значение типа unknown можно передавать дальше и читать его свойства, а проверка типа включается только при присваивании.",
+          "ok": false,
+          "why": "С unknown нельзя сделать ничего, пока тип не сужен через typeof, instanceof, in или type guard. Этим он и отличается от any."
+        },
+        {
+          "s": "Значение, прочитанное из переменной типа any, тоже получает тип any, поэтому один any может расползтись по кодовой базе.",
+          "ok": true,
+          "why": "any выключает проверку для всего, что из него получено. Один результат JSON.parse с типом any незаметно заражает весь код, куда он попадает."
+        },
+        {
+          "s": "Тип never не имеет значений и служит типом возврата функции, которая всегда бросает исключение.",
+          "ok": true,
+          "why": "never также остаётся от объединения, когда все его варианты исключены проверками. На этом построена исчерпывающая проверка в switch."
+        },
+        {
+          "s": "Проверка typeof x === 'object' исключает null, поэтому после неё можно безопасно читать свойства x.",
+          "ok": false,
+          "why": "typeof null возвращает 'object', так что null проходит эту проверку. Его нужно исключать отдельно."
+        },
+        {
+          "s": "Проверка через instanceof может не сработать для объекта, созданного в другом realm, например в iframe.",
+          "ok": true,
+          "why": "У каждого realm свои конструкторы и прототипы. Объект из iframe не является экземпляром класса из основного окна."
+        },
+        {
+          "s": "Компилятор проверяет тело пользовательского type guard вида x is User и выдаёт ошибку, если проверка внутри неверная.",
+          "ok": false,
+          "why": "Компилятор слепо верит телу type guard. Если проверка неверная, сужение будет неверным, и компилятор этого не заметит."
+        },
+        {
+          "s": "Ветка default с присваиванием переменной типа never сообщает о новом варианте объединения только во время выполнения.",
+          "ok": false,
+          "why": "Если добавить новый вариант, присваивание в never перестаёт компилироваться и указывает на каждый switch. В рантайме для внешних данных эта ветка логирует и пропускает значение."
+        },
+        {
+          "s": "При switch по общему литеральному тегу размеченного объединения TypeScript сужает тип в каждой ветке.",
+          "ok": true,
+          "why": "В ветке 'success' компилятор знает про data, в ветке 'error' про error. Невозможные состояния вроде загрузки с ошибкой не выражаются."
+        }
       ],
       "en": [
-        "TypeScript reports extra properties whenever an object has keys the target type doesn't declare, even when the object is passed through a variable.",
-        "The compiler verifies the body of a user-defined type guard like x is User, so a wrong check inside it is a compile error."
+        {
+          "s": "TypeScript reports an extra-property error even if the object was first stored in a variable and then passed to the function.",
+          "ok": false,
+          "why": "Excess property checking only applies to a fresh object literal. Through a variable, a typo'd field passes as an ordinary extra property."
+        },
+        {
+          "s": "In TypeScript a value fits a type if it has all the required properties with compatible types, and the type's name plays no role.",
+          "ok": true,
+          "why": "That's structural typing: shape is compared, not names. Extra properties are allowed."
+        },
+        {
+          "s": "Excess property checking fires on a fresh object literal, because nothing else can hold a reference to that literal.",
+          "ok": true,
+          "why": "Nobody can ever read an extra key in that literal, so the compiler treats it as a mistake. Most likely it's a typo."
+        },
+        {
+          "s": "To stop the compiler mixing up UserId and OrderId, which are both strings, it's enough to declare two different type aliases over string.",
+          "ok": false,
+          "why": "Typing is structural, so two aliases over string are interchangeable. You need a branded type: a string intersected with a unique tag property."
+        },
+        {
+          "s": "A value of type unknown can be passed around and have its properties read; type checking only kicks in on assignment.",
+          "ok": false,
+          "why": "You can't do anything with unknown until you narrow it with typeof, instanceof, in or a type guard. That's exactly how it differs from any."
+        },
+        {
+          "s": "A value read from a variable of type any is also typed any, so a single any can spread through the codebase.",
+          "ok": true,
+          "why": "any switches checking off for everything derived from it. One JSON.parse result typed any quietly infects all the code it reaches."
+        },
+        {
+          "s": "The never type has no values and is the return type of a function that always throws.",
+          "ok": true,
+          "why": "never is also what's left of a union after every member is eliminated by checks. Exhaustive switch checks are built on that."
+        },
+        {
+          "s": "The check typeof x === 'object' rules out null, so after it you can safely read properties of x.",
+          "ok": false,
+          "why": "typeof null returns 'object', so null passes this check. It has to be excluded separately."
+        },
+        {
+          "s": "An instanceof check can fail for an object created in another realm, such as an iframe.",
+          "ok": true,
+          "why": "Each realm has its own constructors and prototypes. An object from an iframe isn't an instance of the main window's class."
+        },
+        {
+          "s": "The compiler verifies the body of a user-defined type guard like x is User and reports an error if the check inside is wrong.",
+          "ok": false,
+          "why": "The compiler trusts a type guard's body blindly. If the check is wrong, the narrowing is wrong, and the compiler won't notice."
+        },
+        {
+          "s": "A default branch that assigns to a never-typed variable reports a new union member only at runtime.",
+          "ok": false,
+          "why": "When a new member is added, the never assignment stops compiling and points at every switch. At runtime, for outside data, that branch logs and skips the value."
+        },
+        {
+          "s": "When you switch on the shared literal tag of a discriminated union, TypeScript narrows the type in each branch.",
+          "ok": true,
+          "why": "In the 'success' branch the compiler knows about data, in the 'error' branch about error. Impossible states like loading with an error can't be expressed."
+        }
       ]
     },
     "cloze": {

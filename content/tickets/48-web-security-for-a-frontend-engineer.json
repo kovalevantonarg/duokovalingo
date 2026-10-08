@@ -23,7 +23,7 @@
       },
       {
         "q": "Токены и CSRF",
-        "t": "Я предпочитаю cookie с HttpOnly и Secure. JavaScript не может её прочитать, поэтому XSS может действовать от имени пользователя, пока вкладка открыта, но не может украсть токен и использовать его с другой машины. Токен из localStorage внедрённый скрипт уносит одной строкой кода. XSS — это катастрофа в любом случае, cookie лишь ограничивает ущерб. Цена cookie — CSRF (подделка межсайтовых запросов): браузер прикладывает её к запросам, которые инициировал чужой сайт. Главная защита — SameSite. Lax отправляет cookie при top-level (верхнеуровневой) GET-навигации, но не при кросс-сайтовых POST, fetch или iframe. Chromium-браузеры ставят Lax по умолчанию, если атрибут не указан, но с двухминутным исключением: свежую cookie ещё отправят с кросс-сайтовым top-level POST. Firefox и Safari Lax по умолчанию не ставят вообще. Поэтому я всегда задаю его явно и держу GET без побочных эффектов. SameSite считает по сайту, а не по origin (схема, хост и порт), так что взломанный соседний поддомен всё ещё same-site. Для этого добавляю CSRF-токен или проверку заголовка Origin. CORS — другое. Он ослабляет same-origin policy (политику одного источника) и решает, даст ли браузер JS страницы прочитать ответ. Сервер он не защищает: простой POST всё равно дойдёт, а curl CORS вообще игнорирует."
+        "t": "Я предпочитаю cookie с HttpOnly и Secure. JavaScript не может её прочитать, поэтому XSS может действовать от имени пользователя, пока вкладка открыта, но не может украсть токен и использовать его с другой машины. Токен из localStorage внедрённый скрипт уносит одной строкой кода. XSS в любом случае означает полную компрометацию, cookie лишь ограничивает ущерб. Цена cookie — CSRF (подделка межсайтовых запросов): браузер прикладывает её к запросам, которые инициировал чужой сайт. Главная защита — SameSite. Lax отправляет cookie при top-level (верхнеуровневой) GET-навигации, но не при кросс-сайтовых POST, fetch или iframe. Chromium-браузеры ставят Lax по умолчанию, если атрибут не указан, но с двухминутным исключением: свежую cookie ещё отправят с кросс-сайтовым top-level POST. Firefox и Safari Lax по умолчанию не ставят вообще. Поэтому я всегда задаю его явно и держу GET без побочных эффектов. SameSite считает по сайту, а не по origin (схема, хост и порт), так что взломанный соседний поддомен всё ещё same-site. Для этого добавляю CSRF-токен или проверку заголовка Origin. CORS — другое. Он ослабляет same-origin policy (политику одного источника) и решает, даст ли браузер JS страницы прочитать ответ. Сервер он не защищает: простой POST всё равно дойдёт, а curl CORS вообще игнорирует."
       }
     ],
     "kill": "<b>«У нас React, XSS нам не страшен»</b> или <b>«CORS защищает наш API»</b> — CORS решает только, что браузер даст прочитать JS, а запрос до сервера всё равно доходит."
@@ -46,20 +46,136 @@
       },
       {
         "q": "Tokens and CSRF",
-        "t": "I prefer an HttpOnly, Secure cookie. JavaScript can't read it, so an XSS can act as the user while the tab is open, but it can't steal the token and replay it from another machine. A token in localStorage is one line away from exfiltration. XSS is game over either way; the cookie just limits the blast radius. The cost of cookies is CSRF: the browser attaches them to requests another site triggers. SameSite is the main defense. Lax sends the cookie on top-level GET navigations but not on cross-site POSTs, fetches or iframes. Chromium browsers default to Lax when the attribute is missing, with a two-minute exception: a freshly set cookie still goes out on a top-level cross-site POST. Firefox and Safari don't default to Lax. So I always set it explicitly and keep GET free of side effects. SameSite works on site, not origin, so a compromised sibling subdomain is still same-site. For that I add a CSRF token or an Origin header check. CORS is different. It relaxes the same-origin policy and decides whether the browser lets page JS read a response. It doesn't protect the server: a simple POST still arrives, and curl ignores CORS entirely."
+        "t": "I prefer an HttpOnly, Secure cookie. JavaScript can't read it, so an XSS can act as the user while the tab is open, but it can't steal the token and replay it from another machine. An injected script can steal a token from localStorage with one line of code. XSS is a full compromise either way; the cookie only limits the damage. The cost of cookies is CSRF: the browser attaches them to requests another site triggers. SameSite is the main defense. Lax sends the cookie on top-level GET navigations but not on cross-site POSTs, fetches or iframes. Chromium browsers default to Lax when the attribute is missing, with a two-minute exception: a freshly set cookie still goes out on a top-level cross-site POST. Firefox and Safari don't default to Lax. So I always set it explicitly and keep GET free of side effects. SameSite works on site, not origin, so a compromised sibling subdomain is still same-site. For that I add a CSRF token or an Origin header check. CORS is different. It relaxes the same-origin policy and decides whether the browser lets page JS read a response. It doesn't protect the server: a simple POST still arrives, and curl ignores CORS entirely."
       }
     ],
     "kill": "<b>\"We use React, so XSS isn't a concern\"</b> or <b>\"CORS protects our API\"</b> — CORS only controls what the browser lets JS read; the request still reaches the server."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "SameSite=Lax стоит по умолчанию во всех основных браузерах, поэтому явно задавать его не нужно.",
-        "Если CORS-политика не разрешает evil.com, то POST-форма с evil.com вообще не дойдёт до нашего сервера."
+        {
+          "s": "React 19 проверяет href из пользовательских данных и блокирует ссылки со схемой data: и фишинговые домены.",
+          "ok": false,
+          "why": "React 19 блокирует только javascript:-ссылки. data: и чужие домены проходят, поэтому протоколы ограничивают списком http, https и mailto."
+        },
+        {
+          "s": "React экранирует текст в JSX-детях и значениях атрибутов, поэтому строка с тегом script выводится как обычные символы.",
+          "ok": true,
+          "why": "Это закрывает stored, reflected и DOM-based XSS, пока данные идут через JSX. Защита заканчивается на dangerouslySetInnerHTML, innerHTML через ref и опасных href."
+        },
+        {
+          "s": "Строгий CSP задаёт в script-src одноразовый nonce на каждый запрос вместе с 'strict-dynamic'.",
+          "ok": true,
+          "why": "Внедрённый инлайн-скрипт без верного nonce не выполнится, а 'strict-dynamic' разрешает скрипты, загруженные доверенным скриптом."
+        },
+        {
+          "s": "Строгий CSP устраняет саму XSS-уязвимость, поэтому экранировать и санитизировать данные в приложении уже не обязательно.",
+          "ok": false,
+          "why": "CSP ограничивает ущерб, а причину не устраняет. Экранирование и санитизация остаются первой линией защиты."
+        },
+        {
+          "s": "Вывод LLM считается недоверенным вводом, потому что модель может повторить внедрённые инструкции из найденного документа или веб-страницы.",
+          "ok": true,
+          "why": "Так indirect prompt injection превращается в XSS, если рендерить вывод как HTML. По умолчанию markdown разбирают в React-элементы без сырого HTML."
+        },
+        {
+          "s": "При рендере markdown из ответа модели DOMPurify стоит запускать до конвертации markdown в HTML.",
+          "ok": false,
+          "why": "Санитизировать нужно итоговый HTML. Если почистить вход, а потом преобразовать, преобразование может вернуть опасную разметку."
+        },
+        {
+          "s": "Токен в cookie с HttpOnly защищает от XSS: внедрённый скрипт не сможет выполнять запросы от имени пользователя.",
+          "ok": false,
+          "why": "HttpOnly запрещает только чтение cookie из JS. Скрипт по-прежнему действует от имени пользователя, пока открыта вкладка, но не может унести токен."
+        },
+        {
+          "s": "Markdown-картинка с URL атакующего может вынести данные чата при рендере, без единого клика пользователя.",
+          "ok": true,
+          "why": "Браузер загружает картинку сразу, а данные зашиты в её URL. Поэтому картинки с неизвестных хостов блокируют или проксируют и ограничивают img-src в CSP."
+        },
+        {
+          "s": "С SameSite=Lax cookie уходит при top-level GET-навигации, но не уходит с кросс-сайтовыми POST, fetch и iframe.",
+          "ok": true,
+          "why": "Поэтому Lax защищает от CSRF, только если GET не имеет побочных эффектов. В Chromium свежая cookie ещё две минуты уходит и с top-level POST."
+        },
+        {
+          "s": "Firefox и Safari, как и Chromium, ставят SameSite=Lax по умолчанию, если у cookie не указан этот атрибут.",
+          "ok": false,
+          "why": "Lax по умолчанию ставят только Chromium-браузеры. Поэтому SameSite всегда задают явно."
+        },
+        {
+          "s": "SameSite считает по сайту, а не по origin, поэтому взломанный соседний поддомен остаётся same-site.",
+          "ok": true,
+          "why": "www.example.com и login.example.com — разные origin, но один сайт. От такого поддомена защищает CSRF-токен или проверка заголовка Origin."
+        },
+        {
+          "s": "Если CORS-политика не разрешает evil.com, POST-форма с evil.com не дойдёт до нашего сервера.",
+          "ok": false,
+          "why": "CORS решает только, даст ли браузер JS прочитать ответ. Простой POST всё равно доходит до сервера, поэтому от CSRF защищают SameSite и CSRF-токен."
+        }
       ],
       "en": [
-        "SameSite=Lax is the default in all major browsers, so there's no need to set it explicitly.",
-        "If our CORS policy doesn't allow evil.com, a form POST from evil.com never reaches our server."
+        {
+          "s": "React 19 checks href values from user data and blocks data: URLs and phishing domains.",
+          "ok": false,
+          "why": "React 19 blocks only javascript: URLs. data: and foreign domains still pass, so you allowlist http, https and mailto."
+        },
+        {
+          "s": "React escapes text in JSX children and attribute values, so a string with a script tag renders as literal characters.",
+          "ok": true,
+          "why": "That covers stored, reflected and DOM-based XSS as long as data goes through JSX. The protection ends at dangerouslySetInnerHTML, innerHTML via a ref and unsafe hrefs."
+        },
+        {
+          "s": "A strict CSP puts a per-request nonce in script-src together with 'strict-dynamic'.",
+          "ok": true,
+          "why": "An injected inline script without the right nonce won't run, and 'strict-dynamic' allows scripts loaded by a trusted script."
+        },
+        {
+          "s": "A strict CSP removes the XSS vulnerability itself, so escaping and sanitizing data in the app is no longer required.",
+          "ok": false,
+          "why": "CSP limits the damage but doesn't remove the cause. Escaping and sanitizing stay the first line of defense."
+        },
+        {
+          "s": "LLM output counts as untrusted input, because the model can repeat injected instructions from a retrieved document or web page.",
+          "ok": true,
+          "why": "That's how indirect prompt injection turns into XSS once you render output as HTML. By default, markdown is parsed into React elements with raw HTML disabled."
+        },
+        {
+          "s": "When rendering markdown from a model response, DOMPurify should run before the markdown is converted to HTML.",
+          "ok": false,
+          "why": "You sanitize the final HTML. If you clean the input and then transform it, the transformation can bring dangerous markup back."
+        },
+        {
+          "s": "A token in an HttpOnly cookie protects against XSS: an injected script can't send requests on the user's behalf.",
+          "ok": false,
+          "why": "HttpOnly only stops JS from reading the cookie. The script can still act as the user while the tab is open; it just can't steal the token."
+        },
+        {
+          "s": "A markdown image pointing at an attacker URL can leak chat data on render, without a single click from the user.",
+          "ok": true,
+          "why": "The browser fetches the image right away, and the data is encoded in its URL. So images from unknown hosts are blocked or proxied and img-src is restricted in the CSP."
+        },
+        {
+          "s": "With SameSite=Lax, the cookie is sent on top-level GET navigations but not with cross-site POSTs, fetches or iframes.",
+          "ok": true,
+          "why": "So Lax protects against CSRF only if GET has no side effects. In Chromium a fresh cookie still goes out on top-level POSTs for two minutes."
+        },
+        {
+          "s": "Firefox and Safari, like Chromium, default to SameSite=Lax when a cookie doesn't specify the attribute.",
+          "ok": false,
+          "why": "Only Chromium browsers default to Lax. That's why SameSite is always set explicitly."
+        },
+        {
+          "s": "SameSite works on site rather than origin, so a compromised sibling subdomain is still same-site.",
+          "ok": true,
+          "why": "www.example.com and login.example.com are different origins but the same site. A CSRF token or an Origin header check covers that case."
+        },
+        {
+          "s": "If our CORS policy doesn't allow evil.com, a form POST from evil.com won't reach our server.",
+          "ok": false,
+          "why": "CORS only decides whether the browser lets JS read the response. A simple POST still reaches the server, so CSRF is handled by SameSite and CSRF tokens."
+        }
       ]
     },
     "cloze": {

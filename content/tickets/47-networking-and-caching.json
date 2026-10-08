@@ -52,14 +52,130 @@
     "kill": "<b>\"no-cache means the browser doesn't cache it\"</b> — that's no-store. no-cache stores the response and revalidates it before every use, usually with a cheap 304."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Cache-Control: no-cache запрещает браузеру вообще сохранять ответ.",
-        "HTTP/2 полностью устранил head-of-line blocking: потерянный пакет задерживает только свой поток."
+        {
+          "s": "Заголовок Cache-Control: no-cache запрещает браузеру сохранять ответ, поэтому его ставят на ответы с чувствительными данными.",
+          "ok": false,
+          "why": "Для чувствительных ответов нужен no-store, он запрещает хранение. no-cache разрешает сохранить ответ, но требует перепроверять его у сервера перед каждым использованием."
+        },
+        {
+          "s": "Ответ 304 Not Modified приходит без тела, и браузер снова использует сохранённую копию.",
+          "ok": true,
+          "why": "Это всё равно сетевой круг, но дешёвый: сервер только подтверждает, что версия по ETag не изменилась."
+        },
+        {
+          "s": "Для перепроверки браузер шлёт заголовок If-None-Match с ETag, который сервер отдал вместе с ответом.",
+          "ok": true,
+          "why": "ETag — отпечаток версии ответа. Сервер сравнивает его с текущей версией и, если она та же, отвечает 304."
+        },
+        {
+          "s": "HTML-страницу приложения стоит отдавать с max-age на год, как и JS-бандлы с хешем в имени.",
+          "ok": false,
+          "why": "HTML — точка входа со ссылками на новые хеши, поэтому ему ставят no-cache. Если HTML закешировать надолго, пользователи продолжат грузить старые бандлы."
+        },
+        {
+          "s": "Файлам с хешем содержимого в имени ставят max-age=31536000 и immutable, потому что по одному URL контент не меняется.",
+          "ok": true,
+          "why": "Новая версия файла получает новое имя и новый URL. immutable просит не перепроверять файл даже при перезагрузке, Chrome этот флаг игнорирует."
+        },
+        {
+          "s": "HTTP/2 полностью убрал head-of-line blocking: потерянный пакет задерживает только свой поток.",
+          "ok": false,
+          "why": "В HTTP/2 блокировка переехала на уровень TCP: один потерянный пакет стопорит все потоки соединения. Независимые потоки появились в HTTP/3."
+        },
+        {
+          "s": "HTTP/3 работает поверх QUIC, где каждый поток упорядочен отдельно, поэтому потеря пакета стопорит только свой поток.",
+          "ok": true,
+          "why": "QUIC работает поверх UDP и сам следит за порядком внутри каждого потока, не связывая потоки между собой."
+        },
+        {
+          "s": "Чем больше ресурсов помечено через preload, тем быстрее загружается ресурс, критичный для первого экрана.",
+          "ok": false,
+          "why": "Лишние preload конкурируют с реально критичным ресурсом. Неиспользованный preload — чистая потеря, и Chrome предупреждает о нём в консоли."
+        },
+        {
+          "s": "QUIC совмещает транспортное рукопожатие с TLS-рукопожатием, поэтому новое соединение экономит один сетевой круг.",
+          "ok": true,
+          "why": "В TCP с TLS эти рукопожатия идут друг за другом. Выигрыш заметнее всего на мобильных сетях."
+        },
+        {
+          "s": "stale-while-revalidate для HTML на CDN нужен, чтобы посетители сразу после деплоя получали новую версию страницы.",
+          "ok": false,
+          "why": "Он мгновенно отдаёт закешированную копию и обновляет её в фоне. Значит, после каждого изменения кто-то получит старую версию, так задумано."
+        },
+        {
+          "s": "Новый service worker по умолчанию активируется сразу после установки, даже если открыты вкладки со старым воркером.",
+          "ok": false,
+          "why": "Новый воркер ждёт, пока закроются все вкладки, которыми управляет старый. Поэтому неудачный воркер может надолго привязать пользователей к старой сборке."
+        },
+        {
+          "s": "После деплоя старые чанки с хешами держат на CDN какое-то время, иначе пользователи со старым HTML получат 404 на ленивых роутах.",
+          "ok": true,
+          "why": "Открытая вкладка со старым HTML продолжает запрашивать старые имена файлов, когда пользователь переходит на ещё не загруженный роут."
+        }
       ],
       "en": [
-        "Cache-Control: no-cache tells the browser not to store the response at all.",
-        "HTTP/2 fully eliminated head-of-line blocking: a lost packet only delays its own stream."
+        {
+          "s": "The Cache-Control: no-cache header forbids the browser from storing the response, so it's the one for sensitive responses.",
+          "ok": false,
+          "why": "Sensitive responses need no-store, which forbids storing. no-cache lets the browser store the response but requires revalidating it with the server before every use."
+        },
+        {
+          "s": "A 304 Not Modified response has no body, and the browser reuses its stored copy.",
+          "ok": true,
+          "why": "It's still a round trip, but a cheap one: the server only confirms that the version behind the ETag hasn't changed."
+        },
+        {
+          "s": "To revalidate, the browser sends an If-None-Match header with the ETag the server returned with the response.",
+          "ok": true,
+          "why": "The ETag is a fingerprint of the response version. The server compares it with the current version and answers 304 if it matches."
+        },
+        {
+          "s": "The app's HTML page should be served with a one-year max-age, the same as hashed JS bundles.",
+          "ok": false,
+          "why": "The HTML is the entry point that references the new hashes, so it gets no-cache. Cache it for long and users keep loading old bundles."
+        },
+        {
+          "s": "Files with a content hash in the name get max-age=31536000 and immutable, because a given URL never changes content.",
+          "ok": true,
+          "why": "A new version of the file gets a new name and a new URL. immutable asks the browser not to revalidate even on reload; Chrome ignores the flag."
+        },
+        {
+          "s": "HTTP/2 removed head-of-line blocking entirely: a lost packet delays only its own stream.",
+          "ok": false,
+          "why": "In HTTP/2 the blocking moved down to TCP: one lost packet stalls every stream on the connection. Independent streams came with HTTP/3."
+        },
+        {
+          "s": "HTTP/3 runs over QUIC, where each stream is ordered separately, so a lost packet stalls only its own stream.",
+          "ok": true,
+          "why": "QUIC runs on top of UDP and keeps order within each stream without tying the streams to each other."
+        },
+        {
+          "s": "The more resources you mark with preload, the faster the resource that's critical for the first screen loads.",
+          "ok": false,
+          "why": "Extra preloads compete with the resource that's actually critical. An unused preload is pure waste, and Chrome warns about it in the console."
+        },
+        {
+          "s": "QUIC combines the transport handshake with the TLS handshake, so a new connection saves one round trip.",
+          "ok": true,
+          "why": "With TCP plus TLS those handshakes happen one after the other. The gain is most noticeable on mobile networks."
+        },
+        {
+          "s": "stale-while-revalidate for HTML on a CDN is there so visitors get the new version of the page right after a deploy.",
+          "ok": false,
+          "why": "It serves the cached copy instantly and refreshes it in the background. So after each change someone gets the old version, by design."
+        },
+        {
+          "s": "By default, a new service worker activates right after installing, even while tabs controlled by the old worker are open.",
+          "ok": false,
+          "why": "A new worker waits until every tab controlled by the old one is closed. That's how a bad worker can pin users to an old build for a long time."
+        },
+        {
+          "s": "After a deploy, old hashed chunks stay on the CDN for a while, or users on the old HTML get 404s on lazy-loaded routes.",
+          "ok": true,
+          "why": "An open tab with the old HTML keeps requesting the old file names when the user navigates to a route that isn't loaded yet."
+        }
       ]
     },
     "cloze": {

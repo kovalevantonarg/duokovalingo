@@ -15,18 +15,18 @@
     "a": [
       {
         "q": "Пайплайн",
-        "t": "Загрузка, потом парсинг — PDF и HTML в текст, и это недооценённая стадия: таблицы и вёрстка ломаются чаще всего. Chunking с учётом структуры, двести–пятьсот токенов, с перекрытием. Эмбеддинг одной моделью, батчами. Хранение: текст куска, метаданные и вектор. На запросе: эмбеддю вопрос, достаю top-20, опционально гибрид с BM25, реранкер до пяти, собираю промпт с пронумерованными кусками и инструкцией отвечать только из контекста и ставить ссылки на номера. Генерирую, проверяю цитаты постобработкой, отдаю ответ вместе с источниками."
+        "t": "Загрузка, потом парсинг PDF и HTML в текст. Это недооценённая стадия: чаще всего ломаются таблицы и вёрстка. Chunking с учётом структуры, двести–пятьсот токенов, с перекрытием. Эмбеддинг одной моделью, батчами. Хранение: текст куска, метаданные и вектор. На запросе: эмбеддю вопрос, достаю top-20, опционально гибрид с BM25, реранкер до пяти, собираю промпт с пронумерованными кусками и инструкцией отвечать только из контекста и ставить ссылки на номера. Генерирую, проверяю цитаты постобработкой, отдаю ответ вместе с источниками."
       },
       {
         "q": "Хранение",
-        "t": "pgvector с индексом HNSW (приближённый поиск соседей) — когда Postgres уже есть и корпус умеренный: одна база, транзакции, и права доступа через обычный join. В документации есть только лимит Postgres в 32 ТБ на непартиционированную таблицу, а порога производительности нет, поэтому меряю на своих данных. Отдельная векторная база — на масштабе или когда нужна продвинутая фильтрация и скорость. Метаданные обязательны: id документа, тенант или пользователь, раздел, версия, время. Обновление документа — перечанкить его и удалить старые куски по id документа; поле версии спасает от устаревших кусков, которые иначе живут вечно. Ингестия должна быть идемпотентной: повторная загрузка не плодит дубли."
+        "t": "pgvector с индексом HNSW (приближённый поиск соседей) беру, когда Postgres уже есть и корпус умеренный: одна база, транзакции, и права доступа через обычный join. В документации есть только лимит Postgres в 32 ТБ на непартиционированную таблицу, а порога производительности нет, поэтому меряю на своих данных. Отдельная векторная база нужна на большом масштабе или когда важны продвинутая фильтрация и скорость. Метаданные обязательны: id документа, тенант или пользователь, раздел, версия, время. При обновлении документа я заново режу его на куски и удаляю старые куски по id документа; поле версии спасает от устаревших кусков, которые иначе живут вечно. Ингестия должна быть идемпотентной: повторная загрузка не плодит дубли."
       },
       {
         "q": "Обслуживание",
-        "t": "Бюджет примерный: эмбеддинг запроса и поиск по индексу — малая часть общего времени, реранкер сто–триста миллисекунд, генерация одна–три секунды, со стримингом. Кэширую эмбеддинги запросов, а ответы на повторы — семантическим кэшем. Фильтр по тенанту — внутри запроса, через WHERE или namespace, а не в коде после выдачи, где одна забытая проверка сливает чужие данные. С HNSW pgvector применяет WHERE после сканирования индекса, и селективный фильтр может недобрать строк; лечится итеративным сканированием, частичным индексом или партицией на тенанта. Цитаты принудительные: утверждения без куска-источника выбрасываются. Мониторю recall на золотом наборе, faithfulness, перцентили задержки, стоимость ответа и долю «контекст не найден»."
+        "t": "Бюджет примерный: эмбеддинг запроса и поиск по индексу — малая часть общего времени, реранкер сто–триста миллисекунд, генерация одна–три секунды, со стримингом. Кэширую эмбеддинги запросов, а ответы на повторы — семантическим кэшем. Фильтр по тенанту ставлю внутри запроса, через WHERE или namespace, а не в коде после выдачи, где одна забытая проверка сливает чужие данные. С HNSW pgvector применяет WHERE после сканирования индекса, и селективный фильтр может недобрать строк; лечится итеративным сканированием, частичным индексом или партицией на тенанта. Цитаты принудительные: утверждения без куска-источника выбрасываются. Мониторю recall на золотом наборе, faithfulness, перцентили задержки, стоимость ответа и долю «контекст не найден»."
       }
     ],
-    "kill": "Забыть парсинг и права доступа. И описать только счастливый путь — интервьюер спросит «как узнаете, что стало хуже?», и без эвала ответа нет."
+    "kill": "Забыть парсинг и права доступа. И описать только счастливый путь: интервьюер спросит «как узнаете, что стало хуже?», а без эвала ответа нет."
   },
   "en": {
     "topic": "Design: RAG end-to-end",
@@ -38,7 +38,7 @@
     "a": [
       {
         "q": "Pipeline",
-        "t": "Upload, then parsing — PDF and HTML to text, and it's the underrated stage: tables and layout break most often. Structure-aware chunking, two to five hundred tokens, with overlap. Embedding with one model, in batches. Storage: chunk text, metadata and the vector. At query time: embed the question, pull the top twenty, optionally hybrid with BM25, rerank down to five, build the prompt with numbered chunks and an instruction to answer only from context and cite by number. Generate, verify the citations in post-processing, return the answer with its sources."
+        "t": "Upload, then parsing PDF and HTML to text. It's the underrated stage: tables and layout break most often. Structure-aware chunking, two to five hundred tokens, with overlap. Embedding with one model, in batches. Storage: chunk text, metadata and the vector. At query time: embed the question, pull the top twenty, optionally hybrid with BM25, rerank down to five, build the prompt with numbered chunks and an instruction to answer only from context and cite by number. Generate, verify the citations in post-processing, return the answer with its sources."
       },
       {
         "q": "Storage",
@@ -46,32 +46,148 @@
       },
       {
         "q": "Serving",
-        "t": "Rough budget: query embedding and index search are a small part of the total, the reranker a hundred to three hundred milliseconds, generation one to three seconds, streamed. I cache query embeddings, and answers to recurring questions — a semantic cache. The tenant filter lives inside the query, a WHERE clause or a namespace, never in app code after retrieval, where one missed check leaks data. With HNSW, pgvector applies WHERE after the index scan, so a selective filter can return too few rows; iterative scans, partial indexes or per-tenant partitions fix it. Citations are enforced: unsupported claims get dropped. I monitor golden-set recall, faithfulness, latency percentiles, cost per answer and the no-context rate."
+        "t": "Rough budget: query embedding and index search are a small part of the total, the reranker a hundred to three hundred milliseconds, generation one to three seconds, streamed. I cache query embeddings, and answers to recurring questions with a semantic cache. The tenant filter lives inside the query, a WHERE clause or a namespace, never in app code after retrieval, where one missed check leaks data. With HNSW, pgvector applies WHERE after the index scan, so a selective filter can return too few rows; iterative scans, partial indexes or per-tenant partitions fix it. Citations are enforced: unsupported claims get dropped. I monitor golden-set recall, faithfulness, latency percentiles, cost per answer and the no-context rate."
       }
     ],
-    "kill": "Forgetting parsing and permissions. And describing only the happy path — the interviewer will ask how you'd know it got worse, and without an eval there's no answer."
+    "kill": "Forgetting parsing and permissions. And describing only the happy path: the interviewer will ask how you'd know it got worse, and without an eval there's no answer."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Отфильтровать тенантов в коде приложения после выборки top-k — достаточно надёжно.",
-        "Обновление документа — просто добавить новые куски; старые не мешают."
+        {
+          "s": "В RAG-промпт кладут пронумерованные куски и просят модель отвечать только из контекста со ссылками на номера кусков.",
+          "ok": true,
+          "why": "Номера позволяют проверить цитаты постобработкой и показать пользователю источники рядом с ответом."
+        },
+        {
+          "s": "Чтобы заметить деградацию RAG, мониторят recall на золотом наборе, faithfulness, перцентили задержки, стоимость ответа и долю «контекст не найден».",
+          "ok": true,
+          "why": "Офлайн-метрики ловят регрессии при изменениях пайплайна, а онлайн-метрики показывают, что пользователи начали спрашивать о другом."
+        },
+        {
+          "s": "Основную часть задержки RAG-ответа обычно занимают эмбеддинг запроса и поиск по индексу, а не генерация.",
+          "ok": false,
+          "why": "Эмбеддинг и поиск занимают малую часть времени, реранкер около 100–300 мс, а генерация одну–три секунды. Поэтому ответ стримят."
+        },
+        {
+          "s": "Повторная загрузка того же документа в RAG-индекс безвредна, поэтому делать ингестию идемпотентной не обязательно.",
+          "ok": false,
+          "why": "Повторы случаются часто: ретрай после таймаута, повторная доставка из очереди, двойной клик. Без идемпотентности в индексе появляются дубли."
+        },
+        {
+          "s": "pgvector с индексом HNSW подходит, когда Postgres уже есть и корпус умеренный: права доступа проверяются обычным join.",
+          "ok": true,
+          "why": "Одна база, транзакции и привычный SQL. Отдельную векторную базу берут на большом масштабе или ради продвинутой фильтрации."
+        },
+        {
+          "s": "Фильтровать документы чужих тенантов в коде приложения после выборки top-k достаточно надёжно.",
+          "ok": false,
+          "why": "Одна забытая проверка в коде сливает чужие данные. Фильтр по тенанту ставят внутри запроса: через WHERE или namespace."
+        },
+        {
+          "s": "Парсинг PDF и HTML в текст — недооценённая стадия RAG: чаще всего на ней ломаются таблицы и вёрстка.",
+          "ok": true,
+          "why": "Если таблица превратилась в кашу, правильный ответ не попадёт в индекс, и дальнейшие стадии это уже не исправят."
+        },
+        {
+          "s": "Метаданные кусков вроде тенанта и версии нужны только для цитат, на поиск и обновления документов они не влияют.",
+          "ok": false,
+          "why": "Тенант используется в фильтре запроса, а id документа и версия нужны, чтобы при обновлении удалить старые куски."
+        },
+        {
+          "s": "С индексом HNSW pgvector применяет WHERE после сканирования индекса, поэтому селективный фильтр может вернуть меньше строк, чем нужно.",
+          "ok": true,
+          "why": "Индекс отдаёт ближайших соседей, а фильтр выкидывает чужие. Помогают итеративное сканирование, частичный индекс или партиция на тенанта."
+        },
+        {
+          "s": "У pgvector задокументирован порог в несколько миллионов векторов, после которого нужна отдельная векторная база.",
+          "ok": false,
+          "why": "Документирован только лимит Postgres в 32 ТБ на непартиционированную таблицу. Порог производительности меряют на своих данных."
+        },
+        {
+          "s": "При принудительных цитатах утверждения ответа без куска-источника выбрасываются на этапе постобработки.",
+          "ok": true,
+          "why": "Постобработка сверяет ссылки модели с реальными кусками. Утверждение, которое ни на что не опирается, до пользователя не доходит."
+        },
+        {
+          "s": "При обновлении документа в RAG достаточно добавить новые куски, старые куски того же документа ответам не мешают.",
+          "ok": false,
+          "why": "Старые куски остаются в индексе и находятся поиском, и модель цитирует устаревший текст. Их удаляют по id документа и следят за полем версии."
+        }
       ],
       "en": [
-        "Filtering tenants in app code after retrieving the top-k is safe enough.",
-        "Updating a document is just adding new chunks; the old ones don't matter."
+        {
+          "s": "A RAG prompt contains numbered chunks and tells the model to answer only from that context, citing chunk numbers.",
+          "ok": true,
+          "why": "The numbers let you verify citations in post-processing and show the user the sources next to the answer."
+        },
+        {
+          "s": "To spot RAG degradation you monitor golden-set recall, faithfulness, latency percentiles, cost per answer and the no-context rate.",
+          "ok": true,
+          "why": "Offline metrics catch regressions when the pipeline changes, and online metrics show when users start asking about new things."
+        },
+        {
+          "s": "Most of a RAG answer's latency usually comes from query embedding and index search, not from generation.",
+          "ok": false,
+          "why": "Embedding and search are a small part of the time, the reranker about 100–300 ms, and generation one to three seconds. That's why the answer is streamed."
+        },
+        {
+          "s": "Uploading the same document to a RAG index twice is harmless, so idempotent ingestion is optional.",
+          "ok": false,
+          "why": "Repeats happen often: a retry after a timeout, a redelivered queue message, a double click. Without idempotency the index fills with duplicates."
+        },
+        {
+          "s": "pgvector with an HNSW index fits when Postgres already exists and the corpus is moderate: permissions work through an ordinary join.",
+          "ok": true,
+          "why": "One database, transactions and familiar SQL. A dedicated vector store is for large scale or advanced filtering."
+        },
+        {
+          "s": "Filtering out other tenants' documents in app code after retrieving the top-k is reliable enough.",
+          "ok": false,
+          "why": "One missed check in the code leaks someone else's data. The tenant filter goes inside the query, as a WHERE clause or a namespace."
+        },
+        {
+          "s": "Parsing PDF and HTML into text is an underrated RAG stage: tables and layout break there most often.",
+          "ok": true,
+          "why": "If a table turns into garbage, the right answer never reaches the index, and later stages can't fix that."
+        },
+        {
+          "s": "Chunk metadata such as tenant and version is only for citations and doesn't affect search or document updates.",
+          "ok": false,
+          "why": "The tenant is used in the query filter, and the document id and version are needed to delete old chunks on update."
+        },
+        {
+          "s": "With an HNSW index, pgvector applies WHERE after the index scan, so a selective filter can return fewer rows than requested.",
+          "ok": true,
+          "why": "The index returns the nearest neighbours and the filter then drops the rest. Iterative scans, partial indexes or per-tenant partitions help."
+        },
+        {
+          "s": "pgvector documents a threshold of a few million vectors, beyond which you need a dedicated vector database.",
+          "ok": false,
+          "why": "The only documented limit is Postgres's 32 TB per non-partitioned table. You find the performance threshold by benchmarking your own data."
+        },
+        {
+          "s": "With enforced citations, claims in the answer that have no source chunk are dropped during post-processing.",
+          "ok": true,
+          "why": "Post-processing checks the model's references against real chunks. A claim with no support never reaches the user."
+        },
+        {
+          "s": "When a document is updated in RAG, it's enough to add the new chunks; the document's old chunks don't affect answers.",
+          "ok": false,
+          "why": "Old chunks stay in the index and get retrieved, so the model cites outdated text. You delete them by document id and track a version field."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Фильтр по тенанту — [[внутри запроса|в самом запросе]], а не в коде после выдачи.",
-        "pgvector с индексом [[HNSW]] — мой дефолт, когда Postgres уже есть.",
-        "Обновление: перечанкить и удалить старые куски по [[id документа|document id|doc id]]; поле [[версии|version]] спасает от устаревших."
+        "В RAG фильтр по тенанту ставят [[внутри запроса|в самом запросе]], а не в коде приложения после выдачи.",
+        "Если Postgres уже есть и корпус умеренный, для векторного поиска хватает pgvector с индексом [[HNSW]].",
+        "При обновлении документа старые куски удаляют по [[id документа|document id|doc id]], а поле [[версии|version]] защищает от устаревших кусков."
       ],
       "en": [
-        "The tenant filter goes [[inside the query|in the query]], never in app code after retrieval.",
-        "pgvector with an [[HNSW]] index is my default when Postgres is already there.",
-        "Updates: re-chunk and delete old chunks by [[document id|doc id]]; a [[version]] field prevents stale chunks."
+        "In RAG the tenant filter goes [[inside the query|in the query]], never in app code after retrieval.",
+        "If Postgres is already there and the corpus is moderate, pgvector with an [[HNSW]] index is enough for vector search.",
+        "When a document is updated, old chunks are deleted by [[document id|doc id]], and a [[version]] field protects against stale chunks."
       ]
     },
     "steps": {

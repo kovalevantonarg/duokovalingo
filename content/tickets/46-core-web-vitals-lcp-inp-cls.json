@@ -23,7 +23,7 @@
       },
       {
         "q": "План починки",
-        "t": "Для LCP я сначала нахожу LCP-элемент и раскладываю время на части. Если большой TTFB (время до первого байта), проблема в сервере или кешировании. Если картинка начинает грузиться поздно, значит браузер не мог найти её в HTML заранее, например она задана в CSS или её вставляет JS. Я делаю её обычным img в HTML, никогда не ставлю ей lazy-загрузку, добавляю fetchpriority=high и делаю preload (упреждающую загрузку), если она указана только в CSS или JS. Для INP правило такое: меньше работы в обработчике и yield (уступить главный поток) перед тяжёлой частью, чтобы браузер успел отрисовать отклик. Длинные задачи я режу на куски через scheduler.yield там, где он есть. В Chrome и Firefox он есть, в Safari на момент проверки нет, так что нужен фолбэк (запасной вариант) на setTimeout. Для CLS я резервирую место: width и height или aspect-ratio у картинок, фиксированные слоты под встраивания и рекламу, font-display и подогнанные по размеру запасные шрифты, чтобы текст не прыгал при подмене шрифта. В стриминговом чате вылезает и то и другое. Парсить весь markdown на каждый токен убивает INP, поэтому я коплю токены до кадра и парсю инкрементально. И ничего не должно стоять в потоке под растущим сообщением, иначе его толкает вниз на каждом токене."
+        "t": "Для LCP я сначала нахожу LCP-элемент и раскладываю время на части. Если большой TTFB (время до первого байта), проблема в сервере или кешировании. Если картинка начинает грузиться поздно, значит браузер не мог найти её в HTML заранее, например она задана в CSS или её вставляет JS. Я делаю её обычным img в HTML, никогда не ставлю ей lazy-загрузку, добавляю fetchpriority=high и делаю preload (упреждающую загрузку), если она указана только в CSS или JS. Для INP правило такое: меньше работы в обработчике и yield (уступить главный поток) перед тяжёлой частью, чтобы браузер успел отрисовать отклик. Длинные задачи я режу на куски через scheduler.yield там, где он есть. В Chrome и Firefox он есть, в Safari на момент проверки нет, так что нужен фолбэк (запасной вариант) на setTimeout. Для CLS я резервирую место: width и height или aspect-ratio у картинок, фиксированные слоты под встраивания и рекламу, font-display и подогнанные по размеру запасные шрифты, чтобы текст не прыгал при подмене шрифта. В стриминговом чате вылезает и то и другое. Парсить весь markdown на каждый токен сильно ухудшает INP, поэтому я коплю токены до кадра и парсю инкрементально. И ничего не должно стоять в потоке под растущим сообщением, иначе его толкает вниз на каждом токене."
       }
     ],
     "kill": "<b>«У нас Lighthouse 100, значит с Core Web Vitals всё хорошо»</b> — Google оценивает полевые данные на 75-м перцентиле, а оценка Lighthouse считается по загрузке без взаимодействий, так что <b>INP</b> в ней нет вообще."
@@ -52,19 +52,135 @@
     "kill": "<b>\"Our Lighthouse score is 100, so our Core Web Vitals are fine\"</b> — Google judges field data at the 75th percentile, and the Lighthouse score comes from a load with no interactions, so it has no <b>INP</b> at all."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "INP измеряет только задержку перед запуском обработчика первого взаимодействия на странице.",
-        "Если Lighthouse показывает 100, страница гарантированно проходит Core Web Vitals в Search Console."
+        {
+          "s": "LCP фиксирует момент, когда во viewport отрисовался самый большой элемент, картинка или блок текста.",
+          "ok": true,
+          "why": "Для пользователя это ощущение, что страница загрузилась. Хороший результат — 2,5 секунды или меньше."
+        },
+        {
+          "s": "INP измеряет только задержку перед запуском обработчика первого взаимодействия на странице.",
+          "ok": false,
+          "why": "Так работал FID, который INP заменил в марте 2024 года. INP берёт почти худшее взаимодействие за визит и считает время до следующего кадра."
+        },
+        {
+          "s": "INP складывается из трёх фаз: input delay, processing и presentation delay до показа следующего кадра.",
+          "ok": true,
+          "why": "Input delay — ожидание занятого главного потока, processing — работа обработчиков, presentation delay — рендеринг до показа кадра."
+        },
+        {
+          "s": "Оценка Core Web Vitals в Search Console считается по медиане загрузок, общей для мобильных и десктопа.",
+          "ok": false,
+          "why": "Порог должен проходить 75-й перцентиль реальных загрузок, отдельно для мобильных и для десктопа."
+        },
+        {
+          "s": "Lighthouse в режиме navigation измеряет INP по симулированным кликам и включает его в итоговую оценку.",
+          "ok": false,
+          "why": "В отчёте navigation нет взаимодействий, поэтому вместо INP там Total Blocking Time. В лаборатории INP пишут только режим timespan и панель Performance."
+        },
+        {
+          "s": "Хорошими считаются LCP до 2,5 секунды, INP до 200 миллисекунд и CLS до 0,1 включительно.",
+          "ok": true,
+          "why": "Эти пороги проверяют на 75-м перцентиле полевых данных, отдельно для мобильных и десктопа."
+        },
+        {
+          "s": "Search Console берёт полевые данные из CrUX: реальные пользователи Chrome за скользящее окно в 28 дней.",
+          "ok": true,
+          "why": "Поле видит медленные телефоны, клики во время гидрации и длинные сессии. Одна лабораторная загрузка этого не покажет."
+        },
+        {
+          "s": "Оценка Lighthouse 100 в отчёте navigation означает, что страница проходит Core Web Vitals в Search Console.",
+          "ok": false,
+          "why": "Google оценивает полевые данные на 75-м перцентиле, а Lighthouse — одна симулированная загрузка без взаимодействий. INP в этой оценке нет вообще."
+        },
+        {
+          "s": "LCP-картинке стоит ставить loading=\"lazy\", чтобы она не мешала загрузке остальных ресурсов страницы.",
+          "ok": false,
+          "why": "Ленивая загрузка откладывает картинку до layout, а LCP-картинка должна стартовать первой. Ей ставят fetchpriority=high и держат её в исходном HTML."
+        },
+        {
+          "s": "Атрибуционная сборка библиотеки web-vitals сообщает, какой элемент и какая фаза INP оказались медленными.",
+          "ok": true,
+          "why": "Одного числа мало для отладки. Зная элемент и фазу, взаимодействие воспроизводят в DevTools с замедлением CPU."
+        },
+        {
+          "s": "CLS считается как сумма всех сдвигов макета за весь визит, без группировки во всплески.",
+          "ok": false,
+          "why": "Неожиданные сдвиги группируются во всплески, и в метрику идёт самый большой всплеск. Каждый сдвиг оценивается по доле сдвинутого экрана и расстоянию."
+        },
+        {
+          "s": "Чтобы улучшить INP, обработчик делает меньше работы и уступает главный поток перед тяжёлой частью, чтобы браузер успел отрисовать отклик.",
+          "ok": true,
+          "why": "Длинные задачи режут через scheduler.yield там, где он есть. В Safari на момент проверки его не было, поэтому нужен запасной вариант на setTimeout."
+        }
       ],
       "en": [
-        "INP measures only the delay before the handler of the first interaction on the page starts running.",
-        "If Lighthouse shows 100, the page is guaranteed to pass Core Web Vitals in Search Console."
+        {
+          "s": "LCP marks the moment the largest element in the viewport, an image or a text block, is rendered.",
+          "ok": true,
+          "why": "For the user it's the sense that the page has loaded. Good is 2.5 seconds or less."
+        },
+        {
+          "s": "INP measures only the delay before the handler of the first interaction on the page starts running.",
+          "ok": false,
+          "why": "That's how FID worked, and INP replaced it in March 2024. INP takes close to the worst interaction of the visit and measures up to the next painted frame."
+        },
+        {
+          "s": "INP is made up of three phases: input delay, processing, and presentation delay until the next frame is shown.",
+          "ok": true,
+          "why": "Input delay is waiting for a busy main thread, processing is the handlers running, and presentation delay is rendering until the frame is shown."
+        },
+        {
+          "s": "The Core Web Vitals assessment in Search Console uses the median of page loads, combined across mobile and desktop.",
+          "ok": false,
+          "why": "The threshold has to be met at the 75th percentile of real page loads, separately for mobile and desktop."
+        },
+        {
+          "s": "Lighthouse in navigation mode measures INP from simulated clicks and includes it in the overall score.",
+          "ok": false,
+          "why": "The navigation report has no interactions, so it shows Total Blocking Time instead. In the lab, only timespan mode and the Performance panel record INP."
+        },
+        {
+          "s": "Good values are LCP up to 2.5 seconds, INP up to 200 milliseconds and CLS up to 0.1, inclusive.",
+          "ok": true,
+          "why": "These thresholds are checked at the 75th percentile of field data, separately for mobile and desktop."
+        },
+        {
+          "s": "Search Console uses field data from CrUX: real Chrome users over a rolling 28-day window.",
+          "ok": true,
+          "why": "The field sees slow phones, clicks during hydration and long sessions. A single lab load won't show any of that."
+        },
+        {
+          "s": "A Lighthouse score of 100 in the navigation report means the page passes Core Web Vitals in Search Console.",
+          "ok": false,
+          "why": "Google assesses field data at the 75th percentile, while Lighthouse is one simulated load with no interactions. That score has no INP at all."
+        },
+        {
+          "s": "The LCP image should get loading=\"lazy\" so it doesn't compete with the rest of the page's resources.",
+          "ok": false,
+          "why": "Lazy loading defers the image until layout, but the LCP image needs to start first. It gets fetchpriority=high and stays in the HTML source."
+        },
+        {
+          "s": "The attribution build of the web-vitals library reports which element and which INP phase were slow.",
+          "ok": true,
+          "why": "A single number isn't enough to debug. With the element and the phase, you reproduce the interaction in DevTools with CPU throttling."
+        },
+        {
+          "s": "CLS is calculated as the sum of every layout shift over the whole visit, without grouping them into bursts.",
+          "ok": false,
+          "why": "Unexpected shifts are grouped into bursts, and the largest burst is reported. Each shift is scored by how much of the viewport moved and how far."
+        },
+        {
+          "s": "To improve INP, a handler does less work and yields the main thread before the heavy part, so the browser can paint feedback first.",
+          "ok": true,
+          "why": "Long tasks are split with scheduler.yield where it exists. Safari didn't have it when last checked, so you need a setTimeout fallback."
+        }
       ]
     },
     "cloze": {
       "ru": [
-        "Хороший LCP это [[2,5|2.5]] секунды или меньше, хороший INP это [[200]] миллисекунд или меньше, хороший CLS это [[0,1|0.1]] или меньше.",
+        "Хорошими считаются LCP до [[2,5|2.5]] секунды, INP до [[200]] миллисекунд и CLS до [[0,1|0.1]] включительно.",
         "В марте 2024 года INP заменил [[FID|First Input Delay]] в составе Core Web Vitals.",
         "Полевые данные из [[CrUX|Chrome User Experience Report]] оцениваются на [[75-м|семьдесят пятом]] перцентиле."
       ],

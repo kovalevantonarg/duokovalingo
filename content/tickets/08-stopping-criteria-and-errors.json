@@ -23,7 +23,7 @@
       },
       {
         "q": "Падение",
-        "t": "Учёт расходов обязан отработать в любом случае, иначе не знаешь, во что обошёлся неудачный прогон. Отчёт я печатаю из обработчика события exit процесса (там только синхронный код), а обработчики SIGINT и SIGTERM вызывают process.exit, поэтому отчёт печатается и при падении, и при остановке. Не спасут SIGKILL, OOM (убийство процесса из-за нехватки памяти), нативный abort и сигнал без обработчика, например SIGHUP. Инструментация, которая работает только на счастливом пути, бесполезна ровно тогда, когда нужна. Плюс ретраи на транзиентных сетевых ошибках и явный таймаут, чтобы одна икота сети не убивала прогон."
+        "t": "Учёт расходов обязан отработать в любом случае, иначе не знаешь, во что обошёлся неудачный прогон. Отчёт я печатаю из обработчика события exit процесса (там только синхронный код), а обработчики SIGINT и SIGTERM вызывают process.exit, поэтому отчёт печатается и при падении, и при остановке. Не спасут SIGKILL, OOM (убийство процесса из-за нехватки памяти), нативный abort и сигнал без обработчика, например SIGHUP. Инструментация, которая работает только на счастливом пути, бесполезна ровно тогда, когда нужна. Плюс ретраи на транзиентных сетевых ошибках и явный таймаут, чтобы один сетевой сбой не убивал прогон."
       }
     ],
     "kill": "Забыть про потолок итераций. <b>«Ну оно само остановится»</b> — может, после пары неудачных попыток, но никто этого не гарантирует, а зациклившийся агент жжёт деньги."
@@ -46,20 +46,136 @@
       },
       {
         "q": "Crashes",
-        "t": "Cost accounting has to run either way, otherwise you don't know what the failed run cost. I print it from the process exit listener, which runs synchronous code only, and make the SIGINT and SIGTERM handlers call process.exit, so the report prints on a crash and on a stop; SIGKILL, an OOM kill, a native abort or a signal I haven't handled still gets past it. Instrumentation that only works on the happy path is useless precisely when you need it. Plus retries on transient network errors and an explicit timeout, so one hiccup doesn't kill the run."
+        "t": "Cost accounting has to run either way, otherwise you don't know what the failed run cost. I print it from the process exit listener, which runs synchronous code only, and make the SIGINT and SIGTERM handlers call process.exit, so the report prints on a crash and on a stop; SIGKILL, an OOM kill, a native abort or a signal I haven't handled still gets past it. Instrumentation that only works on the happy path is useless precisely when you need it. Plus retries on transient network errors and an explicit timeout, so one network blip doesn't kill the run."
       }
     ],
     "kill": "Forgetting the iteration cap. <b>\"It'll stop on its own\"</b> — it may, after a few failed retries, but nothing guarantees it, and a looping agent burns money."
   },
   "drills": {
-    "lies": {
+    "tf": {
       "ru": [
-        "Агент гарантированно остановится сам, когда инструмент начнёт падать, поэтому лимит шагов не нужен.",
-        "Ошибку инструмента надо бросать исключением, чтобы агент не продолжал с плохими данными."
+        {
+          "s": "Агент останавливается в четырёх случаях: финальный ответ, потолок итераций, неустранимая ошибка или чекпоинт, где нужен человек.",
+          "ok": true,
+          "why": "Финальный ответ — это ответ без запроса инструмента. Остальные три условия задаёт код вокруг модели."
+        },
+        {
+          "s": "Агент с падающим инструментом гарантированно сдастся сам после пары попыток, поэтому жёсткий лимит шагов не обязателен.",
+          "ok": false,
+          "why": "Модель может сдаться, а может пробовать новые пути, пока не кончатся деньги. Поэтому лимит шагов и бюджет обязательны."
+        },
+        {
+          "s": "Ошибку инструмента, например HTTP 404, возвращают модели в tool_result с is_error: true и понятным текстом.",
+          "ok": true,
+          "why": "Текст вроде «HTTP 404 для этого url, попробуй другой источник» подсказывает модели, что делать дальше."
+        },
+        {
+          "s": "Ошибку инструмента лучше бросать исключением, чтобы агент не продолжал работу с плохими данными.",
+          "ok": false,
+          "why": "Исключение убивает агента на первой битой ссылке, и уже оплаченная работа теряется. Ошибку отдают модели, и она пробует другой путь."
+        },
+        {
+          "s": "Получив ошибку инструмента в tool_result, модель обычно пробует другой путь, например другой url или другую страницу.",
+          "ok": true,
+          "why": "Для модели ошибка инструмента — обычные данные, а не авария программы."
+        },
+        {
+          "s": "Учёт расходов агента достаточно записывать при успешном завершении прогона, потому что неудачный прогон ничего не стоит.",
+          "ok": false,
+          "why": "Неудачный прогон тоже тратит токены, и без учёта неизвестно, во что он обошёлся. Отчёт должен печататься и при падении."
+        },
+        {
+          "s": "Причину остановки агента стоит логировать, потому что при разборе неудачного прогона на неё смотрят первой.",
+          "ok": true,
+          "why": "По ней видно, закончил ли агент задачу, упёрся в лимит или упал на ошибке."
+        },
+        {
+          "s": "Обработчик события exit в Node.js выполняется при любом завершении процесса, включая SIGKILL и убийство из-за нехватки памяти.",
+          "ok": false,
+          "why": "При SIGKILL, OOM, нативном abort и сигнале без обработчика exit не срабатывает, и отчёт о стоимости не напечатается."
+        },
+        {
+          "s": "В обработчике события exit процесса можно дождаться асинхронной записи отчёта, например запроса в базу данных.",
+          "ok": false,
+          "why": "В обработчике exit выполняется только синхронный код. Асинхронная запись не успеет завершиться."
+        },
+        {
+          "s": "Отчёт о стоимости печатают из обработчика события exit процесса, а обработчики SIGINT и SIGTERM вызывают process.exit.",
+          "ok": true,
+          "why": "Так отчёт печатается и при падении, и при остановке по сигналу."
+        },
+        {
+          "s": "Потолок шагов агента заменяет денежный бюджет, поэтому отдельный лимит по деньгам в проде не нужен.",
+          "ok": false,
+          "why": "Обязательны оба ограничения: и жёсткий лимит шагов, и бюджет по деньгам."
+        },
+        {
+          "s": "Ретраи на транзиентных сетевых ошибках и явный таймаут нужны, чтобы один сетевой сбой не убивал весь прогон агента.",
+          "ok": true,
+          "why": "Временная ошибка сети не должна стоить всей проделанной работы. Таймаут не даёт зависшему запросу держать прогон бесконечно."
+        }
       ],
       "en": [
-        "The agent is guaranteed to stop on its own once the tool starts failing, so a step cap is unnecessary.",
-        "A tool error should be thrown as an exception so the agent doesn't continue with bad data."
+        {
+          "s": "An agent stops in four cases: a final answer, the iteration cap, an unrecoverable error, or a checkpoint that needs a human.",
+          "ok": true,
+          "why": "A final answer is a response with no tool request. The other three conditions are enforced by the code around the model."
+        },
+        {
+          "s": "An agent with a failing tool is guaranteed to give up on its own after a few attempts, so a hard step cap is optional.",
+          "ok": false,
+          "why": "The model may give up, or it may keep trying new routes until the money runs out. That's why a step cap and a budget are mandatory."
+        },
+        {
+          "s": "A tool error such as an HTTP 404 goes back to the model in a tool_result with is_error: true and a clear message.",
+          "ok": true,
+          "why": "A message like \"HTTP 404 for this URL, try another source\" tells the model what to do next."
+        },
+        {
+          "s": "A tool error is best thrown as an exception, so the agent doesn't keep working with bad data.",
+          "ok": false,
+          "why": "An exception kills the agent on the first dead link and the work already paid for is lost. Hand the error to the model and it tries another route."
+        },
+        {
+          "s": "After getting a tool error in a tool_result, the model usually tries another route, such as a different URL or page.",
+          "ok": true,
+          "why": "To the model a tool error is ordinary data, not an emergency for the program."
+        },
+        {
+          "s": "Recording an agent's costs when the run completes successfully is enough, because a failed run costs nothing.",
+          "ok": false,
+          "why": "A failed run spends tokens too, and without accounting you don't know what it cost. The report has to print on a crash as well."
+        },
+        {
+          "s": "The reason an agent stopped should be logged, because it's the first thing you check when a run goes wrong.",
+          "ok": true,
+          "why": "It shows whether the agent finished the task, hit a limit or failed on an error."
+        },
+        {
+          "s": "A Node.js exit event listener runs on every kind of process termination, including SIGKILL and an out-of-memory kill.",
+          "ok": false,
+          "why": "On SIGKILL, an OOM kill, a native abort or an unhandled signal the exit listener doesn't run, so the cost report won't print."
+        },
+        {
+          "s": "Inside a process exit listener you can wait for an asynchronous report write, such as a database request.",
+          "ok": false,
+          "why": "An exit listener runs synchronous code only. An asynchronous write won't get to finish."
+        },
+        {
+          "s": "The cost report is printed from the process exit listener, and the SIGINT and SIGTERM handlers call process.exit.",
+          "ok": true,
+          "why": "That way the report prints both on a crash and on a stop by signal."
+        },
+        {
+          "s": "An agent's step cap replaces a spending budget, so a separate money limit isn't needed in production.",
+          "ok": false,
+          "why": "Both limits are mandatory: a hard step cap and a spending budget."
+        },
+        {
+          "s": "Retries on transient network errors and an explicit timeout keep one network blip from killing the whole agent run.",
+          "ok": true,
+          "why": "A temporary network error shouldn't cost all the work done so far. A timeout stops a hung request from holding the run forever."
+        }
       ]
     },
     "cloze": {
