@@ -1,10 +1,15 @@
 // Progress data: loading it from the API, saving attempts (or queueing them offline), and queries over tickets.
-import { applyHit, dueTickets, migrate, recOf, setDoubt, statusOf } from "../lib/srs.js";
+import {
+  applyHit,
+  dueTickets,
+  migrate,
+  recOf,
+  resetTicket as resetLocal,
+  setFlags,
+  statusOf,
+} from "../lib/srs.js";
 import { persist, state } from "./state.js";
 import { TODAY, dLocal, iso } from "./util.js";
-
-/** Tickets in the order new ones are introduced: LLM basics and the stories first, the rest by number. */
-const FIRST = [23, 24, 11, 6, 12, 14, 15, 16, 17, 18, 19, 25, 20, 21, 22];
 
 /** All tickets (window.TICKETS from tickets.js). */
 export const tickets = () => window.TICKETS || [];
@@ -15,17 +20,29 @@ export const active = () => tickets().filter((t) => t.sec !== "parked");
 
 export const rec = (n) => recOf(state.db, n);
 export const status = (n) => statusOf(state.db, n);
-export const due = () => dueTickets(state.db);
-export const doubts = () => active().filter((t) => rec(t.n).doubt);
-export const nextNew = () => {
-  const order = [
-    ...FIRST,
-    ...active()
-      .map((t) => t.n)
-      .filter((n) => !FIRST.includes(n)),
-  ];
-  return order.map(tk).find((t) => t && t.sec !== "parked" && status(t.n) === "new" && !rec(t.n).doubt);
+export const isRead = (n) => !!rec(n).read;
+
+/** Setting: train only tickets whose lesson is marked read (on by default). */
+export const onlyRead = () => {
+  try {
+    return localStorage.getItem("drill.onlyRead") !== "0";
+  } catch {
+    return true;
+  }
 };
+export const setOnlyRead = (on) => persist("drill.onlyRead", on ? "1" : "0");
+/** May this ticket come up in sessions, interview mode and random draws? */
+export const trainable = (n) => !onlyRead() || isRead(n);
+
+/** Due tickets that may be trained (see onlyRead). */
+export const due = () => dueTickets(state.db).filter((r) => trainable(r.n));
+/** Due tickets hidden because their lesson isn't read yet. */
+export const dueUnread = () => (onlyRead() ? dueTickets(state.db).filter((r) => !isRead(r.n)) : []);
+export const doubts = () => active().filter((t) => rec(t.n).doubt && trainable(t.n));
+/** Read but never graded: ready for a first session. */
+export const readNew = () => active().filter((t) => isRead(t.n) && status(t.n) === "new");
+/** The next ticket to start: the first one, by number, that is neither read nor graded. */
+export const nextNew = () => active().find((t) => status(t.n) === "new" && !rec(t.n).doubt && !isRead(t.n));
 
 function setDb(db) {
   migrate(db);
@@ -69,8 +86,16 @@ function forgetOtherUser(who) {
 }
 
 // offline: record the attempt locally with the same rules the server uses (lib/srs.js)
-export const applyLocal = (p) =>
-  p.path === "/api/flag" ? setDoubt(state.db, p.n, !!p.doubt) : applyHit(state.db, p, TODAY);
+export function applyLocal(p) {
+  if (p.path === "/api/reset") return resetLocal(state.db, p.n);
+  if (p.path === "/api/flag") {
+    const flags = {};
+    if ("doubt" in p) flags.doubt = !!p.doubt;
+    if ("read" in p) flags.read = !!p.read;
+    return setFlags(state.db, p.n, flags, TODAY);
+  }
+  return applyHit(state.db, p, TODAY);
+}
 
 export async function post(path, body) {
   body.d = TODAY;
@@ -116,6 +141,23 @@ export async function flushPending() {
 
 /** Mark a ticket "not sure" (it goes first in the next session) or clear the mark. */
 export const flagDoubt = (n, on) => post("/api/flag", { n, doubt: !!on });
+/** Mark a ticket's lesson read or unread (synced, so it holds on every device). */
+export const flagRead = (n, on) => post("/api/flag", { n, read: !!on });
+/** Forget a ticket: back to "new"; the read mark and exam history stay. */
+export const resetTicket = (n) => post("/api/reset", { n });
+
+/** Lessons marked read before the mark was synced lived in this browser only: send them up once. */
+export async function syncLocalReads() {
+  let local = [];
+  try {
+    local = JSON.parse(localStorage.getItem("learn.read") || "[]");
+  } catch {}
+  if (!state.live || !local.length) return;
+  for (const n of local) if (!isRead(n)) await flagRead(n, true);
+  try {
+    localStorage.removeItem("learn.read");
+  } catch {}
+}
 
 /** Days with activity in a row, ending today or yesterday. */
 export function streak() {

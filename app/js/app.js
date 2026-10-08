@@ -2,7 +2,7 @@
 import { go, route, upgradeOldLink } from "./router.js";
 import { tipHide, tipShow } from "./tip.js";
 import { state } from "./state.js";
-import { flushPending, loadAttempts, loadState } from "./store.js";
+import { flushPending, loadAttempts, loadState, syncLocalReads } from "./store.js";
 import { drawTabs } from "./ui.js";
 
 upgradeOldLink();
@@ -43,6 +43,7 @@ if ("serviceWorker" in navigator && location.hostname !== "localhost")
 
 loadState().then(async () => {
   await flushPending();
+  await syncLocalReads();
   route();
   // exam scores are cached locally; refresh the cache in the background for the next screen
   if (state.live) loadAttempts();

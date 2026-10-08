@@ -1,7 +1,7 @@
 // Today: one Start button for whatever is due (or the next new ticket), the due list, the next new ticket, interview mode.
 import { icon } from "../icons.js";
 import { state } from "../state.js";
-import { doubts, due, nextNew } from "../store.js";
+import { doubts, due, dueUnread, nextNew, readNew } from "../store.js";
 import { fmtDate, frame, kbd, ticketRow, ui } from "../ui.js";
 import { sessionPlan } from "../games/session.js";
 
@@ -38,6 +38,15 @@ export function home() {
     h += dbt.map((t) => ticketRow(t, ui().doubt)).join("");
     h += `</div>`;
   }
+  const rn = readNew().filter((t) => !d.some((x) => x.n === t.n));
+  if (rn.length)
+    h += `<div class="sec"><span>${ui().readNewList}</span><span class="r">${rn.length}</span></div><div class="card list">${rn
+      .slice(0, 5)
+      .map((t) => ticketRow(t, ui().readNewSub))
+      .join("")}</div>`;
+  const hidden = dueUnread().length;
+  if (hidden)
+    h += `<p class="note-unread">${ui().hiddenDue(hidden)} <a href="#tickets" id="showUnread">${ui().showThem}</a></p>`;
   if (nn && !(plan.kind === "new" && d.length === 0)) {
     h += `<div class="sec"><span>${ui().nextNew}</span></div><div class="card list">${ticketRow(nn, ui().path)}</div>`;
   }
@@ -45,6 +54,8 @@ export function home() {
   frame(h);
   const go = () => (location.hash = plan.href);
   document.getElementById("go").onclick = go;
+  const su = document.getElementById("showUnread");
+  if (su) su.onclick = () => sessionStorage.setItem("drill.filter", "unread");
   document.onkeydown = (e) => {
     if (e.key === "Enter" && !e.target.closest("button,a,input,textarea")) go();
   };

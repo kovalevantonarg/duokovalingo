@@ -113,3 +113,18 @@ test("migration: items become tickets, history maps to tickets, old data kept", 
   migrate(empty);
   assert.deepEqual(empty, emptyDb());
 });
+
+test("read flag and reset", async () => {
+  const { setFlags, resetTicket } = await import("../app/lib/srs.js");
+  const db = fresh();
+  assert.equal(setFlags(db, 2, { read: true }, "2026-10-08"), true);
+  assert.equal(db.tickets[2].read, "2026-10-08");
+  assert.equal(setFlags(db, 2, { read: true }, "2026-10-09"), false, "already read");
+  setFlags(db, 2, { doubt: true });
+  assert.equal(resetTicket(db, 2), true);
+  assert.deepEqual(db.tickets[2], { read: "2026-10-08" }, "back to new, still read");
+  assert.equal(resetTicket(db, 2), false, "nothing left to reset");
+  assert.equal(resetTicket(db, 7), false);
+  setFlags(db, 1, { read: false });
+  assert.equal(resetTicket(db, 999), false);
+});

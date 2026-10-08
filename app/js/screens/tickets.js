@@ -5,14 +5,26 @@ import { icon } from "../icons.js";
 import { dueDate, intervalOf, isDue } from "../../lib/srs.js";
 import { scoreChart } from "../chart.js";
 import { state } from "../state.js";
-import { attemptsOf, flagDoubt, loadAttempts, rec, status, tickets, tk } from "../store.js";
+import {
+  attemptsOf,
+  flagDoubt,
+  loadAttempts,
+  rec,
+  status,
+  tickets,
+  tk,
+  flagRead,
+  isRead,
+  resetTicket,
+} from "../store.js";
 import { MODE_ICON, fmtDate, frame, ticketRow, ui } from "../ui.js";
 import { $, days, esc } from "../util.js";
 import { drawTicket } from "./exam.js";
-import { isRead, lessonIndex } from "./learn.js";
+import { lessonIndex } from "./learn.js";
+import { openSheet, closeSheet } from "./settings.js";
 
 const ORDER = ["llm", "rag", "agents", "sysd", "behav", "js", "ts", "react", "web", "bonus", "parked"];
-const FILTERS = ["all", "weak", "new", "doubt"];
+const FILTERS = ["all", "unread", "weak", "new", "doubt"];
 const view = { q: "", f: "all" };
 
 const norm = (s) =>
@@ -42,6 +54,10 @@ function statusLine(n) {
 }
 
 export async function ticketList() {
+  try {
+    const f = sessionStorage.getItem("drill.filter");
+    if (f) ((view.f = f), sessionStorage.removeItem("drill.filter"));
+  } catch {}
   const page =
     frame(`<div class="sec"><span>${ui().tabs.tickets}</span><span class="r">${tickets().length}</span></div>
     <div class="tbar"><label class="search">${icon.search}<input id="q" type="search" placeholder="${ui().searchPh}" value="${esc(view.q)}" autocomplete="off"></label><button class="btn line" id="draw">${icon.shuffle}<span>${ui().draw}</span></button></div>
@@ -57,6 +73,7 @@ export async function ticketList() {
       if (view.f === "weak" && !(st === "red" || st === "yellow")) return false;
       if (view.f === "new" && st !== "new") return false;
       if (view.f === "doubt" && !rec(t.n).doubt) return false;
+      if (view.f === "unread" && isRead(t.n)) return false;
       const n = String(t.n);
       return words.every((w) => w === n || hay.get(t.n).includes(w));
     };
@@ -107,7 +124,7 @@ export async function hub(n) {
   const page = frame(
     `<section class="card thead"><span class="kick">${ui().ticket} ${n} · ${esc(t.tag)}</span><h1 class="h1">${esc(d.topic)}</h1>
       <div class="stt"><span class="sw ${st}${isDue(r) ? " due" : ""}"></span>${statusLine(n)}</div>
-      <button class="dbtn${r.doubt ? " on" : ""}" id="doubt" aria-pressed="${!!r.doubt}"><b>?</b>${ui().doubtBtn}</button></section>
+      <div class="tbtns"><button class="dbtn rd${read ? " on" : ""}" id="readT" aria-pressed="${read}">${icon.check}${read ? ui().readOn : ui().readOff}</button><button class="dbtn${r.doubt ? " on" : ""}" id="doubt" aria-pressed="${!!r.doubt}"><b>?</b>${ui().doubtBtn}</button></div></section>
     <div class="sec"><span>${ui().pathTitle}</span></div>
     <div class="card path">
       <a class="${stepCls(1, read)}" href="#learn/${n}"><span class="k">${read ? icon.check : 1}</span><span class="tt"><b>${ui().step1}</b><small>${read ? ui().readDone : ui().step1d}</small></span>${icon.chev}</a>
@@ -119,7 +136,8 @@ export async function hub(n) {
     <div class="card qlist"><ol>${d.qs.map((q) => `<li>${esc(q)}</li>`).join("")}</ol></div>
     <div class="sec"><span>${ui().scores}</span><span class="r" id="avg"></span></div>
     <div class="card scores" id="scores"></div>
-    <div class="meta card"><div><span class="k">${ui().last}</span><span class="v">${lastTxt}</span></div><div><span class="k">${ui().interval}</span><span class="v">${intervalOf(r) ? intervalOf(r) + ui().days : "—"}</span></div><div><span class="k">${ui().lastmode}</span><span class="v">${r.mode || "—"}</span></div></div>`,
+    <div class="meta card"><div><span class="k">${ui().last}</span><span class="v">${lastTxt}</span></div><div><span class="k">${ui().interval}</span><span class="v">${intervalOf(r) ? intervalOf(r) + ui().days : "—"}</span></div><div><span class="k">${ui().lastmode}</span><span class="v">${r.mode || "—"}</span></div></div>
+    ${st !== "new" || r.doubt ? `<button class="btn line full reset" id="reset">${ui().resetBtn}</button>` : ""}`,
     { back: { href: "tickets", label: ui().tabs.tickets } },
   );
   document.title = `${n}. ${d.topic}`;
@@ -144,6 +162,24 @@ export async function hub(n) {
   };
   drawScores();
   loadAttempts(n).then(drawScores);
+  $("#readT").onclick = async () => {
+    await flagRead(n, !isRead(n));
+    hub(n);
+  };
+  const rs = $("#reset");
+  if (rs)
+    rs.onclick = () =>
+      openSheet(
+        `<h3 class="sh">${ui().resetTitle(n)}</h3><p class="sub">${ui().resetText}</p><div class="sacts"><button class="btn line" id="no">${ui().cancel}</button><button class="btn red" id="yes">${ui().resetBtn}</button></div>`,
+        (sh) => {
+          sh.querySelector("#no").onclick = closeSheet;
+          sh.querySelector("#yes").onclick = async () => {
+            closeSheet();
+            await resetTicket(n);
+            hub(n);
+          };
+        },
+      );
   $("#doubt").onclick = async (e) => {
     const b = e.currentTarget,
       on = !b.classList.contains("on");

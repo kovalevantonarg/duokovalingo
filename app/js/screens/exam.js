@@ -3,7 +3,7 @@
 import { icon } from "../icons.js";
 import { canDictate, dictate } from "../speech.js";
 import { persist, state } from "../state.js";
-import { active, attemptsOf, loadAttempts, mergeAttempts, status, tk } from "../store.js";
+import { active, attemptsOf, loadAttempts, mergeAttempts, status, tk, trainable } from "../store.js";
 import { frame, scoreCls } from "../ui.js";
 import { $, esc, shuffle } from "../util.js";
 
@@ -234,7 +234,8 @@ export function gradeHtml(j, lang = state.lang) {
 /** A random ticket to draw: weak and unseen ones first. */
 export function drawTicket(except) {
   const weight = { red: 4, new: 3, yellow: 3, green: 1 };
-  const pool = active().filter((t) => t.n !== except);
+  const all = active().filter((t) => t.n !== except);
+  const pool = all.some((t) => trainable(t.n)) ? all.filter((t) => trainable(t.n)) : all;
   const bag = pool.flatMap((t) => Array(weight[status(t.n)] || 1).fill(t.n));
   return shuffle(bag)[0];
 }

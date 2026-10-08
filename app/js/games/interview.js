@@ -4,14 +4,14 @@ import { icon } from "../icons.js";
 import { checkAnswer } from "../screens/exam.js";
 import { canDictate, canSpeak, dictate, speak, stopSpeaking } from "../speech.js";
 import { persist, state } from "../state.js";
-import { active, mergeAttempts, post, status } from "../store.js";
+import { active, mergeAttempts, post, status, trainable } from "../store.js";
 import { exitRound, kbd, roundFrame, rtop, scoreCls, ui, wireQuit } from "../ui.js";
 import { $, codify, esc, shuffle } from "../util.js";
 
 const LIMIT = 120; // seconds per answer
 
 function pick() {
-  const pool = shuffle(active().filter((t) => t.sec !== "bonus"));
+  const pool = shuffle(active().filter((t) => t.sec !== "bonus" && trainable(t.n)));
   const seen = status;
   const out = [];
   for (const pass of [(t) => seen(t.n) !== "new", () => true])
@@ -24,6 +24,7 @@ function pick() {
 }
 
 export function interview() {
+  if (!pick().length) return noneRead();
   let voiceOn = localStorage.getItem("interview.voice") !== "off";
   roundFrame(`<div class="round">${rtop(0)}<div class="body" style="gap:14px"><span class="tag">${ui().interview}</span><h2 class="h2">${ui().ivTitle}</h2><p class="sub">${ui().ivIntro}</p>
     ${canSpeak ? `<label class="ivopt"><input type="checkbox" id="vo" ${voiceOn ? "checked" : ""}> ${ui().ivVoice}</label>` : ""}</div>
@@ -156,4 +157,12 @@ function results(qs) {
   };
   state.rerender = draw;
   draw();
+}
+
+// with "only read tickets" on and nothing read yet there's nothing to ask
+function noneRead() {
+  roundFrame(`<div class="round">${rtop(0)}<div class="body" style="gap:14px"><span class="tag">${ui().interview}</span><h2 class="h2">${ui().ivNoneTitle}</h2><p class="sub">${ui().ivNone}</p></div>
+    <div class="act"><a class="btn blue full big" href="#learn">${ui().tabs.learn}</a></div></div>`);
+  wireQuit();
+  document.onkeydown = (e) => e.key === "Escape" && exitRound();
 }

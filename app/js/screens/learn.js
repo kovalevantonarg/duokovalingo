@@ -1,8 +1,8 @@
 // "From zero" lessons: the index and one lesson (lessons/L<n>.json), with read-aloud.
 import { icon } from "../icons.js";
 import { canSpeak, chunks, readAloud } from "../speech.js";
-import { persist, state } from "../state.js";
-import { tickets } from "../store.js";
+import { state } from "../state.js";
+import { flagRead, isRead, tickets } from "../store.js";
 import { frame, setLang } from "../ui.js";
 import { $, esc } from "../util.js";
 
@@ -104,15 +104,13 @@ const ORDER = ["llm", "rag", "agents", "sysd", "behav", "js", "ts", "react", "we
 const L = () => UI[state.lang];
 let IDX = null;
 const cache = {};
-const readSet = () => {
-  try {
-    return new Set(JSON.parse(localStorage.getItem("learn.read") || "[]"));
-  } catch {
-    return new Set();
-  }
-};
-/** Lessons marked as read. */
-export const isRead = (n) => readSet().has(n);
+/** Tickets whose lesson is marked read (synced with progress, see store.flagRead). */
+const readSet = () =>
+  new Set(
+    tickets()
+      .filter((t) => isRead(t.n))
+      .map((t) => t.n),
+  );
 // Lesson text is our own reviewed content; allow only <b>, <i>, <code> inline tags, escape everything else.
 const rich = (s) => esc(s ?? "").replace(/&lt;(\/?)(b|i|code)&gt;/g, "<$1$2>");
 const plain = (s) => String(s ?? "").replace(/<[^>]+>/g, "");
@@ -260,12 +258,10 @@ export async function lessonScreen(n) {
       }),
   );
   $("#mk").onclick = () => {
-    const s = readSet();
-    s.has(n) ? s.delete(n) : s.add(n);
-    persist("learn.read", [...s]);
-    const on = s.has(n);
+    const on = !isRead(n);
     $("#mk").className = on ? "done" : "";
     $("#mk").textContent = on ? L().marked : L().mark;
+    flagRead(n, on);
   };
   wireListen(x);
   if (!keepScroll) window.scrollTo(0, 0);

@@ -25,6 +25,7 @@ import { CATALOG } from "./catalog.js";
  * @property {string} [mode]     game mode of the last attempt (voice, tf, gap, order, exam)
  * @property {string} [answer]   last voice/typed answer, trimmed
  * @property {boolean} [doubt]   flagged "not sure": goes first in the next session
+ * @property {string} [read]     date the lesson was marked read, YYYY-MM-DD (training can be limited to read tickets)
  */
 
 /** @typedef {{ d: string, tickets: number[], xp?: number }} Day */
@@ -116,14 +117,41 @@ export function applyHit(db, hit, today = isoDay()) {
   return true;
 }
 
-/** Flag or unflag a ticket as "not sure". Returns false for an unknown ticket or no change. @param {Db} db */
-export function setDoubt(db, n, on) {
+/**
+ * Set a ticket's flags: `doubt` ("not sure") and/or `read` (lesson read). Fields left undefined aren't touched.
+ * Returns false for an unknown ticket or when nothing changed. @param {Db} db
+ * @param {{ doubt?: boolean, read?: boolean }} flags
+ */
+export function setFlags(db, n, { doubt, read }, today = isoDay()) {
   if (!isTicket(n)) return false;
   const rec = (db.tickets[Number(n)] ||= {});
-  if (!!rec.doubt === !!on) return false;
-  if (on) rec.doubt = true;
-  else delete rec.doubt;
-  return true;
+  let changed = false;
+  if (doubt !== undefined && !!rec.doubt !== !!doubt) {
+    if (doubt) rec.doubt = true;
+    else delete rec.doubt;
+    changed = true;
+  }
+  if (read !== undefined && !!rec.read !== !!read) {
+    if (read) rec.read = isDate(today) ? today : isoDay();
+    else delete rec.read;
+    changed = true;
+  }
+  return changed;
+}
+/** Flag or unflag a ticket as "not sure". @param {Db} db */
+export const setDoubt = (db, n, on) => setFlags(db, n, { doubt: !!on });
+
+/**
+ * Forget a ticket: back to "new" (status, interval, last date, doubt, last answer go). The lesson stays marked read;
+ * activity history and exam attempts are kept. Returns false when there was nothing to reset. @param {Db} db
+ */
+export function resetTicket(db, n) {
+  const rec = db.tickets[Number(n)];
+  if (!isTicket(n) || !rec) return false;
+  const keep = rec.read ? { read: rec.read } : null;
+  if (keep) db.tickets[Number(n)] = keep;
+  else delete db.tickets[Number(n)];
+  return !!(rec.st || rec.doubt || rec.mode || rec.answer || rec.iv || rec.last);
 }
 
 /** Interval currently in force, or 0 if not scheduled. @param {Rec} rec */

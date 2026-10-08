@@ -3,7 +3,19 @@
 import { icon } from "../icons.js";
 import { momTiles } from "../screens/verdict.js";
 import { state } from "../state.js";
-import { active, doubts, due, nextNew, post, rec, streak, tk, xpToday } from "../store.js";
+import {
+  active,
+  doubts,
+  due,
+  nextNew,
+  post,
+  readNew,
+  rec,
+  streak,
+  tk,
+  trainable,
+  xpToday,
+} from "../store.js";
 import { kbd, roundFrame, rtop, ui, wireQuit, exitRound } from "../ui.js";
 import { $, esc, shuffle } from "../util.js";
 import { runGap } from "./fill-gap.js";
@@ -14,13 +26,16 @@ const SIZE = 3;
 
 /** What Start does right now. */
 export function sessionPlan() {
-  const ns = [...new Set([...doubts().map((t) => t.n), ...due().map((r) => r.n)])].slice(0, SIZE);
+  // "not sure" first, then what's due, then tickets you've read but never answered
+  const ns = [
+    ...new Set([...doubts().map((t) => t.n), ...due().map((r) => r.n), ...readNew().map((t) => t.n)]),
+  ].slice(0, SIZE);
   if (ns.length) return { kind: "review", tickets: ns.map(tk), href: "session" };
   const nn = nextNew();
   if (nn) return { kind: "new", ticket: nn, href: `t/${nn.n}` };
   // everything graded and nothing due: get ahead on the ones drilled longest ago
   const old = active()
-    .filter((t) => rec(t.n).last)
+    .filter((t) => rec(t.n).last && trainable(t.n))
     .sort((a, b) => (rec(a.n).last < rec(b.n).last ? -1 : 1))
     .slice(0, SIZE);
   return { kind: "ahead", tickets: old, href: "session" };

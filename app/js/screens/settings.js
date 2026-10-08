@@ -7,6 +7,7 @@ import { emptyDb } from "../../lib/srs.js";
 import { persist, state } from "../state.js";
 import { setLang, ui } from "../ui.js";
 import { $, esc } from "../util.js";
+import { onlyRead, setOnlyRead } from "../store.js";
 import { loginScreen } from "./login.js";
 
 /** Open a bottom sheet with `html`; `wire(el)` attaches handlers. Closes on the backdrop, Esc or swipe down. */
@@ -124,6 +125,7 @@ export function openSettings() {
     `<button class="tgl${on ? " on" : ""}" id="${id}" role="switch" aria-checked="${!!on}"><i></i></button>`;
   const html = `<h3 class="sh">${ui().settings}</h3>
     ${row(ui().language, "", `<div class="seg"><button data-l="ru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button data-l="en" class="${state.lang === "en" ? "on" : ""}">EN</button></div>`)}
+    ${row(ui().onlyRead, ui().onlyReadD, toggle("orT", onlyRead()))}
     ${row(ui().sound, ui().soundd, toggle("sndT", soundOn()))}
     ${
       canSpeak && voices().length
@@ -154,6 +156,14 @@ export function openSettings() {
           openSettings();
         }),
     );
+    sh.querySelector("#orT").onclick = (e) => {
+      const on = !onlyRead();
+      setOnlyRead(on);
+      e.currentTarget.classList.toggle("on", on);
+      e.currentTarget.setAttribute("aria-checked", on);
+      if (!document.body.classList.contains("inround")) route();
+      openSettings();
+    };
     sh.querySelector("#sndT").onclick = (e) => {
       const on = toggleSound();
       e.currentTarget.classList.toggle("on", on);

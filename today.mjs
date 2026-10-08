@@ -18,7 +18,8 @@ import {
   intervalOf,
   isTicket,
   migrate,
-  setDoubt,
+  resetTicket,
+  setFlags,
   statusOf,
 } from "./app/lib/srs.js";
 import { CATALOG } from "./app/lib/catalog.js";
@@ -201,7 +202,15 @@ function serve(port) {
     }
     if (req.method === "POST" && p === "/api/flag") {
       const b = await body(req);
-      if (setDoubt(db, b.n, !!b.doubt)) save();
+      const flags = {};
+      if ("doubt" in b) flags.doubt = !!b.doubt;
+      if ("read" in b) flags.read = !!b.read;
+      if (setFlags(db, b.n, flags, b.d)) save();
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && p === "/api/reset") {
+      const b = await body(req);
+      if (resetTicket(db, b.n)) save();
       return json(res, 200, out());
     }
     if (req.method === "POST" && p === "/api/check") {

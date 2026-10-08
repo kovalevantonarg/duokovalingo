@@ -2928,3 +2928,29 @@ body.inround .tabs {
   font-size: 13px;
   padding: 0 8px;
 }
+
+.v-app .thead .tbtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.v-app .dbtn.rd.on {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 50%, transparent);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+}
+.v-app .btn.reset {
+  margin-top: 24px;
+  color: var(--dim);
+}
+.v-app .sacts {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.v-app .note-unread {
+  margin: 16px 2px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
