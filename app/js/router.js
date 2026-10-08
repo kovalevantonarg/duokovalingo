@@ -45,6 +45,8 @@ export function upgradeOldLink() {
 
 export function route() {
   closeSheet();
+  state.leave?.(); // the screen being left saves what it tracks (lesson time, reading position)
+  state.leave = null;
   document.onkeydown = null;
   state.rerender = null;
   stopSpeaking();

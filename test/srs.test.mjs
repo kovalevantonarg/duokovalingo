@@ -128,3 +128,57 @@ test("read flag and reset", async () => {
   setFlags(db, 1, { read: false });
   assert.equal(resetTicket(db, 999), false);
 });
+
+test("breaks: welcome back, continue, soft restart, pause, start over", async () => {
+  const { breakDays, planAction, dueTickets, lastActivity } = await import("../app/lib/srs.js");
+  const mk = () => ({
+    ...emptyDb(),
+    tickets: {
+      1: { st: "green", iv: 7, last: "2026-09-01", read: "2026-08-30" },
+      2: { st: "yellow", iv: 3, last: "2026-09-08" },
+      3: { st: "red", iv: 1, last: "2026-09-09" },
+    },
+    history: [{ d: "2026-09-09", tickets: [3], xp: 5 }],
+  });
+  const today = "2026-10-08";
+  let db = mk();
+  assert.equal(lastActivity(db), "2026-09-09");
+  assert.equal(breakDays(db, today), 29);
+  assert.equal(breakDays(db, "2026-09-15"), 0, "6 days isn't a break");
+
+  // continue: dates move by the break, so today looks like the day after the last session
+  planAction(db, { action: "continue" }, today);
+  assert.equal(db.tickets[3].last, "2026-10-07");
+  assert.equal(breakDays(db, today), 0, "choice made");
+  // 1 was already overdue before the break, 3 was due the next day, 2 not yet
+  assert.deepEqual(
+    dueTickets(db, new Date(2026, 9, 8)).map((r) => r.n),
+    [1, 3],
+  );
+
+  // soft: forgotten tickets drop a level and come due today
+  db = mk();
+  planAction(db, { action: "soft" }, today);
+  assert.deepEqual([db.tickets[1].st, db.tickets[2].st, db.tickets[3].st], ["yellow", "red", "red"]);
+  assert.equal(db.tickets[2].last, "2026-10-07");
+  assert.equal(dueTickets(db, new Date(2026, 9, 8)).length, 3);
+
+  // pause freezes; resume shifts by the pause
+  db = mk();
+  planAction(db, { action: "pause" }, "2026-09-10");
+  assert.deepEqual(dueTickets(db, new Date(2026, 9, 8)), []);
+  assert.equal(breakDays(db, today), 0);
+  planAction(db, { action: "resume" }, "2026-09-20");
+  assert.equal(db.tickets[3].last, "2026-09-19");
+  assert.equal(db.paused, undefined);
+
+  // start over keeps read marks and history by default
+  db = mk();
+  planAction(db, { action: "reset" }, today);
+  assert.deepEqual(db.tickets, { 1: { read: "2026-08-30" } });
+  assert.equal(db.history.length, 1);
+  db = mk();
+  planAction(db, { action: "reset", keepRead: false, keepHistory: false }, today);
+  assert.deepEqual([db.tickets, db.history], [{}, []]);
+  assert.equal(planAction(db, { action: "nope" }, today), false);
+});

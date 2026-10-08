@@ -29,7 +29,11 @@ import { CATALOG } from "./catalog.js";
  */
 
 /** @typedef {{ d: string, tickets: number[], xp?: number }} Day */
-/** @typedef {{ schema: 2, tickets: Record<string, Rec>, history: Day[], legacy?: object, exams?: object[] }} Db */
+/**
+ * @typedef {{ schema: 2, tickets: Record<string, Rec>, history: Day[], paused?: string, breakSeen?: string,
+ *   legacy?: object, exams?: object[] }} Db
+ * paused: date a pause began (schedule frozen until resumed); breakSeen: date the "welcome back" choice was made.
+ */
 
 /**
  * @typedef {object} Hit       one attempt, as sent by the client
@@ -174,12 +178,107 @@ export function overdue(rec, now = new Date()) {
 /** @param {Rec} rec */
 export const isDue = (rec, now = new Date()) => (overdue(rec, now) ?? -1) >= 0;
 
-/** Due tickets, most overdue first: [{ n, over, ...rec }]. Parked tickets are left out. @param {Db} db */
+/**
+ * How far past its interval a ticket is: days since the last grade / interval. 1 = due today; above 2 it has
+ * most likely been forgotten. null when not scheduled. @param {Rec} rec
+ */
+export function lapse(rec, now = new Date()) {
+  const iv = intervalOf(rec);
+  return rec.last && iv ? daysSince(rec.last, now) / iv : null;
+}
+export const FORGOTTEN = 2;
+
+/**
+ * Due tickets, the ones most likely forgotten first (by lapse, not raw days overdue): [{ n, over, lapse, ...rec }].
+ * Parked tickets are left out; nothing is due while the schedule is paused. @param {Db} db
+ */
 export function dueTickets(db, now = new Date()) {
+  if (db.paused) return [];
   return Object.entries(db.tickets)
-    .map(([n, rec]) => ({ ...rec, n: Number(n), over: overdue(rec, now) }))
+    .map(([n, rec]) => ({ ...rec, n: Number(n), over: overdue(rec, now), lapse: lapse(rec, now) }))
     .filter((r) => r.over !== null && r.over >= 0 && BY_N.get(r.n)?.sec !== "parked")
-    .sort((a, b) => b.over - a.over || a.n - b.n);
+    .sort((a, b) => b.lapse - a.lapse || a.n - b.n);
+}
+
+// ---- breaks: pause, "welcome back", start over ----
+
+const addDays = (date, k) => {
+  const [y, m, d] = date.split("-").map(Number);
+  return isoDay(new Date(Date.UTC(y, m - 1, d + k)));
+};
+/** Last day with any practice, or null. @param {Db} db */
+export const lastActivity = (db) =>
+  db.history.filter((h) => h.tickets?.length && isDate(h.d)).reduce((a, h) => (a && a > h.d ? a : h.d), null);
+
+/** Days without practice that count as a break (the "welcome back" screen offers a choice after it). */
+export const BREAK_DAYS = 7;
+/**
+ * Length of the current break in days, or 0. Counted from the last practice or the last welcome-back choice,
+ * whichever is later; a paused schedule isn't a break. @param {Db} db
+ */
+export function breakDays(db, today = isoDay()) {
+  if (db.paused) return 0;
+  const since = [lastActivity(db), db.breakSeen].filter(Boolean).sort().pop();
+  const scheduled = Object.values(db.tickets).some((r) => r.last);
+  if (!since || !scheduled) return 0;
+  const gap = Math.round((Date.parse(today) - Date.parse(since)) / DAY_MS);
+  return gap > BREAK_DAYS ? gap : 0;
+}
+
+/** Move every scheduled date forward by `days`, as if that time hadn't passed. @param {Db} db */
+function shift(db, days) {
+  for (const r of Object.values(db.tickets)) if (r.last) r.last = addDays(r.last, days);
+}
+const DOWN = { green: "yellow", yellow: "red", red: "red" };
+
+/**
+ * Change the schedule as a whole. Returns false when nothing changed. @param {Db} db
+ * @param {{ action: "continue"|"soft"|"reset"|"pause"|"resume", keepRead?: boolean, keepHistory?: boolean }} p
+ *   continue  after a break: shift all dates by the break, so only what was overdue before it is overdue now
+ *   soft      after a break: tickets far past their interval drop one level (green → yellow → red) and are due today
+ *   reset     start over: every ticket back to new; optionally keep read marks and the activity history
+ *   pause     freeze the schedule from today (nothing comes due, no reminders)
+ *   resume    unfreeze: dates shift by the length of the pause
+ */
+export function planAction(db, p, today = isoDay()) {
+  const a = p && p.action;
+  if (a === "continue" || a === "soft") {
+    const gap = breakDays(db, today);
+    if (a === "continue" && gap) shift(db, gap - 1);
+    if (a === "soft")
+      for (const r of Object.values(db.tickets)) {
+        if (!r.st || r.st === "new" || (lapse(r, new Date(today + "T12:00:00")) ?? 0) < FORGOTTEN) continue;
+        r.st = DOWN[r.st];
+        r.iv = INTERVAL[r.st];
+        r.last = addDays(today, -r.iv);
+      }
+    db.breakSeen = today;
+    return true;
+  }
+  if (a === "reset") {
+    for (const [n, r] of Object.entries(db.tickets)) {
+      if (p.keepRead !== false && r.read) db.tickets[n] = { read: r.read };
+      else delete db.tickets[n];
+    }
+    if (p.keepHistory === false) db.history = [];
+    delete db.paused;
+    db.breakSeen = today;
+    return true;
+  }
+  if (a === "pause") {
+    if (db.paused) return false;
+    db.paused = today;
+    return true;
+  }
+  if (a === "resume") {
+    if (!db.paused) return false;
+    const days = Math.round((Date.parse(today) - Date.parse(db.paused)) / DAY_MS);
+    if (days > 0) shift(db, days);
+    delete db.paused;
+    db.breakSeen = today;
+    return true;
+  }
+  return false;
 }
 
 /** Next review date, YYYY-MM-DD, or null. @param {Rec} rec */

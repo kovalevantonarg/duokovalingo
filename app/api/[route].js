@@ -2,12 +2,13 @@
 //   google, oauth          sign in with Google (start, callback) → signed session cookie, 90 days
 //   logout, state          session end; the signed-in user's progress
 //   log, done, flag, reset record an attempt / a graded attempt / the "not sure" and "read" flags / forget a ticket
+//   plan                   the schedule as a whole: after a break, pause/resume, start over (lib/srs.js planAction)
 //   exams, check, explain  exam attempts; AI grading of an answer; AI explanation of a statement
 //   push, remind           push subscription; the morning reminder (Vercel Cron, CRON_SECRET)
 // Storage: _store.js (Supabase RPCs guarded by DRILL_DB_KEY, one versioned progress row per user).
 // Any Google account can sign in. AI calls (check, explain) are limited per user per day, except for the owner.
 import { checkPrompt, parseJson, GRADE_BODY } from "./_grade.js";
-import { applyHit, migrate, resetTicket, setFlags } from "../lib/srs.js";
+import { applyHit, migrate, planAction, resetTicket, setFlags } from "../lib/srs.js";
 import { createStore } from "./_store.js";
 import { addSub, cleanSub, dayIn, reminder, removeSubs } from "./_push.js";
 import {
@@ -233,6 +234,11 @@ export default async function handler(req, res) {
       if ("doubt" in body) flags.doubt = !!body.doubt;
       if ("read" in body) flags.read = !!body.read;
       const { db } = await update((d) => setFlags(d, body.n, flags, body.d));
+      return res.status(200).json(out(db, user));
+    }
+    if (route === "plan") {
+      if (!post) return res.status(405).json({ error: "method" });
+      const { db } = await update((d) => planAction(d, body, body.d));
       return res.status(200).json(out(db, user));
     }
     if (route === "reset") {

@@ -14,6 +14,12 @@ The unit of progress is the **ticket**. Each has a status (new / red / yellow / 
 a spoken answer. Quick games (true/false, gaps, order) count as activity only. "Сомневаюсь" flags a ticket so
 the next session takes it first.
 
+Training can be limited to tickets whose lesson is marked read (setting, on by default; the read mark is synced).
+A break of more than a week is not counted as debt: the next visit asks whether to shift the schedule by the
+break, do a soft restart (forgotten tickets drop a level) or start over (`planAction` in `lib/srs.js`). The
+schedule can also be paused. Time estimates (`js/timing.js`) start from a study pace for new material and switch
+to the person's own measured pace after a few lessons and sessions.
+
 Hash routes: `#home`, `#tickets`, `#t/<n>`, `#exam/<n>`, `#learn`, `#learn/<n>`, `#progress`; full-screen
 rounds `#session`, `#interview`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
 (`/exam-tickets.html#t12`, `/learn.html#t5`, `/map.html`) redirect to `/?from=…` and open the matching route.

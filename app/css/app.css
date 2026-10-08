@@ -2954,3 +2954,74 @@ body.inround .tabs {
   font-size: 13px;
   color: var(--dim);
 }
+
+.v-app details.queue {
+  margin-top: 18px;
+}
+.v-app details.queue summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dim);
+  padding: 8px 2px;
+}
+.v-app details.queue summary::-webkit-details-marker {
+  display: none;
+}
+.v-app details.queue summary::after {
+  content: " ▾";
+}
+.v-app details.queue[open] summary::after {
+  content: " ▴";
+}
+.v-app .opts {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.v-app .opt {
+  display: grid;
+  grid-template-columns: 1fr 16px;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 16px 20px;
+  background: none;
+  border: 0;
+  color: var(--fg);
+}
+.v-app .opt + .opt {
+  border-top: 1px solid var(--line);
+}
+.v-app .opt:hover {
+  background: var(--panel2);
+}
+.v-app .opt b {
+  font-size: 16px;
+}
+.v-app .opt small {
+  grid-column: 1;
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.v-app .opt svg {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--dim2);
+}
+.v-app .ck {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  padding: 6px 0;
+}
+.v-app .ck input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}

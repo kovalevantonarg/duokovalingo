@@ -4,6 +4,7 @@ import { canSpeak, chunks, readAloud } from "../speech.js";
 import { state } from "../state.js";
 import { flagRead, isRead, tickets } from "../store.js";
 import { frame, setLang } from "../ui.js";
+import { lessonDone, lessonLabel, lessonPos, setLessonPos, trackLesson } from "../timing.js";
 import { $, esc } from "../util.js";
 
 const UI = {
@@ -34,6 +35,8 @@ const UI = {
     next: "→",
     ticket: "Билет",
     words: "мин чтения",
+    started: "начат",
+    resumeFrom: "Продолжить с раздела",
     listen: "Слушать",
     pause: "Пауза",
     resume: "Дальше",
@@ -80,6 +83,8 @@ const UI = {
     next: "→",
     ticket: "Ticket",
     words: "min read",
+    started: "started",
+    resumeFrom: "Continue from section",
     listen: "Listen",
     pause: "Pause",
     resume: "Resume",
@@ -157,7 +162,7 @@ export async function lessonsIndex() {
     for (const t of ts) {
       const m = idx[t.n],
         r = rd.has(t.n);
-      h += `<a class="ti${m ? "" : " none"}${r ? " read" : ""}" href="#learn/${t.n}"><span class="nn">${t.n}</span><span class="tt"><b>${esc(m ? m[state.lang]?.title || t[state.lang].topic : t[state.lang].topic)}</b>${m ? `<small>${Math.max(1, Math.round((m[state.lang]?.words || 0) / 170))} ${L().words}</small>` : ""}</span><span class="st">${m ? (r ? "✓ " + L().read : L().new) : L().soon}</span></a>`;
+      h += `<a class="ti${m ? "" : " none"}${r ? " read" : ""}" href="#learn/${t.n}"><span class="nn">${t.n}</span><span class="tt"><b>${esc(m ? m[state.lang]?.title || t[state.lang].topic : t[state.lang].topic)}</b>${m ? `<small>${lessonLabel(m[state.lang]?.words || 0, state.lang === "ru")}</small>` : ""}</span><span class="st">${m ? (r ? "✓ " + L().read : lessonPos(t.n) > 0 ? L().started : L().new) : L().soon}</span></a>`;
     }
     h += `</div>`;
   }
@@ -197,6 +202,8 @@ function spoken(x) {
 let keepScroll = false;
 
 export async function lessonScreen(n) {
+  state.leave?.(); // re-render (language switch): save the previous visit first
+  state.leave = null;
   const T = tickets();
   const t = T.find((x) => x.n === n);
   const view = frame(
@@ -238,8 +245,9 @@ export async function lessonScreen(n) {
   const prev = have[pos - 1],
     next = have[pos + 1];
   $("#main").innerHTML = `
-    <div class="kick">${L().ticket} ${n} · ${esc(t[state.lang].topic)}</div>
+    <div class="kick">${L().ticket} ${n} · ${esc(t[state.lang].topic)} · ${lessonLabel(idx[n]?.[state.lang]?.words || 0, state.lang === "ru")}</div>
     <h1 class="big">${esc(x.title)}</h1>
+    ${lessonPos(n) > 0 && !rd.has(n) && x.sections[lessonPos(n)] ? `<button class="resume" id="resume">${L().resumeFrom} <b>${lessonPos(n) + 1}. ${esc(x.sections[lessonPos(n)].h)}</b> →</button>` : ""}
     <div class="why"><span class="lbl">${L().why}</span>${rich(x.why)}</div>
     <details class="toc"><summary>${L().toc} ▾</summary><ol>${x.sections.map((s, i) => `<li><a href="#s${i}" data-j="s${i}">${esc(s.h)}</a></li>`).join("")}${extra.map(([id, h]) => `<li><a href="#${id}" data-j="${id}">${h}</a></li>`).join("")}</ol></details>
     ${x.sections.map((s, i) => `<section class="ls" id="s${i}"><h2><span class="sn">${i + 1}</span>${esc(s.h)}</h2>${s.body.map(block).join("")}</section>`).join("")}
@@ -259,11 +267,40 @@ export async function lessonScreen(n) {
   );
   $("#mk").onclick = () => {
     const on = !isRead(n);
+    if (on) {
+      stop();
+      lessonDone(n, idx[n]?.[state.lang]?.words || 0);
+    }
     $("#mk").className = on ? "done" : "";
     $("#mk").textContent = on ? L().marked : L().mark;
     flagRead(n, on);
   };
   wireListen(x);
+  // time spent and where reading stopped, saved when the lesson is left
+  const stopTime = trackLesson(n);
+  let stopped = false;
+  const stop = () => {
+    if (!stopped) ((stopped = true), stopTime());
+  };
+  const secs = [...view.querySelectorAll("section.ls[id^=s]")];
+  const io = new IntersectionObserver(
+    (es) => {
+      const top = es
+        .filter((e) => e.isIntersecting)
+        .map((e) => secs.indexOf(e.target))
+        .filter((i) => i >= 0);
+      if (top.length) setLessonPos(n, Math.min(...top));
+    },
+    { rootMargin: "0px 0px -60% 0px" },
+  );
+  secs.forEach((el) => io.observe(el));
+  state.leave = () => {
+    stop();
+    io.disconnect();
+  };
+  const rb = $("#resume");
+  if (rb)
+    rb.onclick = () => document.getElementById("s" + lessonPos(n))?.scrollIntoView({ behavior: "smooth" });
   if (!keepScroll) window.scrollTo(0, 0);
   keepScroll = false;
   prog();

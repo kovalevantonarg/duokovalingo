@@ -21,6 +21,7 @@ import { $, esc, shuffle } from "../util.js";
 import { runGap } from "./fill-gap.js";
 import { buildTF, clozeQs, runTF } from "./true-false.js";
 import { playVoice } from "./voice.js";
+import { sessionDone } from "../timing.js";
 
 const SIZE = 3;
 
@@ -49,6 +50,7 @@ export function session() {
   const was = streak(),
     xpWas = xpToday();
   const results = [];
+  const t0 = Date.now();
   state.combo = 0;
   const qs = buildTF(ns, 8);
   runTF(
@@ -87,6 +89,7 @@ export function session() {
   }
 
   function summary(warm) {
+    sessionDone(ns.length, t0);
     const mark = { green: "✓", yellow: "~", red: "✗" };
     roundFrame(`<div class="round">${rtop(100, true)}<div class="res"><span class="tag">${ui().sessionDone}</span>
       <div class="slist">${results.map((r) => `<div class="srow2"><span class="sw ${r.st}"></span><span class="tn">${r.n}</span><span class="tt">${esc(tk(r.n)[state.lang].topic)}</span><b class="st-${r.st}">${mark[r.st]} ${ui().statuses[r.st]}</b></div>`).join("")}</div>

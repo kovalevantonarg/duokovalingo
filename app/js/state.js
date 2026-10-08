@@ -35,6 +35,8 @@ export const state = {
   rerender: null,
   /** correct answers in a row in the current round */
   combo: 0,
+  /** called when the current screen is left (set by screens that track something) */
+  leave: null,
   /** where a round returns to when it ends or is closed */
   back: "home",
 };

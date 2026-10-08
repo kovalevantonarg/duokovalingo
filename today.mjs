@@ -18,6 +18,7 @@ import {
   intervalOf,
   isTicket,
   migrate,
+  planAction,
   resetTicket,
   setFlags,
   statusOf,
@@ -206,6 +207,11 @@ function serve(port) {
       if ("doubt" in b) flags.doubt = !!b.doubt;
       if ("read" in b) flags.read = !!b.read;
       if (setFlags(db, b.n, flags, b.d)) save();
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && p === "/api/plan") {
+      const b = await body(req);
+      if (planAction(db, b, b.d || TODAY)) save();
       return json(res, 200, out());
     }
     if (req.method === "POST" && p === "/api/reset") {

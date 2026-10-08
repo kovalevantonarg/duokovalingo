@@ -1,8 +1,10 @@
 // Progress data: loading it from the API, saving attempts (or queueing them offline), and queries over tickets.
 import {
   applyHit,
+  breakDays,
   dueTickets,
   migrate,
+  planAction,
   recOf,
   resetTicket as resetLocal,
   setFlags,
@@ -88,6 +90,7 @@ function forgetOtherUser(who) {
 // offline: record the attempt locally with the same rules the server uses (lib/srs.js)
 export function applyLocal(p) {
   if (p.path === "/api/reset") return resetLocal(state.db, p.n);
+  if (p.path === "/api/plan") return planAction(state.db, p, TODAY);
   if (p.path === "/api/flag") {
     const flags = {};
     if ("doubt" in p) flags.doubt = !!p.doubt;
@@ -143,6 +146,11 @@ export async function flushPending() {
 export const flagDoubt = (n, on) => post("/api/flag", { n, doubt: !!on });
 /** Mark a ticket's lesson read or unread (synced, so it holds on every device). */
 export const flagRead = (n, on) => post("/api/flag", { n, read: !!on });
+/** The schedule as a whole: "continue" | "soft" (after a break), "pause" | "resume", "reset" (+ keepRead, keepHistory). */
+export const plan = (action, opts = {}) => post("/api/plan", { action, ...opts });
+/** Days in the current break (no practice for more than a week), or 0. */
+export const breakNow = () => breakDays(state.db, TODAY);
+export const paused = () => state.db.paused || null;
 /** Forget a ticket: back to "new"; the read mark and exam history stay. */
 export const resetTicket = (n) => post("/api/reset", { n });
 

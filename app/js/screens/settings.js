@@ -7,7 +7,7 @@ import { emptyDb } from "../../lib/srs.js";
 import { persist, state } from "../state.js";
 import { setLang, ui } from "../ui.js";
 import { $, esc } from "../util.js";
-import { onlyRead, setOnlyRead } from "../store.js";
+import { onlyRead, paused, plan, setOnlyRead } from "../store.js";
 import { loginScreen } from "./login.js";
 
 /** Open a bottom sheet with `html`; `wire(el)` attaches handlers. Closes on the backdrop, Esc or swipe down. */
@@ -126,6 +126,7 @@ export function openSettings() {
   const html = `<h3 class="sh">${ui().settings}</h3>
     ${row(ui().language, "", `<div class="seg"><button data-l="ru" class="${state.lang === "ru" ? "on" : ""}">RU</button><button data-l="en" class="${state.lang === "en" ? "on" : ""}">EN</button></div>`)}
     ${row(ui().onlyRead, ui().onlyReadD, toggle("orT", onlyRead()))}
+    ${row(ui().pauseL, ui().pauseD, toggle("pzT", !!paused()))}
     ${row(ui().sound, ui().soundd, toggle("sndT", soundOn()))}
     ${
       canSpeak && voices().length
@@ -144,6 +145,7 @@ export function openSettings() {
     ${state.db.push && pushable() ? row(ui().reminders, ui().remindersd, toggle("pushT", false)) : ""}
     ${"serviceWorker" in navigator ? row(ui().offlineLessons, ui().offlineLessonsd, `<button class="btn line" id="offl">${localStorage.getItem("learn.offline") ? ui().saved : ui().save}</button>`) : ""}
     <div class="sfoot">${state.live ? ui().synced : `${icon.warn}${ui().offlineShort}${state.pending.length ? ` · ${state.pending.length} ${ui().pending}` : ""}`}</div>
+    <button class="btn line full" id="over" style="margin-top:6px">${ui().optOver}</button>
     ${state.db.auth ? `<div class="sfoot">${ui().signedIn} <b>${esc(state.db.user?.email || "")}</b></div><button class="btn line full" id="lo">${icon.out}${ui().logout}</button>` : ""}`;
   openSheet(html, (sh) => {
     sh.querySelectorAll("[data-l]").forEach(
@@ -164,6 +166,12 @@ export function openSettings() {
       if (!document.body.classList.contains("inround")) route();
       openSettings();
     };
+    sh.querySelector("#pzT").onclick = async () => {
+      await plan(paused() ? "resume" : "pause");
+      if (!document.body.classList.contains("inround")) route();
+      openSettings();
+    };
+    sh.querySelector("#over").onclick = openResetPlan;
     sh.querySelector("#sndT").onclick = (e) => {
       const on = toggleSound();
       e.currentTarget.classList.toggle("on", on);
@@ -210,4 +218,22 @@ export function openSettings() {
         loginScreen();
       };
   });
+}
+
+/** Start over: every ticket back to new. Read marks and activity history stay unless unticked; exam scores stay. */
+export function openResetPlan() {
+  const cb = (id, label) => `<label class="ck"><input type="checkbox" id="${id}" checked> ${label}</label>`;
+  openSheet(
+    `<h3 class="sh">${ui().overTitle}</h3><p class="sub">${ui().overText}</p>${cb("kRead", ui().keepRead)}${cb("kHist", ui().keepHistory)}<div class="sacts"><button class="btn line" id="no">${ui().cancel}</button><button class="btn red" id="yes">${ui().optOver}</button></div>`,
+    (sh) => {
+      sh.querySelector("#no").onclick = closeSheet;
+      sh.querySelector("#yes").onclick = async () => {
+        const keepRead = sh.querySelector("#kRead").checked,
+          keepHistory = sh.querySelector("#kHist").checked;
+        closeSheet();
+        await plan("reset", { keepRead, keepHistory });
+        route();
+      };
+    },
+  );
 }

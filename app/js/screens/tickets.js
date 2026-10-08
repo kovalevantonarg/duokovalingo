@@ -21,6 +21,7 @@ import { MODE_ICON, fmtDate, frame, ticketRow, ui } from "../ui.js";
 import { $, days, esc } from "../util.js";
 import { drawTicket } from "./exam.js";
 import { lessonIndex } from "./learn.js";
+import { lessonLabel } from "../timing.js";
 import { openSheet, closeSheet } from "./settings.js";
 
 const ORDER = ["llm", "rag", "agents", "sysd", "behav", "js", "ts", "react", "web", "bonus", "parked"];
@@ -127,7 +128,7 @@ export async function hub(n) {
       <div class="tbtns"><button class="dbtn rd${read ? " on" : ""}" id="readT" aria-pressed="${read}">${icon.check}${read ? ui().readOn : ui().readOff}</button><button class="dbtn${r.doubt ? " on" : ""}" id="doubt" aria-pressed="${!!r.doubt}"><b>?</b>${ui().doubtBtn}</button></div></section>
     <div class="sec"><span>${ui().pathTitle}</span></div>
     <div class="card path">
-      <a class="${stepCls(1, read)}" href="#learn/${n}"><span class="k">${read ? icon.check : 1}</span><span class="tt"><b>${ui().step1}</b><small>${read ? ui().readDone : ui().step1d}</small></span>${icon.chev}</a>
+      <a class="${stepCls(1, read)}" href="#learn/${n}"><span class="k">${read ? icon.check : 1}</span><span class="tt"><b>${ui().step1}</b><small>${read ? ui().readDone : ui().step1d}<span id="lEst"></span></small></span>${icon.chev}</a>
       <div class="${stepCls(2, practiced)}"><span class="k">${practiced ? icon.check : 2}</span><span class="tt"><b>${ui().step2}</b><small>${ui().step2d}</small><span class="chips">${chip("tf", ui().tf)}${drills.cloze ? chip("gap", ui().gap) : ""}${drills.steps ? chip("order", ui().order) : ""}</span></span></div>
       <a class="${stepCls(3, examined)}" href="#exam/${n}"><span class="k">${examined ? icon.check : 3}</span><span class="tt"><b>${ui().step3}</b><small>${ui().step3d}</small></span>${icon.chev}</a>
       <a class="step alt" href="#play/${n}/voice"><span class="k">${icon.mic14}</span><span class="tt"><b>${ui().aloud}</b><small>${ui().aloudd}</small></span>${icon.chev}</a>
@@ -141,6 +142,12 @@ export async function hub(n) {
     { back: { href: "tickets", label: ui().tabs.tickets } },
   );
   document.title = `${n}. ${d.topic}`;
+  if (!read)
+    lessonIndex().then((idx) => {
+      const el = $("#lEst"),
+        w = idx[n]?.[state.lang]?.words;
+      if (el && w) el.textContent = " · " + lessonLabel(w, state.lang === "ru");
+    });
   const drawScores = () => {
     const xs = attemptsOf(n);
     const box = $("#scores");

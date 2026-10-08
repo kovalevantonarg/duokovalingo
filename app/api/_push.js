@@ -25,6 +25,7 @@ export const dayIn = (tz, now = new Date()) => new Intl.DateTimeFormat("en-CA", 
  * @param {string} today YYYY-MM-DD in the user's time zone
  */
 export function reminder(db, today) {
+  if (db.paused) return null;
   if ((db.history || []).some((h) => h && h.d === today)) return null;
   // srs counts days with local-date getters; noon of `today` keeps that right whatever the server's zone
   const due = dueTickets(db, new Date(`${today}T12:00:00`)).length;
