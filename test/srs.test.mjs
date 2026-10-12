@@ -192,3 +192,11 @@ test("practice step is recorded only by practice rounds", () => {
   applyHit(db, { n: 3, mode: "interview", d: "2026-10-12" });
   assert.equal(db.tickets[3].practiced, undefined);
 });
+
+test("a practice round keeps its result on the ticket", () => {
+  const db = fresh();
+  applyHit(db, { n: 4, mode: "tf", correct: 8, total: 10, d: "2026-10-12" });
+  assert.deepEqual(db.tickets[4].drill, { c: 8, t: 10, d: "2026-10-12" });
+  applyHit(db, { n: 4, mode: "gap", correct: 5, total: 3, d: "2026-10-12" });
+  assert.equal(db.tickets[4].drill.c, 8, "nonsense counts are ignored");
+});

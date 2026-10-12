@@ -27,6 +27,7 @@ import { CATALOG } from "./catalog.js";
  * @property {boolean} [doubt]   flagged "not sure": goes first in the next session
  * @property {string} [read]     date the lesson was marked read, YYYY-MM-DD (training can be limited to read tickets)
  * @property {string} [practiced] date of the last practice round (true/false, gaps, order, session warm-up)
+ * @property {{ c: number, t: number, d: string }} [drill] result of the last practice round on this ticket alone
  */
 
 /** @typedef {{ d: string, tickets: number[], xp?: number }} Day */
@@ -120,7 +121,12 @@ export function applyHit(db, hit, today = isoDay()) {
     delete rec.doubt; // a fresh grade answers the doubt
   }
   if (hit.mode) rec.mode = String(hit.mode).slice(0, 20);
-  if (PRACTICE.test(String(hit.mode || ""))) rec.practiced = d;
+  if (PRACTICE.test(String(hit.mode || ""))) {
+    rec.practiced = d;
+    const c = Number(hit.correct),
+      t = Number(hit.total);
+    if (Number.isInteger(c) && Number.isInteger(t) && t > 0 && c >= 0 && c <= t) rec.drill = { c, t, d };
+  }
   if (hit.transcript) rec.answer = String(hit.transcript).slice(0, 600);
   return true;
 }

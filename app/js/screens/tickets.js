@@ -18,7 +18,7 @@ import {
   resetTicket,
 } from "../store.js";
 import { MODE_ICON, fmtDate, frame, ticketRow, ui } from "../ui.js";
-import { $, days, esc } from "../util.js";
+import { $, TODAY, days, esc } from "../util.js";
 import { drawTicket } from "./exam.js";
 import { lessonIndex } from "./learn.js";
 import { lessonLabel } from "../timing.js";
@@ -130,7 +130,7 @@ export async function hub(n) {
     <div class="sec"><span>${ui().pathTitle}</span></div>
     <div class="card path">
       <a class="${stepCls(1, read)}" href="#learn/${n}"><span class="k">${read ? icon.check : 1}</span><span class="tt"><b>${ui().step1}</b><small>${read ? ui().readDone : ui().step1d}<span id="lEst"></span></small></span>${icon.chev}</a>
-      <div class="${stepCls(2, practiced)}"><span class="k">${practiced ? icon.check : 2}</span><span class="tt"><b>${ui().step2}</b><small>${ui().step2d}</small><span class="chips">${chip("tf", ui().tf)}${drills.cloze ? chip("gap", ui().gap) : ""}${drills.steps ? chip("order", ui().order) : ""}</span></span></div>
+      <div class="${stepCls(2, practiced)}"><span class="k">${practiced ? icon.check : 2}</span><span class="tt"><b>${ui().step2}</b><small>${r.drill ? ui().lastPractice(`${r.drill.c}/${r.drill.t}`, r.drill.d === TODAY ? ui().todayW : `${days(r.drill.d)}${ui().days} ${ui().ago}`) : ui().step2d}</small><span class="chips">${chip("tf", ui().tf)}${drills.cloze ? chip("gap", ui().gap) : ""}${drills.steps ? chip("order", ui().order) : ""}</span></span></div>
       <a class="${stepCls(3, examined)}" href="#exam/${n}"><span class="k">${examined ? icon.check : 3}</span><span class="tt"><b>${ui().step3}</b><small>${ui().step3d}</small></span>${icon.chev}</a>
       <a class="step alt" href="#play/${n}/voice"><span class="k">${icon.mic14}</span><span class="tt"><b>${ui().aloud}</b><small>${ui().aloudd}</small></span>${icon.chev}</a>
     </div>

@@ -3025,3 +3025,14 @@ body.inround .tabs {
   height: 18px;
   accent-color: var(--accent);
 }
+
+.v-app .scb i {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 10px;
+  opacity: 0.75;
+  margin-right: 4px;
+}
+.v-app .scb.pr {
+  margin-right: 6px;
+}

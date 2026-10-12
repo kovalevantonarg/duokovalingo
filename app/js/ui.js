@@ -91,8 +91,12 @@ export const scoreCls = (n) => (n >= 8 ? "g" : n >= 5 ? "y" : "r");
 export function ticketRow(t, sub = "", href = `t/${t.n}`) {
   const st = status(t.n),
     r = rec(t.n),
-    sc = lastScore(t.n);
-  return `<a class="trow" href="#${href}"><span class="sw ${st}${isDue(r) ? " due" : ""}"></span><span class="tn">${t.n}</span><span class="tt"><b>${esc(t[state.lang].topic)}</b>${sub ? `<small>${sub}</small>` : ""}</span>${r.doubt ? `<span class="dbt" title="${ui().doubt}">?</span>` : ""}${sc != null ? `<span class="scb ${scoreCls(sc)}">${sc}</span>` : ""}${icon.chev}</a>`;
+    sc = lastScore(t.n),
+    dr = r.drill;
+  // last practice round (right/total) and last exam score, each labelled so they can't be confused
+  const prac = dr ? `<span class="scb pr ${scoreCls((dr.c / dr.t) * 10)}" title="${ui().lastPracticeT}"><i>${ui().pracShort}</i>${dr.c}/${dr.t}</span>` : "";
+  const exam = sc != null ? `<span class="scb ${scoreCls(sc)}" title="${ui().lastExamT}"><i>${ui().examShort}</i>${sc}</span>` : "";
+  return `<a class="trow" href="#${href}"><span class="sw ${st}${isDue(r) ? " due" : ""}"></span><span class="tn">${t.n}</span><span class="tt"><b>${esc(t[state.lang].topic)}</b>${sub ? `<small>${sub}</small>` : ""}</span>${r.doubt ? `<span class="dbt" title="${ui().doubt}">?</span>` : ""}${prac}${exam}${icon.chev}</a>`;
 }
 
 export function rtop(pct, ok) {
