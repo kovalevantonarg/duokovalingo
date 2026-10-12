@@ -26,6 +26,7 @@ import { CATALOG } from "./catalog.js";
  * @property {string} [answer]   last voice/typed answer, trimmed
  * @property {boolean} [doubt]   flagged "not sure": goes first in the next session
  * @property {string} [read]     date the lesson was marked read, YYYY-MM-DD (training can be limited to read tickets)
+ * @property {string} [practiced] date of the last practice round (true/false, gaps, order, session warm-up)
  */
 
 /** @typedef {{ d: string, tickets: number[], xp?: number }} Day */
@@ -52,6 +53,8 @@ export const INTERVAL = Object.freeze({ red: 1, yellow: 3, green: 7 });
 export const EASE = 2;
 export const MAX_IV = 90;
 export const SCHEMA = 2;
+/** Modes that count as the "practice" step of a ticket's path (tf, gap, order and their review rounds, session). */
+const PRACTICE = /^(tf|gap|order|session)(-review)?$/;
 
 const DAY_MS = 864e5;
 const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -117,6 +120,7 @@ export function applyHit(db, hit, today = isoDay()) {
     delete rec.doubt; // a fresh grade answers the doubt
   }
   if (hit.mode) rec.mode = String(hit.mode).slice(0, 20);
+  if (PRACTICE.test(String(hit.mode || ""))) rec.practiced = d;
   if (hit.transcript) rec.answer = String(hit.transcript).slice(0, 600);
   return true;
 }

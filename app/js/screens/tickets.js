@@ -116,8 +116,9 @@ export async function hub(n) {
     st = status(n);
   const drills = window.DRILLS[n] || {};
   const read = isRead(n);
-  const practiced = st !== "new" || ["tf", "gap", "order", "session", "voice"].includes(r.mode);
-  const examined = attemptsOf(n).length > 0 || (st !== "new" && r.mode === "exam");
+  // each step counts only when it was actually done for this ticket, not because the ticket has a status
+  const practiced = !!r.practiced;
+  const examined = attemptsOf(n).length > 0;
   const nextStep = !read ? 1 : !practiced ? 2 : 3;
   const stepCls = (k, done) => `step${done ? " done" : ""}${k === nextStep ? " next" : ""}`;
   const chip = (m, label) => `<a class="chip" href="#play/${n}/${m}">${MODE_ICON[m]}${label}</a>`;

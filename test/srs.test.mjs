@@ -182,3 +182,13 @@ test("breaks: welcome back, continue, soft restart, pause, start over", async ()
   assert.deepEqual([db.tickets, db.history], [{}, []]);
   assert.equal(planAction(db, { action: "nope" }, today), false);
 });
+
+test("practice step is recorded only by practice rounds", () => {
+  const db = fresh();
+  applyHit(db, { n: 2, st: "green", mode: "voice", d: "2026-10-12" });
+  assert.equal(db.tickets[2].practiced, undefined, "a graded answer isn't practice");
+  applyHit(db, { n: 2, mode: "tf-review", d: "2026-10-12" });
+  assert.equal(db.tickets[2].practiced, "2026-10-12");
+  applyHit(db, { n: 3, mode: "interview", d: "2026-10-12" });
+  assert.equal(db.tickets[3].practiced, undefined);
+});
