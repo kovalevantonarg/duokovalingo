@@ -99,3 +99,30 @@ export function parseJson(text) {
     next: String(j.next || "").slice(0, 400),
   };
 }
+
+// Dictionary lookup for a saved word: Russian translation in the sense of the sentence it came from.
+export const WORD_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["lemma", "tr", "def", "ipa", "note"],
+  properties: {
+    lemma: S("string", "base form of the word or phrase, e.g. 'token' for 'tokens'"),
+    tr: S("string", "short Russian translation that fits this sentence, up to 6 words"),
+    def: S("string", "plain-English definition, up to 15 words"),
+    ipa: S("string", "IPA transcription of the base form, or empty"),
+    note: S("string", "in Russian, up to 20 words: how it's used in software engineering, or empty"),
+  },
+};
+export const WORD_BODY = (model, word, ctx) => ({
+  model,
+  max_tokens: 400,
+  system:
+    "You are an English-to-Russian technical dictionary for a software engineer who reads interview prep material. Give the meaning the word has in the sentence. Be short and exact; no filler.",
+  messages: [
+    {
+      role: "user",
+      content: `Word or phrase: ${String(word).slice(0, 80)}\nSentence: ${String(ctx || "").slice(0, 300)}`,
+    },
+  ],
+  output_config: { format: { type: "json_schema", schema: WORD_SCHEMA } },
+});

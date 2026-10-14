@@ -10,6 +10,7 @@ import {
   setFlags,
   statusOf,
 } from "../lib/srs.js";
+import { dueWords, wordKey, wordOp } from "../lib/words.js";
 import { persist, state } from "./state.js";
 import { TODAY, dLocal, iso } from "./util.js";
 
@@ -91,6 +92,7 @@ function forgetOtherUser(who) {
 export function applyLocal(p) {
   if (p.path === "/api/reset") return resetLocal(state.db, p.n);
   if (p.path === "/api/plan") return planAction(state.db, p, TODAY);
+  if (p.path === "/api/words") return p.op === "lookup" ? false : wordOp(state.db, p, TODAY).ok;
   if (p.path === "/api/flag") {
     const flags = {};
     if ("doubt" in p) flags.doubt = !!p.doubt;
@@ -205,3 +207,24 @@ export async function loadAttempts(n = null) {
 /** A ticket's exam attempts (not interview answers), oldest first. */
 export const attemptsOf = (n) => state.exams.filter((e) => e.n === Number(n) && e.kind !== "interview");
 export const lastScore = (n) => attemptsOf(n).slice(-1)[0]?.score;
+
+// ---- personal dictionary (lib/words.js) ----
+
+/** Saved words as [{ key, ...word }], newest first. */
+export const words = () =>
+  Object.entries(state.db.words || {})
+    .map(([key, w]) => ({ key, ...w }))
+    .sort((a, b) => (a.added < b.added ? 1 : a.added > b.added ? -1 : 0));
+export const wordsDue = () => dueWords(state.db);
+export const savedWord = (text) => state.db.words?.[wordKey(text)] || null;
+/** Save a word with the sentence it came from; the server looks up a translation. Returns its key. */
+export async function saveWord(w, ctx, n) {
+  const before = new Set(Object.keys(state.db.words || {}));
+  await post("/api/words", { op: "add", w, ctx, n });
+  // the lookup may file it under its base form ("tokens" → "token"): the new key is the one that wasn't there
+  return Object.keys(state.db.words || {}).find((k) => !before.has(k)) || wordKey(w);
+}
+export const editWord = (key, fields) => post("/api/words", { op: "update", key, ...fields });
+export const dropWord = (key) => post("/api/words", { op: "remove", key });
+export const gradeWordAs = (key, st) => post("/api/words", { op: "grade", key, st });
+export const lookupWord = (key) => post("/api/words", { op: "lookup", key });

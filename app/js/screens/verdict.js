@@ -7,6 +7,7 @@ import { state } from "../state.js";
 import { post, streak, xpToday } from "../store.js";
 import { exitRound, kbd, roundFrame, rtop, ui, wireQuit } from "../ui.js";
 import { $, codify, esc } from "../util.js";
+import { markWords } from "../vocab.js";
 
 // which reference paragraph explains this statement: rare shared words (idf over the 3 paragraphs), shared word pairs, and the paragraph's own label
 export function bestPara(t, text) {
@@ -56,6 +57,7 @@ export function wireSheet(q, stmt, next, morePara) {
       "beforeend",
       `<div class="ref"><span class="rq">${esc(p.q)} · ${esc(q.t[state.lang].topic)}</span><p>${codify(p.t)}</p></div>`,
     );
+    markWords($("#moreBox"));
   }
   const ex = $("#expl");
   if (ex)

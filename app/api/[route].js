@@ -2,12 +2,14 @@
 //   google, oauth          sign in with Google (start, callback) → signed session cookie, 90 days
 //   logout, state          session end; the signed-in user's progress
 //   log, done, flag, reset record an attempt / a graded attempt / the "not sure" and "read" flags / forget a ticket
+//   words                  the personal dictionary: add (with an AI lookup), update, remove, grade, lookup
 //   plan                   the schedule as a whole: after a break, pause/resume, start over (lib/srs.js planAction)
 //   exams, check, explain  exam attempts; AI grading of an answer; AI explanation of a statement
 //   push, remind           push subscription; the morning reminder (Vercel Cron, CRON_SECRET)
 // Storage: _store.js (Supabase RPCs guarded by DRILL_DB_KEY, one versioned progress row per user).
 // Any Google account can sign in. AI calls (check, explain) are limited per user per day, except for the owner.
-import { checkPrompt, parseJson, GRADE_BODY } from "./_grade.js";
+import { checkPrompt, parseJson, GRADE_BODY, WORD_BODY } from "./_grade.js";
+import { applyLookup, wordKey, wordOp } from "../lib/words.js";
 import { applyHit, migrate, planAction, resetTicket, setFlags } from "../lib/srs.js";
 import { createStore } from "./_store.js";
 import { addSub, cleanSub, dayIn, reminder, removeSubs } from "./_push.js";
@@ -234,6 +236,33 @@ export default async function handler(req, res) {
       if ("doubt" in body) flags.doubt = !!body.doubt;
       if ("read" in body) flags.read = !!body.read;
       const { db } = await update((d) => setFlags(d, body.n, flags, body.d));
+      return res.status(200).json(out(db, user));
+    }
+    if (route === "words") {
+      if (!post) return res.status(405).json({ error: "method" });
+      let key = wordKey(body.key || body.w || "");
+      let { db } = await update((d) => {
+        if (body.op === "lookup") return false; // read only; the lookup below writes
+        const r = wordOp(d, body, body.d);
+        key = r.key;
+        return r.ok || false;
+      });
+      const word = key && db.words?.[key];
+      // translate a new word (or on request): cached for everyone, a cache miss counts as an AI call
+      if (word && (body.op === "add" || body.op === "lookup") && (!word.tr || body.op === "lookup") && AKEY) {
+        const ck = "word|" + key;
+        let info = null;
+        try {
+          const cached = await store.rpc("drill_cache_get", { p_id: ck });
+          if (cached) info = JSON.parse(cached);
+          else if (await allowAi(user)) {
+            const j = await claude(WORD_BODY(MODEL, word.w, word.ctx));
+            info = JSON.parse((j.content || []).map((c) => c.text || "").join(""));
+            await store.rpc("drill_cache_set", { p_id: ck, p_body: JSON.stringify(info) });
+          }
+        } catch {}
+        if (info) ({ db } = await update((d) => (d.words?.[key] ? void applyLookup(d, key, info) : false)));
+      }
       return res.status(200).json(out(db, user));
     }
     if (route === "plan") {

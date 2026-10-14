@@ -4,11 +4,13 @@ import { tipHide, tipShow } from "./tip.js";
 import { state } from "./state.js";
 import { flushPending, loadAttempts, loadState, syncLocalReads } from "./store.js";
 import { drawTabs } from "./ui.js";
+import { initVocab } from "./vocab.js";
 
 upgradeOldLink();
 document.documentElement.lang = state.lang;
 drawTabs();
 document.addEventListener("langchange", drawTabs);
+initVocab(); // select a word anywhere → "Add to words"
 
 // tooltips on [data-tip] (heatmap days, readiness bars): hover with a mouse, tap on touch
 document.addEventListener("pointermove", (e) => {

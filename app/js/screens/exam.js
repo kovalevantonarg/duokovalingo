@@ -6,6 +6,7 @@ import { persist, state } from "../state.js";
 import { active, attemptsOf, loadAttempts, mergeAttempts, status, tk, trainable } from "../store.js";
 import { frame, scoreCls } from "../ui.js";
 import { $, esc, shuffle } from "../util.js";
+import { markWords } from "../vocab.js";
 
 const UI = {
   ru: {
@@ -413,6 +414,7 @@ export function examScreen(n) {
       <div class="kill">${L().kill}${D.kill}</div>${srcList(n, ["k", "d"])}
     </div>`;
     $("#reveal").disabled = true;
+    markWords($("#ansBox"));
     $("#ansBox").scrollIntoView({ behavior: "smooth", block: "start" });
   };
 

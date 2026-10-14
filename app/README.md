@@ -20,8 +20,16 @@ break, do a soft restart (forgotten tickets drop a level) or start over (`planAc
 schedule can also be paused. Time estimates (`js/timing.js`) start from a study pace for new material and switch
 to the person's own measured pace after a few lessons and sessions.
 
-Hash routes: `#home`, `#tickets`, `#t/<n>`, `#exam/<n>`, `#learn`, `#learn/<n>`, `#progress`; full-screen
-rounds `#session`, `#interview`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
+**Personal dictionary.** Selecting an English word or short phrase anywhere in the app shows a "В словарь"
+button (`js/vocab.js`). The word is saved with the sentence it came from and the ticket; the API asks the model
+for a Russian translation in that sense, a short definition, IPA and the base form (cached per word, counts
+toward the daily AI quota on a cache miss). Saved words are underlined in lessons, reference answers and the
+answer sheet; tapping one shows the translation. `#words` lists, edits, searches and exports them (CSV);
+`#wplay` reviews up to 15 as flashcards with the same intervals as tickets (`lib/words.js`). Words the person
+knows well come back the other way round: translation first, recall the English.
+
+Hash routes: `#home`, `#tickets`, `#t/<n>`, `#exam/<n>`, `#learn`, `#learn/<n>`, `#words`, `#progress`; full-screen
+rounds `#session`, `#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
 (`/exam-tickets.html#t12`, `/learn.html#t5`, `/map.html`) redirect to `/?from=…` and open the matching route.
 
 ## Where the logic lives
@@ -31,15 +39,17 @@ rounds `#session`, `#interview`, `#play/<n>/<tf|gap|order|voice>`. The old stand
 | `js/app.js` | Entry: global listeners, tab bar, service worker, boot. |
 | `js/state.js`, `js/store.js` | The one mutable state object; progress from the API, the offline queue, ticket queries, exam attempts. |
 | `js/router.js`, `js/ui.js` | Routes; shared pieces (header, tab bar, ticket rows, round top bar). |
-| `js/screens/` | `home` (Today), `tickets` (list + ticket page), `exam`, `learn`, `progress`, `activity`, `settings` (+ bottom sheet), `verdict` (answer feedback, end of round), `login`. |
+| `js/screens/` | `home` (Today), `tickets` (list + ticket page), `exam`, `learn`, `progress`, `activity`, `settings` (+ bottom sheet), `verdict` (answer feedback, end of round), `words` (dictionary + flashcards), `login`. |
+| `js/vocab.js` | Select a word → add it to the dictionary; saved words underlined, tap for the translation. |
 | `js/games/` | `session` (the daily Start), `true-false` (with swipe), `fill-gap`, `order`, `voice`, `interview`. |
 | `js/speech.js` | Dictation (SpeechRecognition) and read-aloud (speechSynthesis). |
 | `js/chart.js` | The exam score chart (inline SVG). |
 | `css/` | `theme.css` tokens; `app.css` (scoped `.v-app`, plus the shell), `exam.css` (`.v-exam`), `learn.css` (`.v-learn`), `map.css` (`.v-map`). |
 | `sw.js` | Service worker: app shell network-first, static files and lessons stale-while-revalidate, `/api` never cached; push notifications. |
 | `lib/srs.js` | Spaced-repetition rules and the migration from the old per-item progress. Imported by the API, `today.mjs` and the browser. |
+| `lib/words.js` | The personal dictionary in the progress row (`db.words`): add, edit, grade, due order, applying a lookup. |
 | `lib/catalog.js` | **Generated** ticket list (number, section, old item ids) for `srs.js`. |
-| `api/[route].js` | Routes: google, oauth, logout, state, log, done, flag, exams, check, explain, push, remind. |
+| `api/[route].js` | Routes: google, oauth, logout, state, log, done, flag, reset, plan, words, exams, check, explain, push, remind. |
 | `api/_auth.js` | Sign-in with Google (authorization-code flow) and the signed session cookie. |
 | `api/_grade.js` | The answer checker: prompt, JSON schema, parser. Shared with `today.mjs`. |
 | `api/_store.js` | Progress storage, one row per user: versioned read-modify-write with retry, exam attempts per user, the daily AI quota. |

@@ -15,6 +15,8 @@ import {
   rec,
   status,
   tk,
+  words,
+  wordsDue,
 } from "../store.js";
 import { lessonLabel, sessionMinutes } from "../timing.js";
 import { fmtDate, frame, kbd, ticketRow, ui } from "../ui.js";
@@ -67,6 +69,9 @@ export function home() {
   const nn = nextNew();
   if (nn && plan.kind !== "new")
     h += `<div class="sec"><span>${ui().nextNew}</span></div><div class="card list">${ticketRow(nn, ui().path)}</div>`;
+  const wd = words().length ? wordsDue().length : 0;
+  if (wd)
+    h += `<a class="card promo words" href="#wplay"><span class="pi">${icon.book}</span><span class="pt"><b>${ui().wordsCard(Math.min(wd, 15))}</b><small>${ui().wordsCardSub}</small></span>${icon.chev}</a>`;
   h += `<a class="card promo" href="#interview"><span class="pi">${icon.mic}</span><span class="pt"><b>${ui().interview}</b><small>${ui().interviewd}</small></span>${icon.chev}</a>`;
   frame(h);
   if (plan.kind === "new")

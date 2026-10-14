@@ -1,0 +1,135 @@
+// @ts-check
+/**
+ * The personal dictionary: English words and phrases saved from lessons and tickets, reviewed as flashcards.
+ * Lives in the progress row as db.words, keyed by the normalised word. Same spaced-repetition rules as tickets
+ * (lib/srs.js): red → tomorrow, yellow → 3 days, green → 7 days and doubling.
+ */
+import { INTERVAL, isoDay, nextInterval, overdue } from "./srs.js";
+
+/**
+ * @typedef {object} Word
+ * @property {string} w        the word or phrase as saved (lemma once looked up)
+ * @property {string} [tr]     Russian translation, short
+ * @property {string} [def]    plain-English definition
+ * @property {string} [ipa]    pronunciation
+ * @property {string} [note]   usage note
+ * @property {string} [ctx]    the sentence it was found in
+ * @property {number} [n]      ticket it came from
+ * @property {string} added    YYYY-MM-DD
+ * @property {"red"|"yellow"|"green"} [st]
+ * @property {number} [iv]
+ * @property {string} [last]
+ */
+
+export const MAX_WORDS = 1000;
+const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const str = (s, max) =>
+  String(s ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+
+/** Normalised key: lower case, single spaces, no surrounding punctuation. */
+export const wordKey = (w) =>
+  str(w, 80)
+    .toLowerCase()
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+
+/** Is this selection worth offering to save? Latin letters, 1–5 words, not too long. */
+export function savable(text) {
+  const t = str(text, 200);
+  return t.length >= 2 && t.length <= 60 && /[A-Za-z]/.test(t) && t.split(" ").length <= 5;
+}
+
+/** Add a word (or refresh its context). Returns the key, or null when invalid or the dictionary is full. */
+export function addWord(db, { w, ctx, n }, today = isoDay()) {
+  const key = wordKey(w);
+  if (!key || !savable(w)) return null;
+  db.words ||= {};
+  const cur = db.words[key];
+  if (cur) {
+    if (ctx && !cur.ctx) cur.ctx = str(ctx, 300);
+    return key;
+  }
+  if (Object.keys(db.words).length >= MAX_WORDS) return null;
+  /** @type {Word} */
+  const word = { w: str(w, 80), added: isDate(today) ? today : isoDay() };
+  if (ctx) word.ctx = str(ctx, 300);
+  if (Number.isInteger(Number(n)) && Number(n) > 0) word.n = Number(n);
+  db.words[key] = word;
+  return key;
+}
+
+/** Fill or edit the text fields (translation, definition, …). Empty string clears a field. */
+export function updateWord(db, key, fields) {
+  const word = db.words?.[key];
+  if (!word) return false;
+  const max = { w: 80, tr: 120, def: 200, ipa: 60, note: 200, ctx: 300 };
+  let changed = false;
+  for (const k of Object.keys(max)) {
+    if (fields[k] === undefined) continue;
+    const v = str(fields[k], max[k]);
+    if (k === "w" && !v) continue;
+    if (v) word[k] = v;
+    else delete word[k];
+    changed = true;
+  }
+  return changed;
+}
+
+export function removeWord(db, key) {
+  if (!db.words?.[key]) return false;
+  delete db.words[key];
+  return true;
+}
+
+/** Self-grade after a flashcard: moves the word along the same intervals as tickets. */
+export function gradeWord(db, key, st, today = isoDay()) {
+  const word = db.words?.[key];
+  if (!word || !(st in INTERVAL)) return false;
+  word.iv = nextInterval(word, st);
+  word.st = st;
+  word.last = isDate(today) ? today : isoDay();
+  return true;
+}
+
+/** Words to review now: never reviewed ones (oldest first) after the due ones (most overdue first). */
+export function dueWords(db, now = new Date()) {
+  const all = Object.entries(db.words || {}).map(([key, w]) => ({ key, ...w, over: overdue(w, now) }));
+  const due = all.filter((w) => w.over !== null && w.over >= 0).sort((a, b) => b.over - a.over);
+  const fresh = all.filter((w) => !w.last).sort((a, b) => (a.added < b.added ? -1 : 1));
+  return [...due, ...fresh];
+}
+
+/** Apply one /api/words request body to db. Returns { ok, key } (ok false = nothing changed or invalid). */
+export function wordOp(db, b, today = isoDay()) {
+  if (b.op === "add") {
+    const key = addWord(db, b, today);
+    return { ok: !!key, key };
+  }
+  const key = wordKey(b.key || b.w || "");
+  if (b.op === "update") return { ok: updateWord(db, key, b), key };
+  if (b.op === "remove") return { ok: removeWord(db, key), key };
+  if (b.op === "grade") return { ok: gradeWord(db, key, b.st, today), key };
+  return { ok: false, key };
+}
+
+/**
+ * Store a dictionary lookup on a word: fills empty fields (never overwrites the person's own edits) and, when the
+ * lookup found a different base form ("tokens" → "token"), files the word under it. Returns the final key.
+ * @param {{ lemma?: string, tr?: string, def?: string, ipa?: string, note?: string }} info
+ */
+export function applyLookup(db, key, info) {
+  const word = db.words?.[key];
+  if (!word || !info) return key;
+  const fill = {};
+  for (const k of ["tr", "def", "ipa", "note"]) if (!word[k] && info[k]) fill[k] = info[k];
+  updateWord(db, key, fill);
+  const lk = wordKey(info.lemma || "");
+  if (lk && lk !== key && !db.words[lk] && savable(info.lemma)) {
+    db.words[lk] = { ...word, w: str(info.lemma, 80) };
+    delete db.words[key];
+    return lk;
+  }
+  return key;
+}

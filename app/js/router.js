@@ -1,5 +1,5 @@
 // Hash router. Tabs: #home, #tickets, #learn, #progress. Inside them: #t/<n> (ticket), #exam/<n>, #learn/<n>.
-// Full-screen rounds: #play/<n>/<tf|gap|order|voice>, #session, #interview.
+// My words: #words (?w=<word> opens one). Full-screen rounds: #play/<n>/<tf|gap|order|voice>, #session, #interview, #wplay.
 import { ticketOfItem } from "../lib/srs.js";
 import { playGap } from "./games/fill-gap.js";
 import { interview } from "./games/interview.js";
@@ -14,12 +14,13 @@ import { loginScreen } from "./screens/login.js";
 import { progress } from "./screens/progress.js";
 import { closeSheet } from "./screens/settings.js";
 import { hub, ticketList } from "./screens/tickets.js";
+import { wordPlay, wordsScreen } from "./screens/words.js";
 import { stopSpeaking } from "./speech.js";
 import { state } from "./state.js";
 import { tk } from "./store.js";
 import { setTab } from "./ui.js";
 
-const ROUNDS = new Set(["play", "session", "interview"]);
+const ROUNDS = new Set(["play", "session", "interview", "wplay"]);
 let prev = "";
 
 /** Old links: /exam-tickets.html#t12, /learn.html#t5, /map.html arrive as /?from=…#… (see vercel.json). */
@@ -52,7 +53,8 @@ export function route() {
   stopSpeaking();
   if (state.needLogin) return loginScreen();
   const h = location.hash.slice(1) || "home";
-  const [scr, a, b] = h.split("/");
+  const [path, query] = h.split("?");
+  const [scr, a, b] = path.split("/");
   // a round remembers where it was opened from, and returns there
   if (ROUNDS.has(scr) && !ROUNDS.has(prev.split("/")[0])) state.back = prev || "home";
   prev = h;
@@ -77,6 +79,10 @@ export function route() {
       return a && tk(a) ? lessonScreen(+a) : lessonsIndex();
     case "progress":
       return progress();
+    case "words":
+      return wordsScreen(new URLSearchParams(query || ""));
+    case "wplay":
+      return wordPlay();
     case "item": // links from before tickets were the unit of progress
       return void (location.hash = "t/" + (ticketOfItem(a) || ""));
     default:

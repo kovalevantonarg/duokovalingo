@@ -10,7 +10,8 @@ import { createServer } from "node:http";
 import { exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join, extname } from "node:path";
-import { checkPrompt, parseJson, GRADE_BODY } from "./app/api/_grade.js";
+import { checkPrompt, parseJson, GRADE_BODY, WORD_BODY } from "./app/api/_grade.js";
+import { applyLookup, wordKey, wordOp } from "./app/lib/words.js";
 import {
   applyHit,
   dueTickets,
@@ -207,6 +208,33 @@ function serve(port) {
       if ("doubt" in b) flags.doubt = !!b.doubt;
       if ("read" in b) flags.read = !!b.read;
       if (setFlags(db, b.n, flags, b.d)) save();
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && p === "/api/words") {
+      const b = await body(req);
+      let key = wordKey(b.key || b.w || "");
+      if (b.op !== "lookup") {
+        const r = wordOp(db, b, b.d || TODAY);
+        key = r.key;
+        if (r.ok) save();
+      }
+      const word = key && db.words?.[key];
+      if (word && (b.op === "add" || b.op === "lookup") && !word.tr && env("ANTHROPIC_API_KEY")) {
+        const ck = "word|" + key;
+        try {
+          const info = cache[ck]
+            ? JSON.parse(cache[ck])
+            : JSON.parse(
+                (await claude(WORD_BODY(MODEL, word.w, word.ctx))).content.map((c) => c.text || "").join(""),
+              );
+          cache[ck] = JSON.stringify(info);
+          writeFileSync(CACHE, JSON.stringify(cache, null, 1));
+          applyLookup(db, key, info);
+          save();
+        } catch (e) {
+          console.log("  word lookup failed:", e.message);
+        }
+      }
       return json(res, 200, out());
     }
     if (req.method === "POST" && p === "/api/plan") {

@@ -3036,3 +3036,338 @@ body.inround .tabs {
 .v-app .scb.pr {
   margin-right: 6px;
 }
+
+/* ---- personal dictionary: selection button, word popover, #words, #wplay ---- */
+.wpop {
+  position: fixed;
+  z-index: 60;
+  max-width: min(340px, calc(100vw - 16px));
+  background: var(--panel);
+  border: 1px solid var(--dim3);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.4;
+  animation: wpop 140ms ease-out;
+}
+@keyframes wpop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.wpop:has(.wc) {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+.wpop .wadd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wpop .wadd svg {
+  color: var(--accent);
+}
+.wpop .wok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--good);
+}
+.wpop .wok svg {
+  width: 14px;
+  height: 14px;
+}
+.wpop .wc {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wpop .wc b {
+  font-size: 16px;
+}
+.wpop .ipa,
+.v-app .ipa {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dim);
+}
+.wpop .wtr {
+  font-size: 15px;
+  font-weight: 600;
+}
+.wpop .wdef {
+  color: var(--dim);
+  font-size: 13px;
+}
+.wpop .wdim,
+.v-app .wdim {
+  color: var(--dim2);
+  font-weight: 500;
+}
+.wpop .wact {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.wpop .wact a {
+  color: var(--accent);
+}
+.wpop .wact button {
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+mark.vw {
+  background: none;
+  color: inherit;
+  text-decoration: underline dotted var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.v-app .wnew {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.v-app .wnew.wait {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.v-app .wnew input,
+.v-app .wsearch input,
+.v-app .wed input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+}
+.v-app .wnew input:focus,
+.v-app .wsearch input:focus,
+.v-app .wed input:focus {
+  outline: none;
+  border-color: var(--dim3);
+}
+.v-app .wnew .btn {
+  height: 46px;
+  padding: 0 16px;
+}
+.v-app .wsearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--dim2);
+}
+.v-app .wlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+.v-app .wrow {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.v-app .wrow summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.v-app .wrow summary::-webkit-details-marker {
+  display: none;
+}
+.v-app .wrow summary > svg {
+  flex: none;
+  color: var(--dim3);
+  transition: transform 150ms;
+}
+.v-app .wrow[open] summary > svg {
+  transform: rotate(90deg);
+}
+.v-app .wrow .sw {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--dim3);
+}
+.v-app .wrow .sw.g {
+  background: var(--good);
+}
+.v-app .wrow .sw.y {
+  background: var(--warn);
+}
+.v-app .wrow .sw.r {
+  background: var(--crit);
+}
+.v-app .wrow .ww {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.v-app .wrow .ww b {
+  font-size: 15.5px;
+  overflow-wrap: anywhere;
+}
+.v-app .wrow .ww i {
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--dim2);
+}
+.v-app .wrow .wt {
+  flex: 1.2;
+  min-width: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--dim);
+}
+.v-app .wed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+.v-app .wed label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+}
+.v-app .wctx {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0;
+}
+.v-app .wctx b {
+  color: var(--fg);
+}
+.v-app .wctx a {
+  color: var(--accent);
+  white-space: nowrap;
+}
+.v-app .wbtn {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.v-app .wbtn .btn {
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  gap: 6px;
+}
+.v-app .wbtn .sp {
+  flex: 1;
+}
+.v-app .wbtn .del {
+  color: var(--crit);
+}
+.v-app .wed small {
+  font-size: 12px;
+}
+.v-app .wfoot {
+  margin-top: 18px;
+  text-align: center;
+}
+.v-app .lnk {
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.v-app .promo.words .pi {
+  background: rgba(88, 214, 141, 0.14);
+  color: var(--good);
+}
+.v-app .promo.words + .promo {
+  margin-top: 10px;
+}
+.v-app .wcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.v-app .wfront {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+.v-app .wfront.sm {
+  font-size: 24px;
+  margin: 0;
+}
+.v-app .wcard > .wctx {
+  font-size: 15.5px;
+}
+.v-app .wback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  animation: wpop 160ms ease-out;
+}
+.v-app .wback p {
+  margin: 0;
+}
+.v-app .wback .wtr {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--good);
+}
+.v-app .wback .wdef {
+  font-size: 15px;
+  color: var(--fg);
+}
+.v-app .wback .wnote {
+  font-size: 14px;
+  color: var(--dim);
+}
+.v-app .wed input {
+  flex: none;
+  height: 42px;
+}
