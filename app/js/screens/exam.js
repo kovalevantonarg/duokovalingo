@@ -1,9 +1,7 @@
-// Exam: one ticket, its three questions one at a time (typed or dictated), graded by the AI against the
-// reference; then the reference itself with its source ledger. Attempts are kept per ticket.
-import { icon } from "../icons.js";
-import { canDictate, dictate } from "../speech.js";
-import { persist, state } from "../state.js";
-import { active, attemptsOf, loadAttempts, mergeAttempts, status, tk, trainable } from "../store.js";
+// Exam helpers shared with the exam round (games/voice.js): the AI check and its grade card, drawing a ticket;
+// and the reference page (#ref/<n>): the reference with its source ledger and the past attempts.
+import { state } from "../state.js";
+import { active, attemptsOf, loadAttempts, status, tk, trainable } from "../store.js";
 import { frame, scoreCls } from "../ui.js";
 import { $, esc, shuffle } from "../util.js";
 import { markWords } from "../vocab.js";
@@ -59,6 +57,7 @@ const UI = {
     dictStop: "Стоп",
     nodict: "Диктовка работает в Chrome и Safari.",
     other: "Другой билет",
+    answerIt: "Ответить на билет →",
     lessonLink: "Разбор: термины, механика, примеры →",
     ticket: "Билет",
     copy: "Скопировать",
@@ -120,6 +119,7 @@ const UI = {
     dictStop: "Stop",
     nodict: "Dictation works in Chrome and Safari.",
     other: "Another ticket",
+    answerIt: "Answer this ticket →",
     lessonLink: "Lesson: terms, mechanism, examples →",
     ticket: "Ticket",
     copy: "Copy",
@@ -147,15 +147,6 @@ const fmtD = (d) => {
   return isNaN(x)
     ? d
     : x.toLocaleDateString(state.lang === "ru" ? "ru-RU" : "en-GB", { day: "numeric", month: "short" });
-};
-const draftKey = (n) => "exam.draft." + n;
-const readDraft = (n) => {
-  try {
-    const v = JSON.parse(localStorage.getItem(draftKey(n)) || "null");
-    return Array.isArray(v) && v.length === 3 ? v : ["", "", ""];
-  } catch {
-    return ["", "", ""];
-  }
 };
 
 /** Ledger entries for the given answer slots (0-2, "k" kill, "d" drills). */
@@ -241,183 +232,31 @@ export function drawTicket(except) {
   return shuffle(bag)[0];
 }
 
-let timer = null;
-
+/**
+ * A ticket's reference (#ref/<n>): the answer as it sounds spoken, with its source ledger, and the past graded
+ * attempts. Answering happens in the exam round (games/voice.js); this page is for reading and checking.
+ */
 export function examScreen(n) {
-  if (!n) return void location.replace("#exam/" + drawTicket());
   const t = tk(n),
-    d = t[state.lang];
-  const ans = readDraft(n);
-  let qi = Math.max(
-    0,
-    ans.findIndex((a) => !a.trim()),
-  );
-  if (qi < 0) qi = 0;
-  let rec = null;
-  const total = () => ans.join("").trim().length;
-  const view = frame(
+    D = t[state.lang];
+  frame(
     `<div class="card">
       <div class="tnum">${L().ticket} ${t.n} · ${esc(t.tag)}</div>
-      <div class="ttopic">${esc(d.topic)}</div>
-      <div class="tmeta">${L().meta} <span class="timer" id="timer">0:00</span></div>
+      <div class="ttopic">${esc(D.topic)}</div>
       <div class="att" id="att"></div>
       <p class="lesson"><a href="#learn/${t.n}">${L().lessonLink}</a></p>
-      <div class="qdots" id="qdots"></div>
-      <p class="qcur" id="qcur"></p>
-      <textarea id="mine" placeholder="${L().ph}"></textarea>
-      <div class="tools">
-        ${canDictate ? `<button id="dict">${icon.mic14}<span>${L().dict}</span></button>` : ""}
-        <button class="ghost" id="prev">${L().prev}</button>
-        <button class="primary" id="next"></button>
-        <span class="count" id="cnt"></span>
-      </div>
-      <div class="tools"><button class="chk" id="chk">${L().check}</button><button id="reveal">${L().reveal}</button><button class="ghost" id="other">${L().other}</button></div>
-      <div id="gradeBox"></div>
-      <div class="hint">${L().hint}</div>
+      <div class="tools"><a class="primary btnlink" href="#exam/${n}">${L().answerIt}</a></div>
     </div>
-    <div id="ansBox"></div>
-    <footer class="foot">${L().foot}</footer>`,
-    { back: { href: `t/${n}`, label: `${L().ticket} ${n}` }, scope: "v-exam", cls: "wrap" },
-  );
-  document.title = `${L().ticket} ${n} · ${d.topic}`;
-  const ta = $("#mine");
-
-  // timer: starts with the screen, turns red after 4 minutes
-  clearInterval(timer);
-  const t0 = Date.now();
-  timer = setInterval(() => {
-    const el = $("#timer");
-    if (!el) return clearInterval(timer);
-    const s = Math.floor((Date.now() - t0) / 1000);
-    el.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
-    el.className = "timer " + (s > 240 ? "over" : "run");
-  }, 500);
-
-  const save = () => persist(draftKey(n), ans);
-  const stopDict = () => {
-    if (!rec) return;
-    rec.stop();
-    rec = null;
-    const b = $("#dict");
-    if (b) {
-      b.classList.remove("rec");
-      b.querySelector("span").textContent = L().dict;
-    }
-  };
-  const show = () => {
-    $("#qdots").innerHTML = d.qs
-      .map(
-        (_, i) =>
-          `<button class="${i === qi ? "on" : ""}${ans[i].trim() ? " done" : ""}" data-q="${i}">${L().q3}${i + 1}</button>`,
-      )
-      .join("");
-    $("#qdots")
-      .querySelectorAll("[data-q]")
-      .forEach((b) => (b.onclick = () => goQ(+b.dataset.q)));
-    $("#qcur").innerHTML = `<span>${L().q} ${qi + 1} / 3</span>${esc(d.qs[qi])}`;
-    ta.value = ans[qi];
-    $("#prev").disabled = qi === 0;
-    $("#next").textContent = qi < 2 ? L().next + " →" : L().check;
-    $("#cnt").textContent = total() + " " + L().chars;
-  };
-  const goQ = (i) => {
-    stopDict();
-    ans[qi] = ta.value;
-    save();
-    qi = i;
-    show();
-    ta.focus({ preventScroll: true });
-  };
-  ta.oninput = () => {
-    ans[qi] = ta.value;
-    save();
-    $("#cnt").textContent = total() + " " + L().chars;
-  };
-  $("#prev").onclick = () => qi > 0 && goQ(qi - 1);
-  $("#next").onclick = () => (qi < 2 ? goQ(qi + 1) : grade());
-  const db = $("#dict");
-  if (db)
-    db.onclick = () => {
-      if (rec) return stopDict();
-      const base = ta.value;
-      rec = dictate(
-        (final, interim) => {
-          ta.value = final + interim;
-          ans[qi] = final;
-          save();
-          $("#cnt").textContent = total() + " " + L().chars;
-        },
-        { initial: base },
-      );
-      db.classList.add("rec");
-      db.querySelector("span").textContent = L().dictStop;
-    };
-  ta.onkeydown = (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      $("#next").click();
-    }
-  };
-
-  async function grade() {
-    stopDict();
-    ans[qi] = ta.value;
-    save();
-    const box = $("#gradeBox"),
-      btn = $("#chk");
-    const text = ans
-      .map((a, i) => (a.trim() ? `${i + 1}. ${a.trim()}` : ""))
-      .filter(Boolean)
-      .join("\n\n");
-    btn.disabled = true;
-    btn.classList.add("busy");
-    btn.textContent = L().checking;
-    const j = await checkAnswer(t, text);
-    btn.disabled = false;
-    btn.classList.remove("busy");
-    btn.textContent = L().check;
-    if (j.error) {
-      box.innerHTML = `<div class="grade err">${esc(j.error)}</div>`;
-      return;
-    }
-    box.innerHTML = gradeHtml(j);
-    mergeAttempts(
-      j.attempts?.length
-        ? j.attempts
-        : [
-            {
-              n,
-              lang: state.lang,
-              d: new Date().toISOString().slice(0, 10),
-              t: Date.now(),
-              score: j.score,
-              q: j.questions,
-              answer: text.slice(0, 1500),
-              verdict: (j.verdict || "").slice(0, 300),
-            },
-          ],
-    );
-    try {
-      localStorage.removeItem(draftKey(n));
-    } catch {}
-    renderAttempts();
-    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  $("#chk").onclick = grade;
-  $("#other").onclick = () => (location.hash = "exam/" + drawTicket(n));
-  $("#reveal").onclick = () => {
-    const D = t[state.lang];
-    $("#ansBox").innerHTML = `<div class="ans">
+    <div id="ansBox"><div class="ans">
       <h3>${L().std}</h3>
       ${window.SOURCES ? `<div class="verif">${L().verif(new Date(window.SOURCES_CHECKED).toLocaleDateString(state.lang === "ru" ? "ru-RU" : "en-GB", { day: "numeric", month: "long", year: "numeric" }))}</div>` : ""}
       ${D.a.map((b, i) => `<div class="ablock"><div class="aq">${i + 1}. ${b.q}</div><p class="atext">${b.t}</p>${srcList(n, [i])}</div>`).join("")}
       <div class="kill">${L().kill}${D.kill}</div>${srcList(n, ["k", "d"])}
-    </div>`;
-    $("#reveal").disabled = true;
-    markWords($("#ansBox"));
-    $("#ansBox").scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
+    </div></div>`,
+    { back: { href: `t/${n}`, label: `${L().ticket} ${n}` }, scope: "v-exam", cls: "wrap" },
+  );
+  document.title = `${L().ticket} ${n} · ${D.topic}`;
+  markWords($("#ansBox"));
   function renderAttempts() {
     const box = $("#att");
     if (!box) return;
@@ -444,8 +283,6 @@ export function examScreen(n) {
         }),
     );
   }
-  show();
   renderAttempts();
   loadAttempts(n).then(renderAttempts);
-  void view;
 }

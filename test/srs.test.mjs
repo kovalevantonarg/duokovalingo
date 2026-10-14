@@ -200,3 +200,14 @@ test("a practice round keeps its result on the ticket", () => {
   applyHit(db, { n: 4, mode: "gap", correct: 5, total: 3, d: "2026-10-12" });
   assert.equal(db.tickets[4].drill.c, 8, "nonsense counts are ignored");
 });
+
+test("a graded exam (AI or self-graded) marks the exam step; quick games don't", async () => {
+  const { applyHit, emptyDb } = await import("../app/lib/srs.js");
+  const db = emptyDb();
+  applyHit(db, { n: 1, mode: "tf", xp: 1, correct: 5, total: 8 }, "2026-10-14");
+  assert.equal(db.tickets[1].answered, undefined);
+  applyHit(db, { n: 1, mode: "voice", st: "yellow", xp: 6 }, "2026-10-14");
+  assert.equal(db.tickets[1].answered, "2026-10-14");
+  applyHit(db, { n: 2, mode: "exam", st: "green", xp: 9 }, "2026-10-15");
+  assert.equal(db.tickets[2].answered, "2026-10-15");
+});

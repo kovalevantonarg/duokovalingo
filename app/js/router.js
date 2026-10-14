@@ -1,5 +1,5 @@
-// Hash router. Tabs: #home, #tickets, #learn, #progress. Inside them: #t/<n> (ticket), #exam/<n>, #learn/<n>.
-// My words: #words (?w=<word> opens one). Full-screen rounds: #play/<n>/<tf|gap|order|voice>, #session, #interview, #wplay.
+// Hash router. Tabs: #home, #tickets, #learn, #words, #progress. Inside them: #t/<n> (ticket), #ref/<n>, #learn/<n>.
+// My words: #words (?w=<word> opens one). Full-screen rounds: #exam/<n>, #play/<n>/<tf|gap|order|voice>, #session, #interview, #wplay.
 import { ticketOfItem } from "../lib/srs.js";
 import { playGap } from "./games/fill-gap.js";
 import { interview } from "./games/interview.js";
@@ -7,7 +7,7 @@ import { playOrder } from "./games/order.js";
 import { session } from "./games/session.js";
 import { playTF } from "./games/true-false.js";
 import { playVoice } from "./games/voice.js";
-import { examScreen } from "./screens/exam.js";
+import { drawTicket, examScreen } from "./screens/exam.js";
 import { home } from "./screens/home.js";
 import { lessonScreen, lessonsIndex } from "./screens/learn.js";
 import { loginScreen } from "./screens/login.js";
@@ -20,7 +20,7 @@ import { state } from "./state.js";
 import { tk } from "./store.js";
 import { setTab } from "./ui.js";
 
-const ROUNDS = new Set(["play", "session", "interview", "wplay"]);
+const ROUNDS = new Set(["play", "session", "interview", "wplay", "exam"]);
 let prev = "";
 
 /** Old links: /exam-tickets.html#t12, /learn.html#t5, /map.html arrive as /?from=…#… (see vercel.json). */
@@ -73,8 +73,10 @@ export function route() {
       return ticketList();
     case "t":
       return tk(a) ? hub(+a) : ticketList();
-    case "exam":
-      return examScreen(tk(a) ? +a : null);
+    case "exam": // the exam: speak or type, then the AI's grade or your own (games/voice.js)
+      return tk(a) ? playVoice(+a) : void location.replace("#exam/" + drawTicket());
+    case "ref": // reference with its source ledger and past attempts
+      return tk(a) ? examScreen(+a) : ticketList();
     case "learn":
       return a && tk(a) ? lessonScreen(+a) : lessonsIndex();
     case "progress":

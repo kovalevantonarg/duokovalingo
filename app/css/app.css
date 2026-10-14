@@ -3424,3 +3424,83 @@ mark.vw {
   color: var(--crit);
   font-size: 11px;
 }
+/* exam round: one box for spoken and typed answers */
+.v-app .qdots2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.v-app .qdots2 button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.v-app .qdots2 button.done {
+  border-color: var(--good);
+  color: var(--good);
+}
+.v-app .qdots2 button.on {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+.v-app .qdots2 .qn {
+  margin-left: 6px;
+}
+.v-app .ansbox {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  padding: 14px 16px;
+  color: #e9e4da;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.v-app .ansbox:focus {
+  outline: none;
+  border-color: var(--dim3);
+}
+.v-app .ansbox.live {
+  border-color: var(--crit);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+}
+.v-app .gradecard {
+  margin-top: 28px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-color: #3d4f5a;
+}
+.v-app .gradecard .or {
+  text-align: center;
+  font-size: 13px;
+  color: var(--dim2);
+}
+.v-app .srclink {
+  margin-top: 14px;
+  font-size: 13px;
+}
+.v-app .srclink a,
+.v-app .qlist .reflink {
+  color: var(--dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.v-app .qlist .reflink {
+  display: inline-block;
+  margin: 0 0 14px 16px;
+  font-size: 13px;
+}

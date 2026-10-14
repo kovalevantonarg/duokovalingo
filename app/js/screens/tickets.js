@@ -118,7 +118,7 @@ export async function hub(n) {
   const read = isRead(n);
   // each step counts only when it was actually done for this ticket, not because the ticket has a status
   const practiced = !!r.practiced;
-  const examined = attemptsOf(n).length > 0;
+  const examined = attemptsOf(n).length > 0 || !!r.answered || !!r.answer;
   const nextStep = !read ? 1 : !practiced ? 2 : 3;
   const stepCls = (k, done) => `step${done ? " done" : ""}${k === nextStep ? " next" : ""}`;
   const chip = (m, label) => `<a class="chip" href="#play/${n}/${m}">${MODE_ICON[m]}${label}</a>`;
@@ -132,10 +132,9 @@ export async function hub(n) {
       <a class="${stepCls(1, read)}" href="#learn/${n}"><span class="k">${read ? icon.check : 1}</span><span class="tt"><b>${ui().step1}</b><small>${read ? ui().readDone : ui().step1d}<span id="lEst"></span></small></span>${icon.chev}</a>
       <div class="${stepCls(2, practiced)}"><span class="k">${practiced ? icon.check : 2}</span><span class="tt"><b>${ui().step2}</b><small>${r.drill ? ui().lastPractice(`${r.drill.c}/${r.drill.t}`, r.drill.d === TODAY ? ui().todayW : `${days(r.drill.d)}${ui().days} ${ui().ago}`) : ui().step2d}</small><span class="chips">${chip("tf", ui().tf)}${drills.cloze ? chip("gap", ui().gap) : ""}${drills.steps ? chip("order", ui().order) : ""}</span></span></div>
       <a class="${stepCls(3, examined)}" href="#exam/${n}"><span class="k">${examined ? icon.check : 3}</span><span class="tt"><b>${ui().step3}</b><small>${ui().step3d}</small></span>${icon.chev}</a>
-      <a class="step alt" href="#play/${n}/voice"><span class="k">${icon.mic14}</span><span class="tt"><b>${ui().aloud}</b><small>${ui().aloudd}</small></span>${icon.chev}</a>
     </div>
     <div class="sec"><span>${ui().questions}</span></div>
-    <div class="card qlist"><ol>${d.qs.map((q) => `<li>${esc(q)}</li>`).join("")}</ol></div>
+    <div class="card qlist"><ol>${d.qs.map((q) => `<li>${esc(q)}</li>`).join("")}</ol><a class="reflink" href="#ref/${n}">${ui().refSources}</a></div>
     <div class="sec"><span>${ui().scores}</span><span class="r" id="avg"></span></div>
     <div class="card scores" id="scores"></div>
     <div class="meta card"><div><span class="k">${ui().last}</span><span class="v">${lastTxt}</span></div><div><span class="k">${ui().interval}</span><span class="v">${intervalOf(r) ? intervalOf(r) + ui().days : "—"}</span></div><div><span class="k">${ui().lastmode}</span><span class="v">${r.mode || "—"}</span></div></div>

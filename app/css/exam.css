@@ -769,3 +769,14 @@
     animation: none;
   }
 }
+.v-exam a.btnlink {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #1a0a05;
+  text-decoration: none;
+}

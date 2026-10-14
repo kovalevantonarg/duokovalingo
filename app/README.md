@@ -30,8 +30,9 @@ exports them (CSV);
 `#wplay` reviews up to 15 as flashcards with the same intervals as tickets (`lib/words.js`). Words the person
 knows well come back the other way round: translation first, recall the English.
 
-Hash routes: `#home`, `#tickets`, `#t/<n>`, `#exam/<n>`, `#learn`, `#learn/<n>`, `#words`, `#progress`; full-screen
-rounds `#session`, `#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
+Hash routes: `#home`, `#tickets`, `#t/<n>`, `#ref/<n>` (reference, sources, past attempts), `#learn`, `#learn/<n>`, `#words`, `#progress`; full-screen
+rounds `#exam/<n>` (the exam: speak or type into one box, then the AI's grade or your own), `#session`,
+`#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
 (`/exam-tickets.html#t12`, `/learn.html#t5`, `/map.html`) redirect to `/?from=…` and open the matching route.
 
 ## Where the logic lives
@@ -41,10 +42,10 @@ rounds `#session`, `#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The
 | `js/app.js` | Entry: global listeners, tab bar, service worker, boot. |
 | `js/state.js`, `js/store.js` | The one mutable state object; progress from the API, the offline queue, ticket queries, exam attempts. |
 | `js/router.js`, `js/ui.js` | Routes; shared pieces (header, tab bar, ticket rows, round top bar). |
-| `js/screens/` | `home` (Today), `tickets` (list + ticket page), `exam`, `learn`, `progress`, `activity`, `settings` (+ bottom sheet), `verdict` (answer feedback, end of round), `words` (dictionary + flashcards), `login`. |
+| `js/screens/` | `home` (Today), `tickets` (list + ticket page), `exam` (AI check, grade card, the reference page), `learn`, `progress`, `activity`, `settings` (+ bottom sheet), `verdict` (answer feedback, end of round), `words` (dictionary + flashcards), `login`. |
 | `js/wake.js` | Keeps the screen on while a lesson is open (Screen Wake Lock). |
 | `js/vocab.js` | Select a word → add it to the dictionary; saved words underlined, tap for the translation. |
-| `js/games/` | `session` (the daily Start), `true-false` (with swipe), `fill-gap`, `order`, `voice`, `interview`. |
+| `js/games/` | `session` (the daily Start), `true-false` (with swipe), `fill-gap`, `order`, `voice` (the exam round, also the recall part of the session), `interview`. |
 | `js/speech.js` | Dictation (SpeechRecognition) and read-aloud (speechSynthesis). |
 | `js/chart.js` | The exam score chart (inline SVG). |
 | `css/` | `theme.css` tokens; `app.css` (scoped `.v-app`, plus the shell), `exam.css` (`.v-exam`), `learn.css` (`.v-learn`), `map.css` (`.v-map`). |

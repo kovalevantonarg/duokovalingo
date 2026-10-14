@@ -24,6 +24,7 @@ import { CATALOG } from "./catalog.js";
  * @property {number} [iv]       current interval in days
  * @property {string} [mode]     game mode of the last attempt (voice, tf, gap, order, exam)
  * @property {string} [answer]   last voice/typed answer, trimmed
+ * @property {string} [answered] YYYY-MM-DD of the last graded exam (AI or self-graded)
  * @property {boolean} [doubt]   flagged "not sure": goes first in the next session
  * @property {string} [read]     date the lesson was marked read, YYYY-MM-DD (training can be limited to read tickets)
  * @property {string} [practiced] date of the last practice round (true/false, gaps, order, session warm-up)
@@ -128,6 +129,7 @@ export function applyHit(db, hit, today = isoDay()) {
     if (Number.isInteger(c) && Number.isInteger(t) && t > 0 && c >= 0 && c <= t) rec.drill = { c, t, d };
   }
   if (hit.transcript) rec.answer = String(hit.transcript).slice(0, 600);
+  if (/^(voice|exam)$/.test(String(hit.mode || "")) && hit.st) rec.answered = d; // the exam step was done
   return true;
 }
 
