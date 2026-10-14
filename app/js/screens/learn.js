@@ -5,6 +5,7 @@ import { state } from "../state.js";
 import { flagRead, isRead, tickets, words, wordsDue } from "../store.js";
 import { frame, setLang, ui } from "../ui.js";
 import { markWords } from "../vocab.js";
+import { keepAwake } from "../wake.js";
 import { lessonDone, lessonLabel, lessonPos, setLessonPos, trackLesson } from "../timing.js";
 import { $, esc } from "../util.js";
 
@@ -298,9 +299,11 @@ export async function lessonScreen(n) {
     { rootMargin: "0px 0px -60% 0px" },
   );
   secs.forEach((el) => io.observe(el));
+  const sleep = keepAwake(); // the screen doesn't dim while reading
   state.leave = () => {
     stop();
     io.disconnect();
+    sleep();
   };
   const rb = $("#resume");
   if (rb)

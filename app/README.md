@@ -40,6 +40,7 @@ rounds `#session`, `#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The
 | `js/state.js`, `js/store.js` | The one mutable state object; progress from the API, the offline queue, ticket queries, exam attempts. |
 | `js/router.js`, `js/ui.js` | Routes; shared pieces (header, tab bar, ticket rows, round top bar). |
 | `js/screens/` | `home` (Today), `tickets` (list + ticket page), `exam`, `learn`, `progress`, `activity`, `settings` (+ bottom sheet), `verdict` (answer feedback, end of round), `words` (dictionary + flashcards), `login`. |
+| `js/wake.js` | Keeps the screen on while a lesson is open (Screen Wake Lock). |
 | `js/vocab.js` | Select a word → add it to the dictionary; saved words underlined, tap for the translation. |
 | `js/games/` | `session` (the daily Start), `true-false` (with swipe), `fill-gap`, `order`, `voice`, `interview`. |
 | `js/speech.js` | Dictation (SpeechRecognition) and read-aloud (speechSynthesis). |
