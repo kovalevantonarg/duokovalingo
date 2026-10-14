@@ -4,9 +4,9 @@ Static SPA + one Vercel function (`api/[route].js`), multi-user with Google sign
 
 ## The app
 
-One page (`index.html`), four tabs in a bottom bar: **Сегодня** (Start: what's due, or the next new ticket),
+One page (`index.html`), five tabs in a bottom bar: **Сегодня** (Start: what's due, or the next new ticket),
 **Билеты** (search, filters, a ticket's path: lesson → practice → exam), **Разборы** (from-zero lessons, read
-aloud), **Прогресс** (readiness per track, exam score history, activity). Settings (language, sound,
+aloud), **Слова** (the personal dictionary), **Прогресс** (readiness per track, exam score history, activity). Settings (language, sound,
 reminders, lessons offline, sign out) open in a sheet from the header.
 
 The unit of progress is the **ticket**. Each has a status (new / red / yellow / green) and an interval
@@ -24,7 +24,9 @@ to the person's own measured pace after a few lessons and sessions.
 button (`js/vocab.js`). The word is saved with the sentence it came from and the ticket; the API asks the model
 for a Russian translation in that sense, a short definition, IPA and the base form (cached per word, counts
 toward the daily AI quota on a cache miss). Saved words are underlined in lessons, reference answers and the
-answer sheet; tapping one shows the translation. `#words` lists, edits, searches and exports them (CSV);
+answer sheet; tapping one shows the translation. The **Слова** tab (`#words`) shows how learning goes (words by
+status, reviews and accuracy, 14 days of reviews, the words forgotten most) and lists, edits, searches and
+exports them (CSV);
 `#wplay` reviews up to 15 as flashcards with the same intervals as tickets (`lib/words.js`). Words the person
 knows well come back the other way round: translation first, recall the English.
 

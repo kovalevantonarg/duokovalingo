@@ -2,8 +2,8 @@
 import { icon } from "../icons.js";
 import { canSpeak, chunks, readAloud } from "../speech.js";
 import { state } from "../state.js";
-import { flagRead, isRead, tickets, words, wordsDue } from "../store.js";
-import { frame, setLang, ui } from "../ui.js";
+import { flagRead, isRead, tickets } from "../store.js";
+import { frame, setLang } from "../ui.js";
 import { markWords } from "../vocab.js";
 import { keepAwake } from "../wake.js";
 import { lessonDone, lessonLabel, lessonPos, setLessonPos, trackLesson } from "../timing.js";
@@ -157,8 +157,6 @@ export async function lessonsIndex() {
     done = have.filter((t) => rd.has(t.n)).length;
   let h = `<div class="kick">${have.length} / ${T.length}</div><h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
     <div class="sumbar"><div class="track"><div class="fill" style="width:${have.length ? Math.round((done / have.length) * 100) : 0}%"></div></div><span>${done}/${have.length} ${L().read}</span></div>`;
-  const nw = words().length;
-  h += `<a class="wdict" href="#words"><span class="pi">${icon.book}</span><span class="tt"><b>${ui().dictCard}</b><small>${nw ? ui().dictCardSub(nw, wordsDue().length) : ui().dictCardEmpty}</small></span>${icon.chev}</a>`;
   for (const sec of ORDER) {
     const ts = T.filter((t) => t.sec === sec);
     if (!ts.length) continue;

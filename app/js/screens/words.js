@@ -1,7 +1,16 @@
 // The personal dictionary (#words) and its flashcards (#wplay). Words get here from vocab.js (select → "Add").
 import { icon } from "../icons.js";
 import { state } from "../state.js";
-import { dropWord, editWord, gradeWordAs, lookupWord, saveWord, words, wordsDue } from "../store.js";
+import {
+  dropWord,
+  editWord,
+  gradeWordAs,
+  lookupWord,
+  saveWord,
+  words,
+  wordsDue,
+  wordsStats,
+} from "../store.js";
 import { exitRound, frame, kbd, roundFrame, rtop, setProg, ui, wireQuit } from "../ui.js";
 import { $, esc } from "../util.js";
 
@@ -39,11 +48,12 @@ export function wordsScreen(query) {
     const view = frame(
       `<section class="hero card"><span class="kick">${ui().dictKick}</span><h1 class="h1">${all.length ? ui().wordsN(all.length) : ui().dictEmpty}</h1><p class="sub">${all.length ? ui().dictSub(due) : ui().dictHow}</p>
       ${all.length ? (due ? `<a class="btn blue big full" href="#wplay">${ui().reviewWords(Math.min(due, ROUND))} ${icon.arrow}</a>` : `<button class="btn line big full" disabled>${ui().nothingDue}</button>`) : ""}</section>
+      ${all.length ? stats() : ""}
+      ${all.length ? `<div class="sec"><span>${ui().allWords}</span><span class="r">${all.length}</span></div>` : ""}
       <form class="wnew" id="wnew"><input id="wnewIn" placeholder="${ui().addPh}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn line" type="submit">${icon.plus}</button></form>
       ${all.length > 6 ? `<label class="wsearch">${icon.search}<input id="wq" placeholder="${ui().searchW}" value="${esc(filter)}"></label>` : ""}
       <div class="wlist">${list.map((x) => row(x, x.key === openKey)).join("") || (all.length ? `<p class="wdim" style="padding:12px 4px">${ui().noMatch}</p>` : "")}</div>
       ${all.length ? `<p class="wfoot"><button class="lnk" id="csv">${ui().exportCsv}</button></p>` : ""}`,
-      { back: { href: "learn", label: ui().tabs.learn } },
     );
     document.title = ui().dictKick;
     wire(view);
@@ -99,6 +109,30 @@ export function wordsScreen(query) {
     });
   };
   draw();
+}
+
+const ST = ["green", "yellow", "red", "new"];
+const stLabel = (st) => ({ green: ui().wG, yellow: ui().wY, red: ui().wR, new: ui().wNew })[st];
+
+/** How the learning goes: words by status, the last week, 14 days of reviews, the words forgotten most. */
+function stats() {
+  const s = wordsStats();
+  const loc = state.lang === "ru" ? "ru-RU" : "en-GB";
+  const max = Math.max(1, ...s.days.map((d) => d.n));
+  const day = (d) =>
+    new Date(d + "T12:00:00").toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short" });
+  return `<div class="sec"><span>${ui().wStats}</span></div><section class="card pg-sum wstat">
+    <div class="pg-gauge" role="img" aria-label="${ST.map((st) => `${stLabel(st)} ${s.by[st]}`).join(", ")}">${ST.map((st) => (s.by[st] ? `<i class="${st}" style="flex:${s.by[st]}" data-tip="${s.by[st]} · ${stLabel(st)}"></i>` : "")).join("")}</div>
+    <div class="pg-legend">${ST.map((st) => `<span><i class="${st}"></i>${stLabel(st)} <b>${s.by[st]}</b></span>`).join("")}</div>
+    <div class="pg-stats">
+      <div><b>${s.reviewed7}</b><span>${ui().wRev7}</span></div>
+      <div><b>${s.acc30 == null ? "—" : Math.round(s.acc30 * 100) + "%"}</b><span>${ui().wAcc}</span></div>
+      <div><b>${s.added7}</b><span>${ui().wAdd7}</span></div>
+    </div>
+    <div class="wdays" role="img" aria-label="${ui().wDays}">${s.days.map((d) => `<i style="height:${d.n ? Math.max(8, Math.round((d.n / max) * 100)) : 0}%" data-tip="<b>${d.n ? ui().wRevN(d.n) : ui().noAct}</b><br>${esc(day(d.d))}"></i>`).join("")}</div>
+    <div class="wdays-l"><span>${ui().wDays}</span><span>${ui().todayW}</span></div>
+    ${s.hard.length ? `<div class="whard"><span>${ui().wHard}</span>${s.hard.map((w) => `<a href="#words?w=${encodeURIComponent(w.key)}">${esc(w.w)}<small>×${w.miss}</small></a>`).join("")}</div>` : ""}
+  </section>`;
 }
 
 /** CSV for Anki or a spreadsheet: word, translation, definition, note, context. */

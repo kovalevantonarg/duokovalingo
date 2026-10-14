@@ -10,7 +10,7 @@ import {
   setFlags,
   statusOf,
 } from "../lib/srs.js";
-import { dueWords, wordKey, wordOp } from "../lib/words.js";
+import { dueWords, wordKey, wordOp, wordStats } from "../lib/words.js";
 import { persist, state } from "./state.js";
 import { TODAY, dLocal, iso } from "./util.js";
 
@@ -216,6 +216,7 @@ export const words = () =>
     .map(([key, w]) => ({ key, ...w }))
     .sort((a, b) => (a.added < b.added ? 1 : a.added > b.added ? -1 : 0));
 export const wordsDue = () => dueWords(state.db);
+export const wordsStats = () => wordStats(state.db);
 export const savedWord = (text) => state.db.words?.[wordKey(text)] || null;
 /** Save a word with the sentence it came from; the server looks up a translation. Returns its key. */
 export async function saveWord(w, ctx, n) {

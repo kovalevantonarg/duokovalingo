@@ -9,6 +9,7 @@ import {
   updateWord,
   wordKey,
   wordOp,
+  wordStats,
 } from "../app/lib/words.js";
 
 test("what can be saved and how it's keyed", () => {
@@ -78,4 +79,32 @@ test("a lookup fills empty fields only and files the word under its base form", 
   // base form already saved: keep both rather than merge silently
   addWord(db, { w: "tokenized" }, "2026-10-14");
   assert.equal(applyLookup(db, "tokenized", { lemma: "token", tr: "x" }), "tokenized");
+});
+
+test("stats: statuses, reviews per day, accuracy, hard words", () => {
+  const db = { tickets: {}, history: [] };
+  for (const w of ["alpha", "beta", "gamma", "delta"]) addWord(db, { w }, "2026-10-01");
+  addWord(db, { w: "epsilon" }, "2026-10-13");
+  gradeWord(db, "alpha", "green", "2026-10-12");
+  gradeWord(db, "beta", "red", "2026-10-12");
+  gradeWord(db, "beta", "red", "2026-10-13");
+  gradeWord(db, "gamma", "yellow", "2026-10-13");
+  const s = wordStats(db, new Date(2026, 9, 14, 12));
+  assert.deepEqual(s.by, { green: 1, yellow: 1, red: 1, new: 2 });
+  assert.equal(s.total, 5);
+  assert.equal(s.reviewed7, 4);
+  assert.equal(s.added7, 1);
+  assert.equal(s.acc30, 0.25);
+  assert.equal(s.days.length, 14);
+  assert.deepEqual(s.days.slice(-3), [
+    { d: "2026-10-12", n: 2 },
+    { d: "2026-10-13", n: 2 },
+    { d: "2026-10-14", n: 0 },
+  ]);
+  assert.deepEqual(
+    s.hard.map((w) => w.key),
+    ["beta"],
+  );
+  assert.equal(db.words.beta.miss, 2);
+  assert.equal(db.words.beta.reps, 2);
 });

@@ -87,10 +87,60 @@ export function removeWord(db, key) {
 export function gradeWord(db, key, st, today = isoDay()) {
   const word = db.words?.[key];
   if (!word || !(st in INTERVAL)) return false;
+  const d = isDate(today) ? today : isoDay();
   word.iv = nextInterval(word, st);
   word.st = st;
-  word.last = isDate(today) ? today : isoDay();
+  word.last = d;
+  word.reps = (word.reps || 0) + 1;
+  if (st === "red") word.miss = (word.miss || 0) + 1;
+  // reviews per day, for the stats: { d, n reviews, ok "know it" answers }; the last 120 days
+  db.wordLog ||= [];
+  let day = db.wordLog.find((x) => x.d === d);
+  if (!day) {
+    db.wordLog.push((day = { d, n: 0, ok: 0 }));
+    db.wordLog.sort((a, b) => (a.d < b.d ? -1 : 1));
+    if (db.wordLog.length > 120) db.wordLog.splice(0, db.wordLog.length - 120);
+  }
+  day.n++;
+  if (st === "green") day.ok++;
   return true;
+}
+
+/**
+ * Numbers for the dictionary screen: words by status, reviews and additions over the last week, the share of
+ * "know it" answers over 30 days, reviews per day for the last 14 days, and the words forgotten most often.
+ */
+export function wordStats(db, now = new Date()) {
+  const all = Object.entries(db.words || {}).map(([key, w]) => ({ key, ...w }));
+  const by = { green: 0, yellow: 0, red: 0, new: 0 };
+  for (const w of all) by[w.st || "new"]++;
+  // local calendar days, like the dates the app writes
+  const ago = (k) => {
+    const x = new Date(now.getFullYear(), now.getMonth(), now.getDate() - k);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  };
+  const log = db.wordLog || [];
+  const since = (k) => log.filter((x) => x.d >= ago(k));
+  const sum = (xs, f) => xs.reduce((a, x) => a + (x[f] || 0), 0);
+  const m30 = since(29);
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = ago(13 - i);
+    return { d, n: log.find((x) => x.d === d)?.n || 0 };
+  });
+  const hard = all
+    .filter((w) => w.miss && w.st !== "green")
+    .sort((a, b) => b.miss - a.miss || (a.last < b.last ? 1 : -1))
+    .slice(0, 6);
+  return {
+    total: all.length,
+    by,
+    due: dueWords(db, now).length,
+    reviewed7: sum(since(6), "n"),
+    added7: all.filter((w) => w.added >= ago(6)).length,
+    acc30: sum(m30, "n") ? sum(m30, "ok") / sum(m30, "n") : null,
+    days,
+    hard,
+  };
 }
 
 /** Words to review now: never reviewed ones (oldest first) after the due ones (most overdue first). */

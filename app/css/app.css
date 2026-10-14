@@ -3371,3 +3371,56 @@ mark.vw {
   flex: none;
   height: 42px;
 }
+/* dictionary stats */
+.v-app .wstat .pg-stats b {
+  font-variant-numeric: tabular-nums;
+}
+.v-app .wdays {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 56px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--line);
+}
+.v-app .wdays i {
+  flex: 1;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  background: var(--good);
+  opacity: 0.85;
+}
+.v-app .wdays i[style*="height:0%"] {
+  height: 2px !important;
+  background: var(--line);
+}
+.v-app .wdays-l {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -10px;
+  font-size: 12px;
+  color: var(--dim2);
+}
+.v-app .whard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.v-app .whard a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  color: var(--fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+.v-app .whard small {
+  color: var(--crit);
+  font-size: 11px;
+}
