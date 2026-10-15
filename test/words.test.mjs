@@ -10,6 +10,11 @@ import {
   wordKey,
   wordOp,
   wordStats,
+  formIn,
+  checkTyped,
+  exerciseKind,
+  options,
+  gradeFor,
 } from "../app/lib/words.js";
 
 test("what can be saved and how it's keyed", () => {
@@ -107,4 +112,32 @@ test("stats: statuses, reviews per day, accuracy, hard words", () => {
   );
   assert.equal(db.words.beta.miss, 2);
   assert.equal(db.words.beta.reps, 2);
+});
+
+test("trainer: exercise choice, typed answers, options, grades", () => {
+  assert.deepEqual(formIn("Count the Tokens first.", "token"), { at: 10, form: "Tokens" });
+  assert.equal(formIn("No match here", "token"), null);
+  assert.equal(checkTyped(" Tokens ", ["Tokens", "token"]), "ok");
+  assert.equal(checkTyped("throughpt", ["throughput"]), "almost");
+  assert.equal(checkTyped("thru", ["throughput"]), "no");
+  assert.equal(checkTyped("cat", ["car"]), "no", "short words need the exact spelling");
+  const w = { w: "token", tr: "токен", ctx: "Count the tokens." };
+  assert.equal(exerciseKind(w), "pickTr", "new word: recognise it");
+  assert.equal(exerciseKind({ ...w, reps: 2, st: "yellow" }), "gap");
+  assert.equal(exerciseKind({ ...w, reps: 3, st: "green" }), "type");
+  assert.equal(
+    exerciseKind({ w: "token", ctx: "Count the tokens.", reps: 1, st: "red" }),
+    "gap",
+    "no translation: the sentence",
+  );
+  assert.equal(exerciseKind({ w: "token" }), "flip");
+  const opts = options("токен", ["токен", "задержка"], ["очередь", "откат", "пакет"], () => 0.3);
+  assert.equal(opts.length, 4);
+  assert.ok(opts.includes("токен") && opts.includes("задержка"));
+  assert.equal(new Set(opts).size, 4);
+  assert.equal(gradeFor("pickTr", "ok", undefined), "yellow");
+  assert.equal(gradeFor("gap", "ok", "yellow"), "green");
+  assert.equal(gradeFor("type", "ok", "green"), "green");
+  assert.equal(gradeFor("type", "almost", "green"), "yellow");
+  assert.equal(gradeFor("pickW", "no", "green"), "red");
 });

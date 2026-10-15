@@ -1,5 +1,7 @@
-// The personal dictionary (#words) and its flashcards (#wplay). Words get here from vocab.js (select → "Add").
+// The personal dictionary (#words) and its trainer (#wplay). Words get here from vocab.js (select → "Add").
+import { FILLER, checkTyped, exerciseKind, formIn, gradeFor, options } from "../../lib/words.js";
 import { icon } from "../icons.js";
+import { beep } from "../sound.js";
 import { state } from "../state.js";
 import {
   dropWord,
@@ -14,7 +16,7 @@ import {
 import { exitRound, frame, kbd, roundFrame, rtop, setProg, ui, wireQuit } from "../ui.js";
 import { $, esc } from "../util.js";
 
-const ROUND = 15;
+const ROUND = 12;
 const DOT = { green: "g", yellow: "y", red: "r" };
 
 /** The context sentence with the word in bold. */
@@ -47,7 +49,7 @@ export function wordsScreen(query) {
     const list = f ? all.filter((x) => x.key.includes(f) || (x.tr || "").toLowerCase().includes(f)) : all;
     const view = frame(
       `<section class="hero card"><span class="kick">${ui().dictKick}</span><h1 class="h1">${all.length ? ui().wordsN(all.length) : ui().dictEmpty}</h1><p class="sub">${all.length ? ui().dictSub(due) : ui().dictHow}</p>
-      ${all.length ? (due ? `<a class="btn blue big full" href="#wplay">${ui().reviewWords(Math.min(due, ROUND))} ${icon.arrow}</a>` : `<button class="btn line big full" disabled>${ui().nothingDue}</button>`) : ""}</section>
+      ${all.length ? (due ? `<a class="btn blue big full" href="#wplay">${ui().reviewWords(Math.min(due, ROUND))} ${icon.arrow}</a>` : `<a class="btn line big full" href="#wplay/more">${ui().practiceMore}</a>`) : ""}</section>
       ${all.length ? stats() : ""}
       ${all.length ? `<div class="sec"><span>${ui().allWords}</span><span class="r">${all.length}</span></div>` : ""}
       <form class="wnew" id="wnew"><input id="wnewIn" placeholder="${ui().addPh}" maxlength="60" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn line" type="submit">${icon.plus}</button></form>
@@ -147,71 +149,211 @@ function exportCsv() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// ---- flashcards ----
+// ---- the trainer (#wplay; #wplay/more practises the weakest words without touching their schedule) ----
 
-/**
- * Up to 15 words that are due (or never reviewed). Front: the word in its sentence, or (once it's been green)
- * the translation, to recall the English. Space shows the back; 1/2/3 grade it like a ticket.
- */
-export function wordPlay() {
-  const deck = wordsDue().slice(0, ROUND);
+const blank = (ctx, at, form) =>
+  `${esc(ctx.slice(0, at))}<span class="wgap">${"&nbsp;".repeat(Math.max(6, form.length))}</span>${esc(ctx.slice(at + form.length))}`;
+const hintOf = (s) => s[0] + " " + "_ ".repeat(Math.max(0, s.length - 1)).trim();
+
+/** One exercise for a word: what to show, the options or the accepted spellings. */
+function exercise(x, kind, all) {
+  const others = all.filter((o) => o.key !== x.key);
+  const f = formIn(x.ctx, x.w);
+  if (kind === "pickTr")
+    return {
+      kind,
+      tag: ui().tPickTr,
+      big: esc(x.w),
+      sub: x.ipa ? `<p class="ipa">${esc(x.ipa)}</p>` : "",
+      opts: options(
+        x.tr,
+        others.map((o) => o.tr),
+        FILLER.map((p) => p[1]),
+      ),
+      right: x.tr,
+    };
+  if (kind === "pickW")
+    return {
+      kind,
+      tag: ui().tPickW,
+      big: esc(x.tr),
+      sub: x.def ? `<p class="wdef">${esc(x.def)}</p>` : "",
+      opts: options(
+        x.w,
+        others.map((o) => o.w),
+        FILLER.map((p) => p[0]),
+      ),
+      right: x.w,
+    };
+  if (kind === "gap")
+    return {
+      kind,
+      tag: ui().tGap,
+      ctx: blank(x.ctx, f.at, f.form),
+      sub: x.tr ? `<p class="wdef">${esc(x.tr)}</p>` : "",
+      // all options in lower case: a capital letter would give the sentence-start answer away
+      opts: options(
+        f.form.toLowerCase(),
+        others.map((o) => o.w.toLowerCase()),
+        FILLER.map((p) => p[0]),
+      ),
+      right: f.form.toLowerCase(),
+    };
+  if (kind === "type")
+    return f
+      ? {
+          kind,
+          tag: ui().tType,
+          ctx: blank(x.ctx, f.at, f.form),
+          sub: x.tr ? `<p class="wdef">${esc(x.tr)}</p>` : "",
+          answers: [f.form, x.w],
+          hint: hintOf(f.form),
+        }
+      : {
+          kind,
+          tag: ui().tType,
+          big: esc(x.tr),
+          sub: x.def ? `<p class="wdef">${esc(x.def)}</p>` : "",
+          answers: [x.w],
+          hint: hintOf(x.w),
+        };
+  return { kind: "flip", tag: ui().whatMeans, big: esc(x.w), ctx: x.ctx ? ctxHtml(x.ctx, x.w) : "" };
+}
+
+/** What the word is, shown after every answer: that's where the learning happens. */
+const reveal = (x) =>
+  `<p class="wfront sm">${esc(x.w)}${x.ipa ? ` <span class="ipa">${esc(x.ipa)}</span>` : ""}</p>${x.tr ? `<p class="wtr">${esc(x.tr)}</p>` : ""}${x.def ? `<p class="wdef">${esc(x.def)}</p>` : ""}${x.ctx ? `<p class="wctx">${ctxHtml(x.ctx, x.w)}</p>` : ""}${x.note ? `<p class="wnote">${esc(x.note)}</p>` : ""}`;
+
+export function wordPlay(mode) {
+  const practice = mode === "more";
+  const all = words();
+  const deck = practice
+    ? all
+        .slice()
+        .sort(
+          (a, b) =>
+            ({ red: 0, yellow: 1, undefined: 2, green: 3 })[a.st] -
+              { red: 0, yellow: 1, undefined: 2, green: 3 }[b.st] || (a.iv || 0) - (b.iv || 0),
+        )
+        .slice(0, ROUND)
+    : wordsDue().slice(0, ROUND);
   if (!deck.length) return void (location.hash = "words");
-  const tally = { green: 0, yellow: 0, red: 0 };
+  // each word once; a miss comes back at the end in an easier form (it doesn't change the grade again)
+  const queue = deck.map((x) => ({ x, kind: exerciseKind(x) }));
+  const out = new Map(); // key → { x, st }
   let i = 0;
   const step = () => {
-    if (i >= deck.length) return done();
-    const x = deck[i];
-    const rev = x.st === "green" && !!x.tr; // known well: the other way round
-    let open = false;
+    if (i >= queue.length) return done();
+    const { x, kind, again } = queue[i];
+    const ex = exercise(x, kind, all);
+    let res = null,
+      picked = null,
+      typed = "",
+      open = false; // flip cards
+    const finish = (result, st) => {
+      res = result;
+      if (!again) {
+        const grade = st || gradeFor(ex.kind, result, x.st);
+        out.set(x.key, { x, st: grade });
+        if (!practice) gradeWordAs(x.key, grade);
+        if (result === "no")
+          queue.push({ x, kind: x.tr ? "pickTr" : ex.kind === "flip" ? "flip" : "gap", again: true });
+      }
+      beep(result !== "no");
+      setProg(i + 1, queue.length);
+      draw();
+    };
     const draw = () => {
-      const front = rev
-        ? `<span class="tag">${ui().recallEn}</span><p class="wfront">${esc(x.tr)}</p>`
-        : `<span class="tag">${ui().whatMeans}</span><p class="wfront">${esc(x.w)}</p>${x.ctx ? `<p class="wctx">${ctxHtml(x.ctx, x.w)}</p>` : ""}`;
-      const back = `<div class="wback">${rev ? `<p class="wfront sm">${esc(x.w)}</p>${x.ctx ? `<p class="wctx">${ctxHtml(x.ctx, x.w)}</p>` : ""}` : `<p class="wtr">${x.tr ? esc(x.tr) : `<span class="wdim">${ui().noTr}</span>`}</p>`}${x.ipa ? `<p class="ipa">${esc(x.ipa)}</p>` : ""}${x.def ? `<p class="wdef">${esc(x.def)}</p>` : ""}${x.note ? `<p class="wnote">${esc(x.note)}</p>` : ""}</div>`;
-      roundFrame(`<div class="round">${rtop(Math.round((i / deck.length) * 100))}<div class="body wcard">${front}${open ? back : ""}</div>
-        <div class="act">${
-          open
-            ? `<div class="score"><button class="r" data-s="red"><span class="k">1</span>${ui().wR}</button><button class="y" data-s="yellow"><span class="k">2</span>${ui().wY}</button><button class="g" data-s="green"><span class="k">3</span>${ui().wG}</button></div>`
-            : `<button class="btn blue big full" id="flip">${ui().showW} ${kbd("Space", 1)}</button>`
-        }<div class="hint"><span>${kbd("1")} ${kbd("2")} ${kbd("3")} ${ui().hintGrade}</span><span>${kbd("Esc")} ${ui().hintQuit}</span></div></div></div>`);
+      const prompt = `<span class="tag">${ex.tag}${again ? ` · ${ui().tAgain}` : ""}</span>${ex.big ? `<p class="wfront">${ex.big}</p>` : ""}${ex.ctx ? `<p class="wctx big">${ex.ctx}</p>` : ""}${ex.sub || ""}`;
+      let body = "",
+        act = "";
+      if (ex.opts) {
+        body = `<div class="wopts">${ex.opts.map((o, k) => `<button class="ans wopt${res ? (o === ex.right ? " pick" : o === picked ? " pick bad" : " dim") : ""}" data-o="${k}"${res ? " disabled" : ""}>${kbd(k + 1, 1)}<span>${esc(o)}</span></button>`).join("")}</div>`;
+      } else if (ex.answers) {
+        body = `<form class="wtype" id="wtf"><input id="wti" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${esc(ex.hint)}" value="${esc(typed)}"${res ? " disabled" : ""}>${res ? "" : `<button class="btn blue" type="submit">${ui().check}</button>`}</form>${res ? "" : `<button class="lnk" id="idk">${ui().tDontKnow}</button>`}`;
+      } else if (open) body = `<div class="wback">${reveal(x)}</div>`;
+      if (res) {
+        const ok = res !== "no";
+        act = `<div class="sheet ${ok ? "ok" : "bad"}" id="sheet"><div class="h"><span class="mark">${ok ? icon.check : icon.xs}</span><span>${res === "ok" ? ui().resok : res === "almost" ? ui().tAlmost : ui().resbad}</span></div><div class="wsheet">${reveal(x)}</div><button class="btn ${ok ? "green" : "red"} full big" id="nx">${ui().next} ${kbd("Enter", 1)}</button></div>`;
+      } else if (ex.kind === "flip")
+        act = open
+          ? `<div class="score"><button class="r" data-s="red"><span class="k">1</span>${ui().wR}</button><button class="y" data-s="yellow"><span class="k">2</span>${ui().wY}</button><button class="g" data-s="green"><span class="k">3</span>${ui().wG}</button></div>`
+          : `<button class="btn blue big full" id="flip">${ui().showW} ${kbd("Space", 1)}</button>`;
+      roundFrame(
+        `<div class="round">${rtop(Math.round(((i + (res ? 1 : 0)) / queue.length) * 100))}<div class="body wcard">${prompt}${body}</div><div class="act">${act}${res ? "" : `<div class="hint">${ex.opts ? `<span>${kbd("1")}–${kbd("4")} ${ui().tChoose}</span>` : ""}<span>${kbd("Esc")} ${ui().hintQuit}</span></div>`}</div></div>`,
+      );
       wireQuit();
+      const next = () => {
+        i++;
+        step();
+      };
+      if (res) $("#nx").onclick = next;
+      document.querySelectorAll(".wopt").forEach(
+        (b) =>
+          (b.onclick = () => {
+            if (res) return;
+            picked = ex.opts[+b.dataset.o];
+            finish(picked === ex.right ? "ok" : "no");
+          }),
+      );
+      const tf = $("#wtf");
+      if (tf && !res) {
+        const inp = $("#wti");
+        inp.oninput = () => (typed = inp.value);
+        if (matchMedia("(pointer: fine)").matches || i > 0) inp.focus();
+        tf.onsubmit = (e) => {
+          e.preventDefault();
+          typed = inp.value;
+          if (!typed.trim()) return;
+          finish(checkTyped(typed, ex.answers));
+        };
+        $("#idk").onclick = () => finish("no");
+      }
       const flip = $("#flip");
       if (flip) flip.onclick = () => ((open = true), draw());
-      document.querySelectorAll(".score [data-s]").forEach((b) => (b.onclick = () => grade(b.dataset.s)));
+      document
+        .querySelectorAll(".score [data-s]")
+        .forEach((b) => (b.onclick = () => finish(b.dataset.s === "red" ? "no" : "ok", b.dataset.s)));
       document.onkeydown = (e) => {
         if (e.key === "Escape") return exitRound();
-        if (!open && (e.key === " " || e.key === "Enter")) {
-          e.preventDefault();
-          open = true;
-          return draw();
+        if (res) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            next();
+          }
+          return;
         }
-        if (open) {
-          const s = { 1: "red", 2: "yellow", 3: "green" }[e.key];
-          if (s) grade(s);
+        if (e.target.closest("input")) return;
+        if (ex.opts && /^[1-4]$/.test(e.key))
+          document.querySelector(`.wopt[data-o="${+e.key - 1}"]`)?.click();
+        if (ex.kind === "flip") {
+          if (!open && (e.key === " " || e.key === "Enter")) {
+            e.preventDefault();
+            open = true;
+            draw();
+          } else if (open) {
+            const s = { 1: "red", 2: "yellow", 3: "green" }[e.key];
+            if (s) finish(s === "red" ? "no" : "ok", s);
+          }
         }
       };
-    };
-    const grade = (s) => {
-      document.onkeydown = null;
-      tally[s]++;
-      gradeWordAs(x.key, s);
-      setProg(i + 1, deck.length);
-      i++;
-      step();
     };
     state.rerender = draw;
     draw();
   };
   const done = () => {
     state.rerender = null;
-    const more = wordsDue().filter((w) => !deck.some((d) => d.key === w.key)).length;
-    roundFrame(`<div class="round">${rtop(100, true)}<div class="res"><span class="tag">${ui().wordsDone}</span><div class="n" style="margin-top:24px">${tally.green}<small>/${deck.length}</small></div><div class="v">${ui().wKnown}</div>
-      <div class="mom"><div><b style="color:var(--good)">${tally.green}</b><span>${ui().wG}</span></div><div><b style="color:var(--warn)">${tally.yellow}</b><span>${ui().wY}</span></div><div><b style="color:var(--crit)">${tally.red}</b><span>${ui().wR}</span></div></div></div>
-      <div class="act" style="flex-direction:row;gap:12px;margin-top:36px">${more ? `<button class="btn line" id="ag" style="flex:1">${ui().moreWords(more)}</button>` : ""}<button class="btn green" id="hm" style="flex:1.4">${ui().done} ${kbd("Enter", 1)}</button></div></div>`);
+    const rs = [...out.values()];
+    const right = rs.filter((r) => r.st !== "red").length;
+    const more = practice ? 0 : wordsDue().filter((w) => !out.has(w.key)).length;
+    roundFrame(`<div class="round">${rtop(100, true)}<div class="res"><span class="tag">${practice ? ui().tPractice : ui().wordsDone}</span><div class="n" style="margin-top:24px">${right}<small>/${rs.length}</small></div><div class="v">${ui().tRight}</div></div>
+      <div class="card wsum">${rs.map((r) => `<a href="#words?w=${encodeURIComponent(r.x.key)}"><span class="sw ${DOT[r.st]}"></span><b>${esc(r.x.w)}</b><span>${esc(r.x.tr || "")}</span></a>`).join("")}</div>
+      ${practice ? `<p class="wdim" style="text-align:center;margin-top:12px;font-size:13px">${ui().tPracticeNote}</p>` : ""}
+      <div class="act" style="flex-direction:row;gap:12px;margin-top:24px">${more ? `<button class="btn line" id="ag" style="flex:1">${ui().moreWords(more)}</button>` : ""}<button class="btn green" id="hm" style="flex:1.4">${ui().done} ${kbd("Enter", 1)}</button></div></div>`);
     wireQuit();
     $("#hm").onclick = exitRound;
     const ag = $("#ag");
-    if (ag) ag.onclick = wordPlay;
+    if (ag) ag.onclick = () => wordPlay();
     document.onkeydown = (e) => {
       if (e.key === "Enter" || e.key === "Escape") exitRound();
     };

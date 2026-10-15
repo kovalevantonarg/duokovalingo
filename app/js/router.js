@@ -84,7 +84,7 @@ export function route() {
     case "words":
       return wordsScreen(new URLSearchParams(query || ""));
     case "wplay":
-      return wordPlay();
+      return wordPlay(a);
     case "item": // links from before tickets were the unit of progress
       return void (location.hash = "t/" + (ticketOfItem(a) || ""));
     default:

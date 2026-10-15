@@ -27,8 +27,10 @@ toward the daily AI quota on a cache miss). Saved words are underlined in lesson
 answer sheet; tapping one shows the translation. The **Слова** tab (`#words`) shows how learning goes (words by
 status, reviews and accuracy, 14 days of reviews, the words forgotten most) and lists, edits, searches and
 exports them (CSV);
-`#wplay` reviews up to 15 as flashcards with the same intervals as tickets (`lib/words.js`). Words the person
-knows well come back the other way round: translation first, recall the English.
+`#wplay` trains up to 12 due words with exercises that check the answer (`lib/words.js`): new or forgotten words
+ask to pick the translation, shaky ones to fill the gap in their own sentence, known ones to type the English;
+a miss comes back at the end in an easier form. The result sets the word's interval (same rules as tickets).
+`#wplay/more` practises the weakest words without touching their schedule.
 
 Hash routes: `#home`, `#tickets`, `#t/<n>`, `#ref/<n>` (reference, sources, past attempts), `#learn`, `#learn/<n>`, `#words`, `#progress`; full-screen
 rounds `#exam/<n>` (the exam: speak or type into one box, then the AI's grade or your own), `#session`,
