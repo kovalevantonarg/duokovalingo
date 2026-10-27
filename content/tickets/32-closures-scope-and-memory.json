@@ -10,7 +10,7 @@
     "qs": [
       "Что именно захватывает замыкание? Объясните, почему setInterval в React-компоненте всё время выводит старый count.",
       "Память в нашем чат-приложении растёт весь час, пока вкладка открыта. Какие обычные причины?",
-      "Как вы на практике найдёте эту утечку, и где помогают WeakMap и WeakRef?"
+      "Память в долгоживущем чат-приложении течёт. Как вы на практике найдёте утечку, и где помогают WeakMap и WeakRef?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "What exactly does a closure capture? Walk me through why a setInterval in a React component keeps logging a stale count.",
       "Memory in our long-lived chat app keeps climbing over an hour of use. What are the usual culprits?",
-      "How would you actually find that leak, and where do WeakMap and WeakRef help?"
+      "A long-lived chat app leaks memory. How would you actually find the leak, and where do WeakMap and WeakRef help?"
     ],
     "a": [
       {

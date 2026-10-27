@@ -10,7 +10,7 @@
     "qs": [
       "Три инструмента — prompt engineering, RAG, fine-tuning. По какому принципу выбираешь?",
       "Посчитай вслух: что дороже — зафайнтюнить модель или построить RAG? На каких осях сравниваешь?",
-      "Реальный продакшн использует один инструмент или комбинацию? Приведи пример пути от прототипа до продакшна."
+      "В реальном продакшне — один из prompt engineering, RAG и fine-tuning или комбинация? Приведи пример пути от прототипа до продакшна."
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "Three tools — prompt engineering, RAG, fine-tuning. What's your actual decision rule?",
       "Walk me through cost: which is more expensive, fine-tuning or building RAG? What axes are you comparing on?",
-      "Does real production use one tool or a combination? Walk me through a path from prototype to production."
+      "Does real production use one of prompt engineering, RAG and fine-tuning, or a combination? Walk me through a path from prototype to production."
     ],
     "a": [
       {

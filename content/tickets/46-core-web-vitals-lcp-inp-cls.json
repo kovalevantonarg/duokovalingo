@@ -10,7 +10,7 @@
     "qs": [
       "Какие три Core Web Vitals, что каждая реально измеряет и что считается хорошим результатом?",
       "Lighthouse показывает 98, а Search Console говорит, что INP плохой. Как оба могут быть правы?",
-      "Возьми каждую метрику по очереди: что ты сделаешь первым делом, если она красная? Допустим, это страница чата со стримингом ответа LLM."
+      "Возьми каждую из Core Web Vitals по очереди: что ты сделаешь первым делом, если она красная? Допустим, это страница чата со стримингом ответа LLM."
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "What are the three Core Web Vitals, what does each one actually measure, and what counts as good?",
       "Lighthouse gives us a 98, but Search Console says our INP is poor. How can both be true?",
-      "Take each vital in turn: what's the first thing you'd do if it's red? Say it's a chat page streaming an LLM response."
+      "Take each Core Web Vital in turn: what's the first thing you'd do if it's red? Say it's a chat page streaming an LLM response."
     ],
     "a": [
       {

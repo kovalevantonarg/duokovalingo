@@ -9,8 +9,8 @@
     "topic": "Дизайн: RAG end-to-end",
     "qs": [
       "Пройди пайплайн от загрузки документа до ответа. Каждая стадия и выбор на ней.",
-      "Хранение и индекс: pgvector или отдельная база? Метаданные, обновления, удаления.",
-      "Обслуживание запросов: бюджет задержки, кэш, цитаты, права доступа, мониторинг."
+      "Хранение и индекс в RAG: pgvector или отдельная база? Метаданные, обновления, удаления.",
+      "Обслуживание запросов в RAG: бюджет задержки, кэш, цитаты, права доступа, мониторинг."
     ],
     "a": [
       {
@@ -32,8 +32,8 @@
     "topic": "Design: RAG end-to-end",
     "qs": [
       "Walk the pipeline from document upload to answer. Every stage and the choice at it.",
-      "Storage and indexing: pgvector or a dedicated store? Metadata, updates, deletes.",
-      "Serving: latency budget, caching, citations, permissions, monitoring."
+      "RAG storage and indexing: pgvector or a dedicated store? Metadata, updates, deletes.",
+      "Serving a RAG system: latency budget, caching, citations, permissions, monitoring."
     ],
     "a": [
       {

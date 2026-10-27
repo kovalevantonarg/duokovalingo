@@ -9,7 +9,7 @@
     "topic": "RAG или всё в контекст",
     "qs": [
       "Когда RAG не нужен? Опиши случай, где ты его не стал бы делать.",
-      "Когда нужен: минимум четыре причины, не одна.",
+      "Когда RAG нужен: минимум четыре причины, не одна.",
       "Окна уже по миллиону токенов. RAG умер?"
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "RAG versus everything in context",
     "qs": [
       "When do you not need RAG? Describe a case where you'd skip it.",
-      "When you do need it: at least four reasons, not just one.",
+      "When do you need RAG? At least four reasons, not just one.",
       "Context windows are a million tokens now. Is RAG dead?"
     ],
     "a": [

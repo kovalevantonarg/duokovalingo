@@ -9,8 +9,8 @@
     "topic": "Streaming: SSE и ReadableStream",
     "qs": [
       "Как выглядит SSE-поток на проводе и почему для стриминга ответа LLM берут его, а не WebSocket?",
-      "Ты потребляешь поток в браузере. Пройди по коду: от fetch до появления текста на экране.",
-      "Соединение оборвалось на середине ответа. Что ты видишь в коде и что делает UI?"
+      "Ты потребляешь SSE-поток ответа LLM в браузере. Пройди по коду: от fetch до появления текста на экране.",
+      "SSE-соединение оборвалось на середине ответа модели. Что ты видишь в коде и что делает UI?"
     ],
     "a": [
       {
@@ -32,8 +32,8 @@
     "topic": "Streaming: SSE and ReadableStream",
     "qs": [
       "What does an SSE stream look like on the wire, and why use it for LLM output instead of WebSocket?",
-      "You're consuming the stream in the browser. Walk me through the code from fetch to text on screen.",
-      "The connection drops mid-answer. What do you see in code and what does the UI do?"
+      "You're consuming an SSE stream of an LLM answer in the browser. Walk me through the code from fetch to text on screen.",
+      "The SSE connection drops mid-answer. What do you see in code and what does the UI do?"
     ],
     "a": [
       {

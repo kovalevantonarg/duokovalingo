@@ -10,7 +10,7 @@
     "qs": [
       "Как агент понимает, что пора остановиться? Перечисли условия.",
       "Tool вернул 404. Бросаешь исключение или отдаёшь модели?",
-      "Что должно происходить, когда прогон падает на середине?"
+      "Прогон агента падает на середине. Что должно происходить?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "How does an agent know it should stop? List the conditions.",
       "A tool returns 404. Do you throw, or hand it back to the model?",
-      "What has to happen when a run dies halfway?"
+      "What has to happen when an agent run dies halfway?"
     ],
     "a": [
       {

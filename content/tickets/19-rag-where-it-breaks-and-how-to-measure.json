@@ -9,7 +9,7 @@
     "topic": "RAG: где ломается и как мерить",
     "qs": [
       "Четыре места, где RAG ломается. По стадиям.",
-      "Метрики: faithfulness, relevance, recall. Определи и скажи, как мерить каждую.",
+      "Метрики RAG: faithfulness, relevance, recall. Определи и скажи, как мерить каждую.",
       "Как ты построил эвал для своего RAG? Что именно в наборе?"
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "RAG: where it breaks and how to measure",
     "qs": [
       "Four places RAG breaks. By stage.",
-      "Metrics: faithfulness, relevance, recall. Define each and say how you measure it.",
+      "RAG metrics: faithfulness, relevance, recall. Define each and say how you measure it.",
       "How did you build the eval for your RAG? What exactly is in the set?"
     ],
     "a": [

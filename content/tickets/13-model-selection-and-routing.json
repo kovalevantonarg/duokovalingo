@@ -10,7 +10,7 @@
     "qs": [
       "У Claude несколько уровней моделей, от флагмана до Haiku. Как выбираешь и что у тебя по умолчанию?",
       "Что такое model routing и куда на самом деле уходят деньги?",
-      "Как понижаешь модель на шаге, не сломав качество?"
+      "Как понижаешь модель на одном шаге агента, не сломав качество?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "Claude comes in several tiers, from the flagship down to Haiku. How do you choose, and what's your default?",
       "What is model routing, and where does the money actually go?",
-      "How do you downgrade a step's model without breaking quality?"
+      "How do you downgrade the model on one step of an agent without breaking quality?"
     ],
     "a": [
       {

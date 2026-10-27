@@ -9,7 +9,7 @@
     "topic": "Embeddings",
     "qs": [
       "Что такое эмбеддинг и что означает расстояние между двумя?",
-      "Cosine против dot product. Размерности. Где хранить.",
+      "Эмбеддинги: cosine против dot product. Размерности. Где хранить.",
       "Два случая, где семантический поиск промахивается, и что ты добавляешь."
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "Embeddings",
     "qs": [
       "What is an embedding, and what does the distance between two mean?",
-      "Cosine versus dot product. Dimensions. Where do you store them?",
+      "Embeddings: cosine versus dot product. Dimensions. Where do you store them?",
       "Two cases where semantic search misses, and what you add."
     ],
     "a": [

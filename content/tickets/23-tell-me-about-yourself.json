@@ -8,9 +8,9 @@
   "ru": {
     "topic": "Tell me about yourself",
     "qs": [
-      "Версия на 60–90 секунд. Скажи её целиком.",
-      "Версия на 30 секунд для рекрутера.",
-      "Чего ты никогда не говоришь и чем заканчиваешь?"
+      "«Расскажи о себе», версия на 60–90 секунд. Скажи её целиком.",
+      "«Расскажи о себе», версия на 30 секунд для рекрутера.",
+      "В рассказе о себе: чего ты никогда не говоришь и чем заканчиваешь?"
     ],
     "a": [
       {
@@ -31,9 +31,9 @@
   "en": {
     "topic": "Tell me about yourself",
     "qs": [
-      "The 60–90 second version. Say the whole thing.",
-      "The 30-second version, for a recruiter.",
-      "What do you never say, and how do you land it?"
+      "\"Tell me about yourself\", the 60–90 second version. Say the whole thing.",
+      "\"Tell me about yourself\", the 30-second version for a recruiter.",
+      "In your self-introduction: what do you never say, and how do you land it?"
     ],
     "a": [
       {

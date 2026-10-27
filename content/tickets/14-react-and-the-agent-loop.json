@@ -9,8 +9,8 @@
     "topic": "ReAct и агентный цикл",
     "qs": [
       "Что такое ReAct и какую задачу он решает по сравнению с одним вызовом?",
-      "Минимальная реализация: что внутри тела цикла?",
-      "Где это ломается и что ты добавляешь?"
+      "Минимальная реализация ReAct: что внутри тела цикла?",
+      "Где голый ReAct-цикл ломается и что ты добавляешь?"
     ],
     "a": [
       {
@@ -32,8 +32,8 @@
     "topic": "ReAct and the agent loop",
     "qs": [
       "What is ReAct, and what problem does it solve compared to a single call?",
-      "Minimal implementation: what's inside the loop body?",
-      "Where does it break, and what do you add?"
+      "Minimal ReAct implementation: what's inside the loop body?",
+      "Where does a bare ReAct loop break, and what do you add?"
     ],
     "a": [
       {

@@ -9,7 +9,7 @@
     "topic": "Chunking",
     "qs": [
       "Fixed size, semantic, sliding window: что это и в чём trade-off каждого?",
-      "Типичные цифры и зачем вообще существует overlap?",
+      "Типичные размеры чанков и зачем вообще существует overlap?",
       "Как понять, что твой chunking неправильный?"
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "Chunking",
     "qs": [
       "Fixed size, semantic, sliding window: what are they and what's the trade-off of each?",
-      "Typical numbers, and why does overlap exist at all?",
+      "Typical chunk sizes, and why does overlap exist at all?",
       "How do you know your chunking is wrong?"
     ],
     "a": [

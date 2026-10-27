@@ -10,7 +10,7 @@
     "topic": "Statelessness и лестница",
     "qs": [
       "Модель что-нибудь помнит между вызовами?",
-      "Из этого следуют три вещи. Какие?",
+      "Модель ничего не помнит между вызовами. Какие три вещи из этого следуют?",
       "Контекст кончается. Обходы от самого дешёвого к сложному."
     ],
     "a": [
@@ -33,7 +33,7 @@
     "topic": "Statelessness and the ladder",
     "qs": [
       "Does the model remember anything between calls?",
-      "Three things follow from that. What are they?",
+      "The model remembers nothing between calls. What three things follow from that?",
       "You're running out of context. Walk the mitigations from cheapest to most complex."
     ],
     "a": [

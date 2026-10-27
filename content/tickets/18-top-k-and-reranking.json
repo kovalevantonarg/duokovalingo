@@ -8,7 +8,7 @@
   "ru": {
     "topic": "Top-k и reranking",
     "qs": [
-      "Что такое k и как ты его выбираешь?",
+      "Что такое top-k в retrieval и как ты выбираешь k?",
       "Что делает реранкер и почему он второй стадией, а не первой?",
       "Цена и задержка реранкинга. Когда его пропускаешь?"
     ],
@@ -31,7 +31,7 @@
   "en": {
     "topic": "Top-k and reranking",
     "qs": [
-      "What is k, and how do you choose it?",
+      "What is top-k in retrieval, and how do you choose k?",
       "What does a reranker do, and why is it a second stage rather than the first?",
       "Cost and latency of reranking. When do you skip it?"
     ],

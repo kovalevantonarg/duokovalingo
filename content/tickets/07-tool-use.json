@@ -11,7 +11,7 @@
     "qs": [
       "Модель попросила инструмент. Кто идёт в интернет и что происходит дальше по шагам?",
       "Из чего состоит определение tool и что там самое важное?",
-      "Почему content в ответе — массив, а не строка?"
+      "Почему content в ответе модели — массив блоков, а не строка?"
     ],
     "a": [
       {
@@ -34,7 +34,7 @@
     "qs": [
       "The model asked for a tool. Who goes to the internet, and what happens next, step by step?",
       "What's in a tool definition, and which part matters most?",
-      "Why is content an array rather than a string?"
+      "Why is content in the model's response an array of blocks rather than a string?"
     ],
     "a": [
       {

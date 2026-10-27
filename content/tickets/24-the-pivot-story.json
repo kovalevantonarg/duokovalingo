@@ -9,7 +9,7 @@
     "topic": "История пивота",
     "qs": [
       "Почему из [старая область] в [новая область]? Факты, не страсть.",
-      "Это не шаг вниз по сеньорности?",
+      "Переход из [старая область] в [новая область] — это не шаг вниз по сеньорности?",
       "Что ты реально сделал и выпустил? Конкретно, с цифрами."
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "The pivot story",
     "qs": [
       "Why move from [old field] to [new field]? Facts, not passion.",
-      "Isn't this a step down in seniority?",
+      "Moving from [old field] to [new field]: isn't that a step down in seniority?",
       "What have you actually shipped? Be specific, with numbers."
     ],
     "a": [

@@ -9,7 +9,7 @@
     "topic": "Экономика токенов",
     "qs": [
       "Почему output дороже input, сейчас у крупных вендоров примерно в 5 раз за токен? Механизм, а не «так в прайсе».",
-      "Косты выросли втрое за месяц. Первые четыре гипотезы по порядку.",
+      "Счёт за LLM вырос втрое за месяц. Первые четыре гипотезы по порядку.",
       "В простом вызове output был 99% счёта, в агенте input стал 84%. Что изменилось и какой вывод?"
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "Token economics",
     "qs": [
       "Why does output cost more than input, around 5x per token at the big vendors today? Mechanism, not \"that's the price list\".",
-      "Costs tripled this month. Name your first four hypotheses, in order.",
+      "The LLM bill tripled this month. Name your first four hypotheses, in order.",
       "In a single call output was 99% of the bill; in the agent input became 84%. What changed, and what's the takeaway?"
     ],
     "a": [

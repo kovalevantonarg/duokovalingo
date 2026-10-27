@@ -10,7 +10,7 @@
     "qs": [
       "Три способа получить JSON от модели. Что это за способы и когда какой?",
       "Как надёжнее всего получить JSON по схеме у Anthropic? И что на самом деле дают strict и принудительный вызов инструмента?",
-      "JSON пришёл невалидный или не по схеме. Что делаешь?"
+      "JSON от модели пришёл невалидный или не по схеме. Что делаешь?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "Three ways to get JSON out of a model. What are they and when do you use each?",
       "What's the most reliable way to get schema-shaped JSON on Anthropic? And what do strict mode and forcing a tool actually buy you?",
-      "The JSON comes back invalid or off-schema. What do you do?"
+      "The model's JSON comes back invalid or off-schema. What do you do?"
     ],
     "a": [
       {

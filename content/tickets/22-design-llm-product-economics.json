@@ -8,9 +8,9 @@
   "ru": {
     "topic": "Дизайн: экономика LLM-продукта",
     "qs": [
-      "Счёт вырос в три раза за месяц. Как находишь, где?",
-      "Лестница рычагов, по соотношению эффекта и усилий.",
-      "Что кэширование не чинит? Приведи конкретный пример."
+      "Счёт за LLM вырос в три раза за месяц. Как находишь, где?",
+      "Лестница рычагов для снижения счёта за LLM, по соотношению эффекта и усилий.",
+      "Что prompt caching не чинит? Приведи конкретный пример."
     ],
     "a": [
       {
@@ -31,9 +31,9 @@
   "en": {
     "topic": "Design: LLM product economics",
     "qs": [
-      "The bill tripled this month. How do you find where?",
-      "The ladder of levers, in order of impact per effort.",
-      "What can't caching fix? Give a concrete example."
+      "The LLM bill tripled this month. How do you find where?",
+      "The ladder of levers for cutting an LLM bill, in order of impact per effort.",
+      "What can't prompt caching fix? Give a concrete example."
     ],
     "a": [
       {

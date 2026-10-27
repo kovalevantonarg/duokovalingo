@@ -9,8 +9,8 @@
     "topic": "Дизайн: streaming chat UI",
     "qs": [
       "Спроектируй стриминговый чат. Компоненты от браузера до модели, по порядку.",
-      "Состояние на клиенте: что хранишь, как рендеришь частичный ответ, где живёт история.",
-      "UX отказов: retry, cancel, ошибка посреди потока. И что ты логируешь."
+      "Стриминговый чат, состояние на клиенте: что хранишь, как рендеришь частичный ответ, где живёт история.",
+      "Стриминговый чат, UX отказов: retry, cancel, ошибка посреди потока. И что ты логируешь?"
     ],
     "a": [
       {
@@ -32,8 +32,8 @@
     "topic": "Design: streaming chat UI",
     "qs": [
       "Design a streaming chat. Components from the browser to the model, in order.",
-      "Client state: what you store, how you render partial output, where history lives.",
-      "Failure UX: retry, cancel, an error mid-stream. And what you log."
+      "Streaming chat, client state: what you store, how you render partial output, where history lives.",
+      "Streaming chat, failure UX: retry, cancel, an error mid-stream. And what do you log?"
     ],
     "a": [
       {

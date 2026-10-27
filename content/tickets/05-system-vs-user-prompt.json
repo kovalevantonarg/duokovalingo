@@ -10,7 +10,7 @@
     "qs": [
       "Чем system отличается от user? Что куда кладут?",
       "Почему system тяжелее перебить? Назови механизм.",
-      "И почему это НЕ гарантия безопасности? Где живут настоящие контроли?"
+      "System prompt тяжелее перебить, но почему это НЕ гарантия безопасности? Где живут настоящие контроли?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "How does the system prompt differ from the user prompt? What goes where?",
       "Why is the system prompt harder to override? Name the mechanism.",
-      "And why is that NOT a security guarantee? Where do the real controls live?"
+      "The system prompt is harder to override, but why is that NOT a security guarantee? Where do the real controls live?"
     ],
     "a": [
       {

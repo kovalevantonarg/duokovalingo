@@ -10,7 +10,7 @@
     "qs": [
       "Что такое prompt injection? Чем indirect опаснее прямой?",
       "Твой агент читает страницу, в ней «игнорируй инструкции». Что делаешь?",
-      "Почему разделители — не решение?"
+      "Почему разделители вокруг чужого текста — не защита от prompt injection?"
     ],
     "a": [
       {
@@ -33,7 +33,7 @@
     "qs": [
       "What is prompt injection? Why is indirect injection worse than direct?",
       "Your agent fetches a page and it contains \"ignore your instructions\". What do you do?",
-      "Why aren't delimiters a solution?"
+      "Why aren't delimiters around untrusted text a defense against prompt injection?"
     ],
     "a": [
       {

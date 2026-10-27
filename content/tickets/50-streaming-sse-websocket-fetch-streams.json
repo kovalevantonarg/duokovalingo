@@ -9,7 +9,7 @@
     "topic": "Стриминг: SSE, WebSocket, fetch-стримы",
     "qs": [
       "Вы делаете чат, который стримит токены LLM. Polling, SSE, WebSocket или fetch со стримингом — что выберете и почему?",
-      "Почему бы просто не взять EventSource и что ломается в продакшене с долгоживущими стримами?",
+      "Для стриминга токенов LLM: почему бы просто не взять EventSource, и что ломается в продакшене с долгоживущими стримами?",
       "Расскажите, как вы читаете поток токенов на клиенте и что происходит, когда пользователь жмёт Stop."
     ],
     "a": [
@@ -32,7 +32,7 @@
     "topic": "Streaming: SSE, WebSocket, fetch streams",
     "qs": [
       "You're building a chat UI that streams LLM tokens. Polling, SSE, WebSocket or fetch streaming — which do you pick and why?",
-      "Why not just use EventSource, and what goes wrong in production with long-lived streams?",
+      "For streaming LLM tokens, why not just use EventSource, and what goes wrong in production with long-lived streams?",
       "Walk me through reading the token stream on the client and what happens when the user hits Stop."
     ],
     "a": [
