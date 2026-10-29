@@ -89,7 +89,9 @@ self.addEventListener("fetch", (e) => {
     return e.respondWith(cacheFirst(req));
   if (url.origin !== location.origin || url.pathname.startsWith("/api/")) return; // API: network only
   if (req.mode === "navigate") return e.respondWith(page(req));
-  if (/\.(js|css)$/.test(url.pathname)) return e.respondWith(networkFirst(req));
+  // app code and the labs: always the deployed version when online (labs carry code and tests that must match)
+  if (/\.(js|css)$/.test(url.pathname) || url.pathname.startsWith("/labs/"))
+    return e.respondWith(networkFirst(req));
   e.respondWith(staleWhileRevalidate(e, req));
 });
 

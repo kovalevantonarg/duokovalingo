@@ -3,6 +3,7 @@
 // yourself, with tests that run in the browser (js/labs/run.js); 3) Интервью: the production scenario out loud.
 // Code and results sync with the rest of progress (lib/labs.js). Sources: labs/ → scripts/build-labs.mjs.
 import { pageview } from "../analytics.js";
+import { LABS_V } from "../../labs/version.js";
 import { icon } from "../icons.js";
 import { md, mdInline } from "../md.js";
 import { canDictate, dictate } from "../speech.js";
@@ -173,13 +174,13 @@ let indexP = null;
 const cache = {};
 /** labs/index.json: { block, labs: [{ id, title, tickets, total, steps, repeat: { title, total } }] } */
 export function labIndex() {
-  return (indexP ||= fetch("labs/index.json")
+  return (indexP ||= fetch(`labs/index.json?v=${LABS_V}`)
     .then((r) => (r.ok ? r.json() : { labs: [] }))
     .catch(() => ((indexP = null), { labs: [] })));
 }
 async function loadLab(id) {
   if (cache[id]) return cache[id];
-  const r = await fetch(`labs/${id}.json`);
+  const r = await fetch(`labs/${id}.json?v=${LABS_V}`);
   if (!r.ok) throw new Error(r.status);
   return (cache[id] = await r.json());
 }
