@@ -293,38 +293,34 @@
   font-size: 11px;
   color: var(--dim2);
 }
-.v-lab .lab:not([data-pane="all"]) [data-pane]:not(.lab) {
+.v-lab .ldo:not([data-pane="all"]) [data-pane]:not(.ldo) {
   display: none;
 }
-.v-lab .lab.lab[data-pane="task"] [data-pane="task"],
-.v-lab .lab.lab[data-pane="code"] [data-pane="code"],
-.v-lab .lab.lab[data-pane="tests"] [data-pane="tests"],
-.v-lab .lab.lab[data-pane="talk"] [data-pane="talk"] {
+.v-lab .ldo.ldo[data-pane="task"] [data-pane="task"],
+.v-lab .ldo.ldo[data-pane="code"] [data-pane="code"],
+.v-lab .ldo.ldo[data-pane="tests"] [data-pane="tests"],
+.v-lab .ldo.ldo[data-pane="talk"] [data-pane="talk"] {
   display: block;
 }
-.v-lab .lab.lab[data-pane="code"] .ledit[data-pane="code"] {
+.v-lab .ldo.ldo[data-pane="code"] .ledit[data-pane="code"] {
   display: flex;
 }
 .v-lab .lgrid {
   margin-top: 18px;
 }
-.v-lab .lab[data-pane="all"] .lpanes {
+.v-lab .ldo[data-pane="all"] .lpanes {
   display: none;
 }
 @media (min-width: 1100px) {
   .v-lab .lgrid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    grid-template-areas: "mat work" "prod work";
-    grid-template-rows: auto 1fr;
+    grid-template-areas: "mat work";
     gap: 0 32px;
     align-items: start;
   }
   .v-lab .lmat {
     grid-area: mat;
-  }
-  .v-lab .lprod {
-    grid-area: prod;
   }
   .v-lab .lwork {
     grid-area: work;
@@ -335,12 +331,12 @@
     flex-direction: column;
     gap: 12px;
   }
-  .v-lab .lab[data-pane="all"] .ledit {
+  .v-lab .ldo[data-pane="all"] .ledit {
     display: flex;
     flex: 1.3;
     min-height: 0;
   }
-  .v-lab .lab[data-pane="all"] .lres {
+  .v-lab .ldo[data-pane="all"] .lres {
     flex: 1;
     min-height: 0;
     overflow: auto;
@@ -476,7 +472,7 @@
   overflow: hidden;
   position: relative;
 }
-.v-lab .lab:not([data-pane="all"]) .ledit {
+.v-lab .ldo:not([data-pane="all"]) .ledit {
   height: calc(100dvh - 190px);
   min-height: 360px;
 }
@@ -619,7 +615,7 @@
   background: var(--panel);
   padding: 12px 14px;
 }
-.v-lab .lab:not([data-pane="all"]) .lres {
+.v-lab .ldo:not([data-pane="all"]) .lres {
   margin-top: 0;
 }
 .v-lab .rspec {
@@ -828,6 +824,286 @@
   width: 15px;
   height: 15px;
 }
-.v-lab .lab[data-pane="all"] .gocode {
+.v-lab .ldo[data-pane="all"] .gocode {
   display: none;
+}
+
+/* ---- steps: Разбор → Повторение → Интервью ---- */
+.v-lab .lsteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 22px;
+}
+.v-lab .lsteps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.v-lab .lsteps button.on {
+  border-color: var(--accent);
+  background: rgba(255, 122, 89, 0.08);
+}
+.v-lab .lsteps .k {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--dim3);
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+.v-lab .lsteps button.on .k {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.v-lab .lsteps button.done .k {
+  border-color: var(--green);
+  background: var(--green);
+  color: #062b14;
+}
+.v-lab .lsteps .k svg {
+  width: 13px;
+  height: 13px;
+}
+.v-lab .lsteps .t {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.v-lab .lsteps .t b {
+  font-size: 14.5px;
+}
+.v-lab .lsteps .t small {
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 560px) {
+  .v-lab .lsteps button {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 9px 10px;
+  }
+  .v-lab .lsteps .t b {
+    font-size: 13.5px;
+  }
+}
+
+/* walkthrough: one readable column */
+.v-lab .lread {
+  max-width: 780px;
+}
+.v-lab .ltask {
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.v-lab .ltask .md p:last-child {
+  margin-bottom: 0;
+}
+.v-lab .wintro {
+  font-size: 16px;
+}
+.v-lab .wsteps {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.v-lab .wstep {
+  padding: 16px 18px 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  scroll-margin-top: 12px;
+}
+.v-lab .wnum {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.v-lab .wstep h2 {
+  margin: 4px 0 10px;
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+  line-height: 1.3;
+}
+.v-lab .wstep pre {
+  background: #0e1526;
+}
+.v-lab .md .wgreen,
+.v-lab .md .wtrap {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14.5px;
+}
+.v-lab .md .wgreen {
+  background: rgba(88, 214, 141, 0.1);
+  color: #bdf0d2;
+}
+.v-lab .md .wgreen b {
+  color: var(--green);
+}
+.v-lab .md .wtrap {
+  background: rgba(255, 193, 77, 0.1);
+  color: #f5dfb0;
+}
+.v-lab .md .wtrap b {
+  color: var(--amber);
+}
+.v-lab .wwhole {
+  margin: 18px 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.v-lab .wwhole > summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+.v-lab .wwhole > summary::-webkit-details-marker {
+  display: none;
+}
+.v-lab .wwhole > summary::after {
+  content: " ▾";
+  color: var(--dim);
+}
+.v-lab .wwhole > .md {
+  padding: 0 16px;
+}
+.v-lab .wwhole > .lbtn {
+  margin: 4px 16px 14px;
+}
+.v-lab .wres {
+  margin: 0 16px 16px;
+  background: var(--panel2);
+}
+.v-lab .lbtn.big {
+  height: 48px;
+  padding: 0 20px;
+  margin: 10px 0 40px;
+  font-size: 15px;
+}
+.v-lab .lbtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* repeat: exercise switch, checks, hints */
+.v-lab .exsw {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel2);
+}
+.v-lab .exsw button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.v-lab .exsw button.on {
+  background: var(--panel);
+  color: var(--fg);
+}
+.v-lab .extitle {
+  margin: 0 0 10px;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg);
+  line-height: 1.25;
+}
+.v-lab .checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.v-lab .checks li {
+  position: relative;
+  padding: 8px 12px 8px 30px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 14.5px;
+  color: var(--dim);
+}
+.v-lab .checks li::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dim3);
+}
+.v-lab .checks li b {
+  color: var(--fg);
+}
+.v-lab .hints {
+  margin: 0 0 10px;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14.5px;
+}
+.v-lab .hints:empty {
+  display: none;
+}
+.v-lab .hints li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(122, 162, 255, 0.08);
+  border: 1px solid rgba(122, 162, 255, 0.22);
+}
+.v-lab .peek {
+  margin: 0 0 20px;
+  font-size: 14px;
 }

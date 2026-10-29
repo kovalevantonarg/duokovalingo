@@ -57,7 +57,7 @@ export function wordsScreen(query) {
       <div class="wlist">${list.map((x) => row(x, x.key === openKey)).join("") || (all.length ? `<p class="wdim" style="padding:12px 4px">${ui().noMatch}</p>` : "")}</div>
       ${all.length ? `<p class="wfoot"><button class="lnk" id="csv">${ui().exportCsv}</button></p>` : ""}`,
     );
-    document.title = ui().dictKick;
+    document.title = `${ui().dictKick} · duokovalingo`;
     wire(view);
     if (openKey) view.querySelector(`details[open]`)?.scrollIntoView({ block: "center" });
   };

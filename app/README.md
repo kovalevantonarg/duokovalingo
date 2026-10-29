@@ -20,7 +20,10 @@ break, do a soft restart (forgotten tickets drop a level) or start over (`planAc
 schedule can also be paused. Time estimates (`js/timing.js`) start from a study pace for new material and switch
 to the person's own measured pace after a few lessons and sessions.
 
-**Labs** (the **Практика** tab: `#labs`, `#lab/<id>`). Practice for the tickets in code: a small
+**Labs** (the **Практика** tab: `#labs`, `#lab/<id>/<learn|do|talk>`). Three steps per lab: a walkthrough
+(`WALKTHROUGH.md`) that builds the solution step by step, a repeat task (`repeat/`: a similar problem with its own
+tests, starter and reference) written in the browser, and the production scenario answered out loud. Practice for
+the tickets in code: a small
 TypeScript task per lab with ready failing tests for the edge cases that break LLM products in production. The
 sources live in `labs/` at the repo root (a normal vitest project, `npm test` there works too);
 `node scripts/build-labs.mjs` turns them into `app/labs/*.json`. In the app the code is edited in CodeMirror and the
@@ -133,7 +136,7 @@ Supabase SQL Editor before deploying this version.
 ## Analytics
 
 Vercel Web Analytics (enable it in the project's Analytics tab). `index.html` loads `/_vercel/insights/script.js`
-with auto tracking off; `js/router.js` sends one page view per screen with the hash path (query parts dropped) and
-the route with ids folded (`/#t/[n]`). Speed Insights (`/_vercel/speed-insights/script.js`, enable it in the
+with auto tracking off; `js/analytics.js` sends one page view per screen: the hash route as a path without the `#`
+(`/t/12`, query parts dropped) and the route with ids folded (`/t/[n]`). Speed Insights (`/_vercel/speed-insights/script.js`, enable it in the
 Speed Insights tab) reports Core Web Vitals from real visits; the router keeps its `data-route` on the current
 screen so the vitals are grouped the same way. Nothing is sent from localhost.

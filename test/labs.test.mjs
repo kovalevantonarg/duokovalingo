@@ -29,8 +29,21 @@ test("lab progress: code, runs, best result, first green, solution opened", () =
   );
   applyLab(db, { id: "01", solution: true }, "2026-11-03");
   assert.equal(db.labs["01"].sol, "2026-11-03");
+  applyLab(db, { id: "01", read: true, talk: true }, "2026-11-03");
   assert.equal(resetLab(db, "01"), true);
-  assert.equal(db.labs["01"], undefined);
+  assert.deepEqual(
+    db.labs["01"],
+    { started: "2026-10-29", read: "2026-11-03", talk: "2026-11-03", last: "2026-11-03" },
+    "walkthrough and interview marks survive a reset",
+  );
+  assert.equal(
+    applyLab(db, { id: "01r", passed: 3, total: 13 }, "2026-11-04"),
+    true,
+    "the repeat task has its own record",
+  );
+  assert.equal(db.labs["01r"].passed, 3);
+  assert.equal(resetLab(db, "01r"), true);
+  assert.equal(db.labs["01r"], undefined);
 });
 
 test("lab README and tests parse into the app's lab format", () => {

@@ -23,7 +23,7 @@ import { fmtDate, frame, kbd, ticketRow, ui } from "../ui.js";
 import { sessionPlan } from "../games/session.js";
 import { lessonIndex } from "./learn.js";
 import { openResetPlan } from "./settings.js";
-import { labIndex } from "./labs.js";
+import { labIndex, labStatus } from "./labs.js";
 
 /** What a ticket in the list needs, in words: no day counts, no guilt. */
 function why(n) {
@@ -84,11 +84,13 @@ export function home() {
     });
   // a lab started and not finished yet: one tap back into it
   labIndex().then((idx) => {
-    const l = idx.labs.find((x) => state.db.labs?.[x.id] && !state.db.labs[x.id].green);
+    const l = idx.labs.find((x) => {
+      const s = labStatus(x);
+      return s.cls && !s.done;
+    });
     const el = document.getElementById("labHere");
     if (!l || !el) return;
-    const r = state.db.labs[l.id];
-    el.innerHTML = `<a class="card promo lab" href="#lab/${l.id}"><span class="pi">${icon.pen}</span><span class="pt"><b>${ui().labContinue(l.id, l.title)}</b><small>${ui().labTests(r.passed || 0, r.total || l.total)}</small></span>${icon.chev}</a>`;
+    el.innerHTML = `<a class="card promo lab" href="#lab/${l.id}"><span class="pi">${icon.code}</span><span class="pt"><b>${ui().labContinue(l.id, l.title)}</b><small>${ui().labNext} ${labStatus(l).txt}</small></span>${icon.chev}</a>`;
   });
   const go = () => (location.hash = plan.href);
   document.getElementById("go").onclick = go;

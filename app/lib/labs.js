@@ -1,6 +1,7 @@
 // @ts-check
 /**
- * Lab progress in the progress row: db.labs[id] = { code, at, passed, total, best, runs, started, last, green, sol }.
+ * Lab progress in the progress row: db.labs[id] = { code, at, passed, total, best, runs, started, last, green, sol,
+ * read, talk }. id "01" is the lab (its walkthrough and the original task), "01r" its repeat task.
  * The code is kept so a lab started on the laptop continues on the phone. Dates are YYYY-MM-DD.
  */
 import { isoDay } from "./srs.js";
@@ -14,7 +15,7 @@ export const MAX_CODE = 20000;
  */
 export function applyLab(db, b, today = isoDay()) {
   const id = String(b?.id || "");
-  if (!/^\d{2}$/.test(id)) return false;
+  if (!/^\d{2}r?$/.test(id)) return false; // "01": the walkthrough mark and the original lab; "01r": the repeat task
   const d = isDate(today) ? today : isoDay();
   db.labs ||= {};
   const rec = (db.labs[id] ||= { started: d });
@@ -35,6 +36,14 @@ export function applyLab(db, b, today = isoDay()) {
     rec.runs = (rec.runs || 0) + 1;
     changed = true;
   }
+  if (b.read && !rec.read) {
+    rec.read = d; // the walkthrough was read to the end
+    changed = true;
+  }
+  if (b.talk && !rec.talk) {
+    rec.talk = d; // the production scenario was answered
+    changed = true;
+  }
   if (b.solution && !rec.sol) {
     rec.sol = d;
     changed = true;
@@ -43,9 +52,13 @@ export function applyLab(db, b, today = isoDay()) {
   return changed;
 }
 
-/** Forget a lab's code and results (start it over); the record goes. */
+/** Start an exercise over: its code and results go; the walkthrough and interview marks stay. */
 export function resetLab(db, id) {
-  if (!db.labs?.[id]) return false;
-  delete db.labs[id];
+  const rec = db.labs?.[id];
+  if (!rec) return false;
+  const keep = {};
+  for (const k of ["read", "talk"]) if (rec[k]) keep[k] = rec[k];
+  if (Object.keys(keep).length) db.labs[id] = { started: rec.started, ...keep, last: rec.last };
+  else delete db.labs[id];
   return true;
 }

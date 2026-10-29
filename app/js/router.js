@@ -10,6 +10,7 @@ import { playTF } from "./games/true-false.js";
 import { playVoice } from "./games/voice.js";
 import { drawTicket, examScreen } from "./screens/exam.js";
 import { home } from "./screens/home.js";
+import { pageview } from "./analytics.js";
 import { labScreen, labsIndex } from "./screens/labs.js";
 import { lessonScreen, lessonsIndex } from "./screens/learn.js";
 import { loginScreen } from "./screens/login.js";
@@ -46,20 +47,6 @@ export function upgradeOldLink() {
   history.replaceState(null, "", "/#" + hash);
 }
 
-// one analytics page view per screen (Vercel Web Analytics, Speed Insights gets the same route): the path without query parts (no dictionary words leave the app),
-// the route with ids folded ("/#t/12" → "/#t/[n]") so the dashboard groups screens of one kind
-let lastView = "";
-function pageview(path) {
-  const clean = "/#" + path.split("?")[0];
-  if (clean === lastView) return;
-  lastView = clean;
-  const route = clean.replace(/\/\d+(?=\/|$)/g, "/[n]");
-  window.va?.("pageview", { route, path: clean });
-  // Speed Insights reads the route from its script tag when it reports (INP and CLS come in on leaving)
-  const si = document.getElementById("si");
-  if (si) si.dataset.route = route;
-}
-
 export function route() {
   closeSheet();
   state.leave?.(); // the screen being left saves what it tracks (lesson time, reading position)
@@ -67,11 +54,12 @@ export function route() {
   document.onkeydown = null;
   state.rerender = null;
   stopSpeaking();
+  document.title = "duokovalingo"; // screens that have a better title set their own
   if (state.needLogin) return loginScreen();
   const h = location.hash.slice(1) || "home";
   const [path, query] = h.split("?");
-  pageview(path);
   const [scr, a, b] = path.split("/");
+  if (!(scr === "lab" && a && !b)) pageview(path); // a lab page reports itself with its step
   // a round remembers where it was opened from, and returns there
   if (ROUNDS.has(scr) && !ROUNDS.has(prev.split("/")[0])) state.back = prev || "home";
   prev = h;
@@ -99,7 +87,7 @@ export function route() {
     case "labs":
       return labsIndex();
     case "lab":
-      return /^\d\d$/.test(a || "") ? labScreen(a) : labsIndex();
+      return /^\d\d$/.test(a || "") ? labScreen(a, b) : labsIndex();
     case "progress":
       return progress();
     case "words":

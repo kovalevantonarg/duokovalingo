@@ -112,3 +112,27 @@ test("it.each titles, matcher messages and the import map", async () => {
   );
   assert.throws(() => rewriteImports('import x from "lodash"', resolve, "x.ts"), /can't import "lodash"/);
 });
+
+// the repeat tasks (labs/labs/NN-*/repeat/*.test.ts) go through the same runner
+const repeats = readdirSync(new URL("labs/labs/", root))
+  .sort()
+  .filter((dir) => readdirSync(new URL(`labs/labs/${dir}/`, root)).includes("repeat"))
+  .map((dir) => {
+    const file = readdirSync(new URL(`labs/labs/${dir}/repeat/`, root)).find((f) => f.endsWith(".test.ts"));
+    const test = read(`labs/labs/${dir}/repeat/${file}`);
+    return { dir, file, test, module: test.match(/from ["']@lab\/([\w-]+)["']/)[1] };
+  });
+
+test("repeat tasks: all pass on their references, all fail on their stubs", async () => {
+  assert.ok(repeats.length >= 5);
+  for (const lab of repeats) {
+    const ok = await runLab(lab, `labs/solutions/${lab.module}.ts`);
+    assert.deepEqual(
+      ok.filter((r) => !r.ok).map((r) => `${r.name}: ${r.error}`),
+      [],
+      lab.dir,
+    );
+    const stub = await runLab(lab, `labs/src/${lab.module}.ts`);
+    assert.equal(stub.filter((r) => r.ok).length, 0, lab.dir + " stub");
+  }
+});

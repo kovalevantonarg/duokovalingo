@@ -61,7 +61,7 @@ const UI = {
   en: {
     home: "Home",
     all: "All lessons",
-    h1: "From zero",
+    h1: "Lessons",
     lead: "Every topic from the ground up: terms, mechanism, example, traps, self-check. Read the lesson first, then answer the ticket.",
     read: "read",
     new: "unread",
@@ -149,7 +149,7 @@ async function lesson(n) {
 export async function lessonsIndex() {
   const T = tickets();
   const view = frame(`<div class="wrap" id="main"></div>`, { scope: "v-learn", cls: "" });
-  document.title = L().h1;
+  document.title = `${L().h1} · duokovalingo`;
   const idx = await lessonIndex(),
     rd = readSet();
   if (!view.isConnected) return;
