@@ -51,4 +51,5 @@ export const CATALOG = [
   {"n":48,"sec":"web","core":[63]},
   {"n":49,"sec":"web","core":[64]},
   {"n":50,"sec":"web","core":[65]},
+  {"n":51,"sec":"react","core":[]},
 ];

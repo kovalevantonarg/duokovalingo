@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { transform } from "../app/vendor/sucrase.js";
 import { compileTs, labResolver, rewriteImports, CompileError } from "../app/js/labs/rewrite.js";
 import { __collect, __run } from "../app/js/labs/vitest-lite.js";
+import { parseTests } from "../scripts/build-labs.mjs";
 
 const root = new URL("..", import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), "utf8");
@@ -50,7 +51,10 @@ async function runLab(lab, codePath) {
   return results;
 }
 
-test("vitest-lite passes all 65 lab tests against the reference solutions", async () => {
+// the count the app shows before the first run (parsed from the source) must match what actually runs
+const expected = () => labs.reduce((a, l) => a + parseTests(l.test).length, 0);
+
+test("vitest-lite passes every lab test against the reference solutions", async () => {
   let total = 0;
   for (const lab of labs) {
     const results = await runLab(lab, `labs/solutions/${lab.module}.ts`);
@@ -58,7 +62,7 @@ test("vitest-lite passes all 65 lab tests against the reference solutions", asyn
     assert.deepEqual(failed, [], lab.dir);
     total += results.length;
   }
-  assert.equal(total, 65);
+  assert.equal(total, expected());
 });
 
 test("against the stubs every test fails with the lab's TODO error, readable, no crash", async () => {
@@ -73,7 +77,7 @@ test("against the stubs every test fails with the lab's TODO error, readable, no
     }
     total += results.length;
   }
-  assert.equal(total, 65);
+  assert.equal(total, expected());
 });
 
 test("it.each titles, matcher messages and the import map", async () => {

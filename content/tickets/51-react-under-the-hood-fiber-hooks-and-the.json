@@ -1,0 +1,472 @@
+{
+  "n": 51,
+  "tag": "Frontend · React",
+  "sec": "react",
+  "core": [],
+  "ru": {
+    "topic": "React под капотом: fiber, хуки и очередь обновлений",
+    "qs": [
+      "Как useState работает под капотом: где живёт state, почему хуки нужно вызывать в одном и том же порядке и что на самом деле делает setState?",
+      "Что такое fiber в React и чем render phase отличается от commit phase? Зачем React держит два дерева и почему рендер обязан быть чистым?",
+      "Таймер в useEffect с пустым массивом зависимостей раз в секунду вызывает setCount(count + 1), и счётчик застревает на 1. А console.log в теле компонента в разработке печатает всё дважды. Объясни оба эффекта через устройство React и почини."
+    ],
+    "a": [
+      {
+        "q": "Где живёт state и что делает setState",
+        "t": "У каждого экземпляра компонента есть fiber (файбер, внутренний объект React), и его поле memoizedState указывает на связный список хуков: по узлу на каждый вызов, в порядке вызова. Узел useState хранит текущее значение и очередь ожидающих обновлений. Имён у хуков нет: на каждом рендере курсор идёт по списку, и второй вызов хука получает второй узел. Отсюда правила хуков. Если вызвать хук в условии, следующие хуки прочитают узел соседа, и React обычно бросает «Rendered more hooks than during the previous render». Set-функция при монтировании привязывается к этому fiber и очереди, поэтому она стабильна. Вызов set не меняет переменную. Он создаёт update с lane (полосой приоритета, битом в маске): клик получает синхронную полосу, startTransition полосу перехода. Update ложится в очередь хука, и React планирует рендер корня. Если других обновлений нет и новое значение равно старому по Object.is, React выходит, не планируя рендер. Сам рендер откладывается в microtask (микрозадачу) или задачу планировщика, поэтому set-вызовы одного синхронного куска кода дают один рендер: это автоматический batching с React 18. На следующем рендере useState применяет очередь по порядку и пропускает обновления, чья полоса сейчас не рендерится. Всё это внутренности React 18 и 19."
+      },
+      {
+        "q": "Fiber, render и commit",
+        "t": "Fiber это обычный объект на каждый экземпляр компонента или DOM-узел: тип, key, props, state и хуки, плюс ссылки child, sibling и return, то есть первый ребёнок, сосед и родитель. React обходит это связное дерево циклом, а не рекурсией, и именно это делает рендер прерываемым: каждый fiber это единица работы, и в concurrent rendering (конкурентном рендеринге) React может между единицами уступить поток браузеру, потом продолжить или выбросить работу. Деревьев два. Current это то, что на экране. Work-in-progress (черновик) собирается во время рендера клонированием fiber через поле alternate, и в исходниках это прямо названо double buffering (двойной буферизацией). В render phase React вызывает компоненты, сверяет возвращённые элементы с текущими детьми по типу и key и помечает изменения. DOM не тронут. Commit phase идёт синхронно, за один проход: изменения в DOM, переключение root.current на готовое дерево, refs и layout effects до отрисовки кадра, а useEffect планируется на потом, обычно после отрисовки. Раз рендер можно повторить, приостановить или выбросить, он обязан быть чистым, и StrictMode (проверочный режим) в разработке вызывает компонент дважды, чтобы это поймать. Ловушка: считать рендер обновлением DOM. Рендер вычисляет разницу, commit её применяет."
+      },
+      {
+        "q": "Залипший таймер и двойной лог",
+        "t": "Обе вещи следуют из одного: каждый рендер это отдельный вызов функции со своими константами. С пустым массивом зависимостей эффект запускается один раз после первого commit, и callback интервала замыкает count того рендера, то есть ноль навсегда. Каждый тик вызывает setCount(0 + 1). После первого тика state равен единице, дальше React получает ту же единицу, видит равенство по Object.is и выходит, так что счётчик стоит на единице. Исправление: setCount(c => c + 1). Функция обновления не читает замыкание, React передаёт ей последнее значение из очереди. Если callback нужны другие свежие значения, я добавляю их в зависимости, и интервал перезапускается, или выношу чтение в useEffectEvent, он стабилен с React 19.2. Ref как первый шаг я не беру. Двойной лог это StrictMode: в разработке React вызывает тело компонента дважды, причём в React 19 второй вызов переиспользует хуки первого, так что useMemo не пересчитывается. При монтировании он ещё прогоняет эффект лишний раз: setup, cleanup, setup, и без clearInterval в cleanup остались бы два интервала. В продакшене вызов один. Если двойной запуск что-то ломает, баг в нечистом рендере или в отсутствующей очистке. И запись того же значения иногда всё же вызывает сам компонент, прежде чем React пропустит детей. Это описано в документации и безвредно."
+      }
+    ],
+    "kill": "<b>«state хранится в самом компоненте, а setState сразу меняет его и перерисовывает»</b>: state живёт в fiber, в списке хуков по порядку вызова, а setState только кладёт update с приоритетом (lane) в очередь, и новое значение появится в следующем рендере."
+  },
+  "en": {
+    "topic": "React under the hood: fiber, hooks and the update queue",
+    "qs": [
+      "How does useState actually work under the hood: where does the state live, why must hooks be called in the same order, and what does setState really do?",
+      "What is a fiber in React, and how is the render phase different from the commit phase? Why does React keep two trees, and why must rendering be pure?",
+      "A timer in a useEffect with an empty dependency array calls setCount(count + 1) every second, and the counter gets stuck at 1. And a console.log in the component body prints everything twice in development. Explain both through how React works inside, and fix them."
+    ],
+    "a": [
+      {
+        "q": "Where state lives and what setState does",
+        "t": "Every component instance has a fiber, React's internal object for it, and its memoizedState field points to a linked list of hooks: one node per hook call, in call order. A useState node holds the current value and a queue of pending updates. Hooks have no names: on every render a cursor walks the list, so the second hook call gets the second node. That's why the rules of hooks exist. Call one inside a condition and later hooks read their neighbour's node, so React usually throws 'Rendered more hooks than during the previous render'. The setter is bound to that fiber and queue at mount, which is why it's stable. Calling it doesn't touch the variable. It creates an update with a lane, a priority bit in a bitmask: a click gets the sync lane, startTransition a transition lane. The update joins the hook's queue and React schedules a render of the root. If nothing else is pending and the new value is equal by Object.is, React bails out without scheduling. The render is deferred to a microtask or a scheduler task, so setters in the same synchronous code share one render: that's automatic batching since React 18. On the next render useState applies the queue in order, skipping updates whose lane isn't being rendered. All of this is internal as of React 18 and 19."
+      },
+      {
+        "q": "Fiber, render and commit",
+        "t": "A fiber is a plain object per component instance or DOM node: type, key, props, state and hooks, plus child, sibling and return pointers, meaning first child, next sibling and parent. React walks this linked tree with a loop instead of recursion, and that's what makes rendering interruptible: each fiber is a unit of work, so in concurrent rendering React can yield to the browser between units, then resume or throw the work away. There are two trees. Current is what's on screen. Work-in-progress is the draft built during a render by cloning fibers through their alternate field; the source literally calls it double buffering. In the render phase React calls components, reconciles the returned elements against the current children by type and key, and flags what changed. The DOM is untouched. The commit phase runs synchronously in one pass: DOM changes, root.current flips to the finished tree, refs and layout effects before paint, and useEffect scheduled for later, usually after paint. Since a render can be repeated, paused or discarded, it must be pure, and StrictMode calls components twice in development to catch that. The trap is treating render as a DOM update. Render computes the difference, commit applies it."
+      },
+      {
+        "q": "The stuck timer and the double log",
+        "t": "Both come from one idea: every render is a separate function call with its own constants. With an empty dependency array the effect runs once after the first commit, and the interval callback closes over count from that render, which is zero forever. Every tick calls setCount(0 + 1). After the first tick state is one, then React gets one again, sees it's equal by Object.is and bails out, so the counter sits at one. The fix is setCount(c => c + 1): the updater doesn't read the closure, React hands it the latest queued value. If the callback needs other fresh values, I list them as dependencies and let the interval restart, or move the read into useEffectEvent, stable since React 19.2. A ref isn't my first move. The double log is StrictMode: in development React calls the component body twice, and in React 19 the second call reuses the first call's hooks, so useMemo doesn't recompute. On mount it also runs an extra setup, cleanup, setup cycle for effects; without clearInterval in the cleanup you'd get two intervals. Production calls it once. If the double run breaks something, the bug is an impure render or a missing cleanup. And setting the same value can still call the component once before React skips the children. That's documented and harmless."
+      }
+    ],
+    "kill": "<b>\"State is stored inside the component, and setState changes it and re-renders right away\"</b>: state lives on the fiber, in a list of hooks ordered by call; setState only puts an update with a priority lane into a queue, and the new value shows up in the next render."
+  },
+  "drills": {
+    "tf": {
+      "ru": [
+        {
+          "s": "React хранит state хуков функционального компонента в связном списке, на который указывает поле memoizedState его fiber.",
+          "ok": true,
+          "why": "Каждый вызов хука добавляет узел с полем next, и на рендере курсор идёт по списку в порядке вызова. Это внутреннее устройство React 18 и 19."
+        },
+        {
+          "s": "React сопоставляет вызов useState с его state по имени переменной, в которую ты деструктурируешь результат.",
+          "ok": false,
+          "why": "Имён React не видит. Хук узнаётся только по позиции в порядке вызова, поэтому порядок должен совпадать на каждом рендере."
+        },
+        {
+          "s": "Вызов setCount(5) сразу записывает 5 в переменную count, а следующий рендер только показывает её на экране.",
+          "ok": false,
+          "why": "Set кладёт update в очередь. Переменная этого рендера не меняется, новое значение React вычислит на следующем рендере."
+        },
+        {
+          "s": "Set-функция из useState одна и та же на всех рендерах, поэтому её можно не указывать в зависимостях эффекта.",
+          "ok": true,
+          "why": "Она привязывается к fiber и очереди хука при монтировании. Документация называет её стабильной и разрешает не включать в зависимости."
+        },
+        {
+          "s": "Если у компонента нет ожидающих обновлений и новое значение равно текущему по Object.is, React может выйти, даже не запланировав рендер.",
+          "ok": true,
+          "why": "Это eager state: React считает значение прямо в set-вызове и при равенстве не планирует работу."
+        },
+        {
+          "s": "Lane в React это отдельный поток (thread), в котором рендерятся обновления с этим приоритетом.",
+          "ok": false,
+          "why": "Lane это бит в 31-битной маске приоритетов. Рендер идёт в одном главном потоке JS, а lanes решают, какие обновления взять в этот рендер."
+        },
+        {
+          "s": "Commit phase в конкурентном режиме можно прервать посередине, чтобы обработать ввод пользователя.",
+          "ok": false,
+          "why": "Прерываться может только render phase. Commit идёт за один проход, иначе пользователь увидел бы наполовину обновлённый DOM."
+        },
+        {
+          "s": "При рендере срочной полосы React может пропустить в очереди хука обновление из перехода и применить его позже, сохранив порядок.",
+          "ok": true,
+          "why": "Пропущенное обновление остаётся в базовой очереди хука и применяется, когда рендерится его полоса. Порядок обновлений при этом не меняется."
+        },
+        {
+          "s": "React держит два дерева fiber: current на экране и work-in-progress, которое строится во время рендера; они связаны полем alternate.",
+          "ok": true,
+          "why": "В исходниках это названо double buffering. После мутаций DOM в commit root.current переключается на готовое дерево."
+        },
+        {
+          "s": "В useEffect с пустым массивом зависимостей setInterval(() => setCount(count + 1), 1000) увеличивает счётчик каждую секунду.",
+          "ok": false,
+          "why": "Callback замкнул count первого рендера, то есть 0, и каждый тик пишет 1. Нужна функция обновления c => c + 1."
+        },
+        {
+          "s": "StrictMode вызывает компоненты дважды и в продакшен-сборке, поэтому его стоит убирать перед релизом.",
+          "ok": false,
+          "why": "Все проверки StrictMode работают только в разработке. В продакшене компонент вызывается один раз."
+        },
+        {
+          "s": "Вызов хука внутри условия может закончиться ошибкой «Rendered more hooks than during the previous render».",
+          "ok": true,
+          "why": "Если на этом рендере хуков больше, чем узлов в списке прошлого, React не находит узел для лишнего вызова и бросает ошибку."
+        }
+      ],
+      "en": [
+        {
+          "s": "React stores a function component's hook state in a linked list that the memoizedState field of its fiber points to.",
+          "ok": true,
+          "why": "Each hook call adds a node with a next field, and during a render a cursor walks the list in call order. This is React 18 and 19 internals."
+        },
+        {
+          "s": "React matches a useState call to its state by the name of the variable you destructure the result into.",
+          "ok": false,
+          "why": "React never sees names. A hook is identified only by its position in the call order, so the order must match on every render."
+        },
+        {
+          "s": "Calling setCount(5) writes 5 into the count variable immediately, and the next render just puts it on screen.",
+          "ok": false,
+          "why": "The setter queues an update. This render's variable never changes; React computes the new value during the next render."
+        },
+        {
+          "s": "The setter returned by useState is the same function on every render, so you can leave it out of effect dependencies.",
+          "ok": true,
+          "why": "It's bound to the fiber and the hook's queue at mount. The docs call it stable and allow omitting it from dependencies."
+        },
+        {
+          "s": "If a component has no pending updates and the new value equals the current one by Object.is, React can bail out without even scheduling a render.",
+          "ok": true,
+          "why": "That's eager state: React computes the value inside the setter call and, if it's equal, schedules no work."
+        },
+        {
+          "s": "A lane in React is a separate thread that renders the updates of that priority.",
+          "ok": false,
+          "why": "A lane is a bit in a 31-bit priority bitmask. Rendering runs on the single main JS thread; lanes decide which updates go into this render."
+        },
+        {
+          "s": "In concurrent mode the commit phase can be interrupted halfway to handle user input.",
+          "ok": false,
+          "why": "Only the render phase is interruptible. The commit runs in one pass, or the user would see a half-updated DOM."
+        },
+        {
+          "s": "While rendering an urgent lane, React can skip a transition update in a hook's queue and apply it later, keeping the order intact.",
+          "ok": true,
+          "why": "The skipped update stays in the hook's base queue and is applied when its lane renders. The order of updates is preserved."
+        },
+        {
+          "s": "React keeps two fiber trees, current on screen and work-in-progress built during a render, linked by the alternate field.",
+          "ok": true,
+          "why": "The source calls this double buffering. After the DOM mutations in the commit, root.current flips to the finished tree."
+        },
+        {
+          "s": "Inside a useEffect with an empty dependency array, setInterval(() => setCount(count + 1), 1000) increments the counter every second.",
+          "ok": false,
+          "why": "The callback closed over count from the first render, which is 0, so every tick writes 1. You need the updater c => c + 1."
+        },
+        {
+          "s": "StrictMode calls components twice in the production build as well, so you should remove it before a release.",
+          "ok": false,
+          "why": "All StrictMode checks are development-only. In production the component is called once."
+        },
+        {
+          "s": "Calling a hook inside a condition can end in the error 'Rendered more hooks than during the previous render'.",
+          "ok": true,
+          "why": "If this render calls more hooks than the previous render's list has nodes, React finds no node for the extra call and throws."
+        }
+      ]
+    },
+    "cloze": {
+      "ru": [
+        "Хуки компонента хранятся в [[связном списке|списке]] на его fiber, и React узнаёт каждый хук по [[порядку вызова|порядку вызовов]].",
+        "React держит два дерева: [[current]] на экране и [[work-in-progress|work in progress]], которое строится во время рендера.",
+        "Если новое значение равно текущему по [[Object.is]], React пропускает рендер детей."
+      ],
+      "en": [
+        "A component's hooks are stored in a [[linked list|list]] on its fiber, and React identifies each hook by its [[call order|order of calls]].",
+        "React keeps two trees: [[current]] on screen and [[work-in-progress|work in progress]], built during a render.",
+        "If the new value equals the current one by [[Object.is]], React skips rendering the children."
+      ]
+    },
+    "steps": {
+      "ru": {
+        "title": "От setState до экрана",
+        "items": [
+          "Set-вызов создаёт update и даёт ему lane (приоритет)",
+          "Update ложится в очередь хука, React планирует рендер корня",
+          "Render: useState применяет обновления из очереди по порядку",
+          "Reconciliation: новые элементы сверяются с деревом current",
+          "Commit: мутации DOM, root.current переключается на новое дерево",
+          "Layout effects до отрисовки, useEffect обычно после"
+        ]
+      },
+      "en": {
+        "title": "From setState to screen",
+        "items": [
+          "The setter creates an update and gives it a lane (priority)",
+          "The update joins the hook's queue; React schedules a root render",
+          "Render: useState applies the queued updates in order",
+          "Reconciliation: new elements are diffed against the current tree",
+          "Commit: DOM mutations, root.current flips to the new tree",
+          "Layout effects run before paint, useEffect usually after"
+        ]
+      }
+    }
+  },
+  "sources": [
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Hook state lives in a linked list on the fiber's memoizedState field (internal, React 18/19)",
+      "e": "Source comment: 'Hooks are stored as a linked list on the fiber's memoizedState field.' Hook = {memoizedState, baseState, baseQueue, queue, next}.",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Hooks are identified by call order, not by name; that is why the rules of hooks exist",
+      "e": "'Hooks rely on a stable call order on every render of the same component.' Rules: don't call Hooks inside loops, conditions, nested functions, or try/catch/finally.",
+      "u": [
+        "https://react.dev/learn/state-a-components-memory",
+        "https://react.dev/reference/rules/rules-of-hooks"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "A changed hook count throws 'Rendered more hooks than during the previous render' (or 'Rendered fewer hooks than expected')",
+      "e": "updateWorkInProgressHook throws 'Rendered more hooks than during the previous render.'; renderWithHooks throws 'Rendered fewer hooks than expected. This may be caused by an accidental early return statement.'",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "The setter is bound to the fiber and queue at mount, so it's stable",
+      "e": "mountState: dispatchSetState.bind(null, currentlyRenderingFiber, queue). Docs: the set function is stable, guaranteed not to change on a re-render.",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js",
+        "https://react.dev/learn/lifecycle-of-reactive-effects"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "setState creates an update with a lane, enqueues it and schedules the root",
+      "e": "dispatchSetState: lane = requestUpdateLane(fiber); update = {lane, action, hasEagerState, eagerState, next}; enqueueConcurrentHookUpdate; scheduleUpdateOnFiber(root, fiber, lane).",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Lanes are bits in a 31-bit mask; a click maps to SyncLane, startTransition to a transition lane, updates outside events to DefaultLane",
+      "e": "TotalLanes = 31; DiscreteEventPriority = SyncLane ('click', 'keydown'); requestUpdateLane returns requestTransitionLane inside a transition; no window.event → DefaultEventPriority.",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberLane.js",
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactEventPriorities.js",
+        "https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/events/ReactDOMEventListener.js",
+        "https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/client/ReactDOMUpdatePriority.js",
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberWorkLoop.js"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Eager bail-out: with no pending updates and an Object.is-equal result, React doesn't schedule a render",
+      "e": "'The queue is currently empty, which means we can eagerly compute the next state... Fast path. We can bail out without scheduling React to re-render.'",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "Render is deferred to a microtask or a scheduler task, so setters in the same synchronous code are batched; automatic since React 18 with createRoot",
+      "e": "ensureRootIsScheduled 'ensures there's a pending microtask to process the root schedule'; sync work is flushed at the end of the microtask. 'Starting in React 18 with createRoot, all updates will be automatically batched, no matter where they originate from.'",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberRootScheduler.js",
+        "https://github.com/reactwg/react-18/discussions/21"
+      ]
+    },
+    {
+      "w": [
+        0
+      ],
+      "s": "ok",
+      "c": "On render, the queue is applied in order; updates with insufficient lane priority are skipped and kept in the base queue",
+      "e": "updateReducerImpl: '// Priority is insufficient. Skip this update.' Skipped updates are cloned into newBaseQueue; useState is updateReducer(basicStateReducer).",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "A fiber is a unit of work with child, sibling and return pointers",
+      "e": "'A fiber represents a unit of work.' 'The return fiber... can also be thought of as the parent fiber.' 'The child fibers form a singly-linked list whose head is the first child.'",
+      "u": [
+        "https://github.com/acdlite/react-fiber-architecture"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Two trees, current and work-in-progress, linked by alternate; the source calls it double buffering",
+      "e": "'At any time, a component instance has at most two fibers that correspond to it: the current, flushed fiber, and the work-in-progress fiber.' createWorkInProgress: 'We use a double buffering pooling technique.'",
+      "u": [
+        "https://github.com/acdlite/react-fiber-architecture",
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiber.js"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Concurrent rendering can pause or abandon a render; the DOM is mutated only at the end",
+      "e": "'React may start rendering an update, pause in the middle, then continue later. It may even abandon an in-progress render altogether... it waits to perform DOM mutations until the end, once the entire tree has been evaluated.'",
+      "u": [
+        "https://react.dev/blog/2022/03/29/react-v18"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "Commit: mutations, then root.current flips, then layout effects; passive effects later",
+      "e": "'The work-in-progress tree is now the current tree. This must come after the mutation phase... but before the layout phase.' root.current = finishedWork.",
+      "u": [
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberWorkLoop.js"
+      ]
+    },
+    {
+      "w": [
+        1
+      ],
+      "s": "ok",
+      "c": "useEffect usually runs after paint, but may run before paint for an interaction",
+      "e": "'If your Effect is caused by an interaction (like a click), React may run your Effect before the browser paints the updated screen.'",
+      "u": [
+        "https://react.dev/reference/react/useEffect"
+      ]
+    },
+    {
+      "w": [
+        1,
+        2
+      ],
+      "s": "ok",
+      "c": "StrictMode re-renders components an extra time, development only",
+      "e": "'Your components will re-render an extra time to find bugs caused by impure rendering.' 'All of these checks are development-only and do not impact the production build.'",
+      "u": [
+        "https://react.dev/reference/react/StrictMode"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "A state variable is fixed per render; the closure sees that render's value",
+      "e": "'A state variable's value never changes within a render, even if its event handler's code is asynchronous.'",
+      "u": [
+        "https://react.dev/learn/state-as-a-snapshot"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Interval with setCount(count + 1) vs updater setCount(c => c + 1)",
+      "e": "Docs example: to update count from inside the Effect without depending on count, 'use the updater function and write setCount(c => c + 1) instead of setCount(count + 1)'.",
+      "u": [
+        "https://react.dev/learn/removing-effect-dependencies"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "useEffectEvent is stable in React 19.2 and reads the latest values without re-running the Effect",
+      "e": "React 19.2 adds useEffectEvent. 'Effect Events... always \"see\" the latest values from render (like props and state) without re-synchronizing your Effect.'",
+      "u": [
+        "https://react.dev/blog/2025/10/01/react-19-2",
+        "https://react.dev/reference/react/useEffectEvent"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "In React 19 the StrictMode double render reuses hook state, so useMemo/useCallback results are reused",
+      "e": "'When double rendering in Strict Mode in development, useMemo and useCallback will reuse the memoized results from the first render during the second render.' Source: 'during the second invocation of the component, the hook state from the first invocation will be reused.'",
+      "u": [
+        "https://react.dev/blog/2024/04/25/react-19-upgrade-guide",
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberHooks.js"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "StrictMode runs Effects an extra setup/cleanup cycle on mount",
+      "e": "'Your components will re-run Effects an extra time to find bugs caused by missing Effect cleanup.'",
+      "u": [
+        "https://react.dev/reference/react/StrictMode"
+      ]
+    },
+    {
+      "w": [
+        2
+      ],
+      "s": "ok",
+      "c": "Setting the same value may still call the component once before skipping the children",
+      "e": "'Although in some cases React may still need to call your component before skipping the children, it shouldn't affect your code.' Verified on React 19.3: stuck interval rendered once more on the second tick, then nothing.",
+      "u": [
+        "https://react.dev/reference/react/useState",
+        "https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactFiberBeginWork.js"
+      ]
+    },
+    {
+      "w": [
+        "k"
+      ],
+      "s": "ok",
+      "c": "The setter only updates the variable for the next render",
+      "e": "'The set function only updates the state variable for the next render. If you read the state variable after calling the set function, you will still get the old value.'",
+      "u": [
+        "https://react.dev/reference/react/useState"
+      ]
+    }
+  ]
+}

@@ -210,9 +210,20 @@ function build() {
       repeat: repeat ? { title: repeat.title, total: repeat.total } : null,
     });
   }
-  // the block structure from the root README ("## Блок 1: ядро агента")
-  const block = (read("README.md").match(/^##\s+(Блок.+)$/m) || [])[1] || "";
-  writeFileSync(new URL("index.json", OUT), JSON.stringify({ block, labs: index }));
+  // blocks from the root README: "## Блок 1: ядро агента" followed by a table whose rows start with the lab number
+  const blocks = [];
+  let cur = null;
+  for (const l of read("README.md").split("\n")) {
+    const h = l.match(/^##\s+(Блок.+)$/);
+    if (h) blocks.push((cur = { title: h[1].trim(), ids: [] }));
+    else if (/^##\s/.test(l)) cur = null;
+    const row = cur && l.match(/^\|\s*(\d\d)\b/);
+    if (row) cur.ids.push(row[1]);
+  }
+  const known = new Set(blocks.flatMap((b) => b.ids));
+  const rest = index.filter((l) => !known.has(l.id)).map((l) => l.id);
+  if (rest.length) blocks.push({ title: "", ids: rest });
+  writeFileSync(new URL("index.json", OUT), JSON.stringify({ blocks, labs: index }));
   // a content hash the app puts into the JSON URLs: a new build is a new URL, so no cache serves an old lab
   const hash = createHash("sha256");
   for (const f of readdirSync(OUT)

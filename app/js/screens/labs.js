@@ -172,7 +172,7 @@ const L = () => UI[state.lang];
 
 let indexP = null;
 const cache = {};
-/** labs/index.json: { block, labs: [{ id, title, tickets, total, steps, repeat: { title, total } }] } */
+/** labs/index.json: { blocks: [{ title, ids }], labs: [{ id, title, tickets, total, steps, repeat: { title, total } }] } */
 export function labIndex() {
   return (indexP ||= fetch(`labs/index.json?v=${LABS_V}`)
     .then((r) => (r.ok ? r.json() : { labs: [] }))
@@ -226,8 +226,13 @@ export async function labsIndex() {
   $("#main").innerHTML =
     `<div class="kick">${L().kick}</div><h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
     <div class="sumbar"><div class="track"><div class="fill" style="width:${idx.labs.length ? Math.round((done / idx.labs.length) * 100) : 0}%"></div></div><span>${done}/${idx.labs.length} ${L().green}</span></div>
-    ${idx.block ? `<div class="sech"><span>${esc(idx.block)}</span><span></span></div>` : ""}
-    <div class="labs">${idx.labs.map(labRow).join("")}</div>`;
+    ${(idx.blocks || [{ title: "", ids: idx.labs.map((l) => l.id) }])
+      .map((b) => {
+        const ls = b.ids.map((x) => idx.labs.find((l) => l.id === x)).filter(Boolean);
+        const done = ls.filter((l) => labStatus(l).done).length;
+        return `${b.title ? `<div class="sech"><span>${esc(b.title)}</span><span>${done}/${ls.length}</span></div>` : ""}<div class="labs">${ls.map(labRow).join("")}</div>`;
+      })
+      .join("")}`;
 }
 
 // ---- #lab/<id> ----
