@@ -10,6 +10,8 @@
     "test": "node --test \"test/*.test.mjs\"",
     "check:content": "node scripts/check-content.mjs",
     "lessons:index": "node scripts/build-lesson-index.mjs",
+    "labs:build": "node scripts/build-labs.mjs",
+    "vendor:build": "node scripts/build-vendor.mjs",
     "serve": "node today.mjs serve",
     "format": "npx --yes prettier@3 --write \"app/**/*.{js,css,html}\" \"scripts/*.mjs\" \"test/*.mjs\" --ignore-path .gitignore"
   }

@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join, extname } from "node:path";
 import { checkPrompt, parseJson, GRADE_BODY, WORD_BODY } from "./app/api/_grade.js";
 import { applyLookup, wordKey, wordOp } from "./app/lib/words.js";
+import { applyLab, resetLab } from "./app/lib/labs.js";
 import {
   applyHit,
   dueTickets,
@@ -208,6 +209,11 @@ function serve(port) {
       if ("doubt" in b) flags.doubt = !!b.doubt;
       if ("read" in b) flags.read = !!b.read;
       if (setFlags(db, b.n, flags, b.d)) save();
+      return json(res, 200, out());
+    }
+    if (req.method === "POST" && p === "/api/lab") {
+      const b = await body(req);
+      if (b.reset ? resetLab(db, String(b.id)) : applyLab(db, b, b.d || TODAY)) save();
       return json(res, 200, out());
     }
     if (req.method === "POST" && p === "/api/words") {

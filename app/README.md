@@ -20,6 +20,15 @@ break, do a soft restart (forgotten tickets drop a level) or start over (`planAc
 schedule can also be paused. Time estimates (`js/timing.js`) start from a study pace for new material and switch
 to the person's own measured pace after a few lessons and sessions.
 
+**Labs** (`#labs`, `#lab/<id>`, a switch at the top of the Lessons tab). Practice for the tickets in code: a small
+TypeScript task per lab with ready failing tests for the edge cases that break LLM products in production. The
+sources live in `labs/` at the repo root (a normal vitest project, `npm test` there works too);
+`node scripts/build-labs.mjs` turns them into `app/labs/*.json`. In the app the code is edited in CodeMirror and the
+same tests run in the browser: `js/labs/run.js` starts a module worker per run that compiles TS with sucrase,
+links the modules as blobs and runs them on `js/labs/vitest-lite.js` (the vitest subset the labs use), with a
+timeout for endless loops. Code and results sync through the progress row (`lib/labs.js`, `/api/lab`). Vendor
+bundles in `app/vendor/` (sucrase, zod, CodeMirror) are rebuilt with `node scripts/build-vendor.mjs`.
+
 **Personal dictionary.** Selecting an English word or short phrase anywhere in the app shows a "В словарь"
 button (`js/vocab.js`). The word is saved with the sentence it came from and the ticket; the API asks the model
 for a Russian translation in that sense, a short definition, IPA and the base form (cached per word, counts
@@ -32,7 +41,7 @@ ask to pick the translation, shaky ones to fill the gap in their own sentence, k
 a miss comes back at the end in an easier form. The result sets the word's interval (same rules as tickets).
 `#wplay/more` practises the weakest words without touching their schedule.
 
-Hash routes: `#home`, `#tickets`, `#t/<n>`, `#ref/<n>` (reference, sources, past attempts), `#learn`, `#learn/<n>`, `#words`, `#progress`; full-screen
+Hash routes: `#home`, `#tickets`, `#t/<n>`, `#ref/<n>` (reference, sources, past attempts), `#learn`, `#labs`, `#lab/<id>`, `#learn/<n>`, `#words`, `#progress`; full-screen
 rounds `#exam/<n>` (the exam: speak or type into one box, then the AI's grade or your own), `#session`,
 `#interview`, `#wplay`, `#play/<n>/<tf|gap|order|voice>`. The old standalone pages
 (`/exam-tickets.html#t12`, `/learn.html#t5`, `/map.html`) redirect to `/?from=…` and open the matching route.
@@ -53,6 +62,9 @@ rounds `#exam/<n>` (the exam: speak or type into one box, then the AI's grade or
 | `css/` | `theme.css` tokens; `app.css` (scoped `.v-app`, plus the shell), `exam.css` (`.v-exam`), `learn.css` (`.v-learn`), `map.css` (`.v-map`). |
 | `sw.js` | Service worker: app shell network-first, static files and lessons stale-while-revalidate, `/api` never cached; push notifications. |
 | `lib/srs.js` | Spaced-repetition rules and the migration from the old per-item progress. Imported by the API, `today.mjs` and the browser. |
+| `lib/labs.js` | Lab progress in the progress row (`db.labs`): code, test results, first green day, reference opened. |
+| `js/screens/labs.js`, `js/labs/` | The labs screens; the in-browser test runner (worker, vitest-lite, import rewriting). |
+| `labs/` (repo root) | Lab sources: README, tests, starter code, reference solutions, the scripted fake model. |
 | `lib/words.js` | The personal dictionary in the progress row (`db.words`): add, edit, grade, due order, applying a lookup. |
 | `lib/catalog.js` | **Generated** ticket list (number, section, old item ids) for `srs.js`. |
 | `api/[route].js` | Routes: google, oauth, logout, state, log, done, flag, reset, plan, words, exams, check, explain, push, remind. |

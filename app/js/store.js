@@ -11,6 +11,7 @@ import {
   statusOf,
 } from "../lib/srs.js";
 import { dueWords, wordKey, wordOp, wordStats } from "../lib/words.js";
+import { applyLab, resetLab } from "../lib/labs.js";
 import { persist, state } from "./state.js";
 import { TODAY, dLocal, iso } from "./util.js";
 
@@ -92,6 +93,7 @@ function forgetOtherUser(who) {
 export function applyLocal(p) {
   if (p.path === "/api/reset") return resetLocal(state.db, p.n);
   if (p.path === "/api/plan") return planAction(state.db, p, TODAY);
+  if (p.path === "/api/lab") return p.reset ? resetLab(state.db, String(p.id)) : applyLab(state.db, p, TODAY);
   if (p.path === "/api/words") return p.op === "lookup" ? false : wordOp(state.db, p, TODAY).ok;
   if (p.path === "/api/flag") {
     const flags = {};
@@ -229,3 +231,10 @@ export const editWord = (key, fields) => post("/api/words", { op: "update", key,
 export const dropWord = (key) => post("/api/words", { op: "remove", key });
 export const gradeWordAs = (key, st) => post("/api/words", { op: "grade", key, st });
 export const lookupWord = (key) => post("/api/words", { op: "lookup", key });
+
+// ---- labs (lib/labs.js): code and test results, synced like the rest of progress ----
+
+export const labRec = (id) => state.db.labs?.[id] || null;
+/** Save the code and/or a test run: { code?, passed?, total?, solution? }. */
+export const saveLab = (id, fields) => post("/api/lab", { id, ...fields });
+export const resetLabProgress = (id) => post("/api/lab", { id, reset: true });

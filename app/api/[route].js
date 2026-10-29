@@ -3,6 +3,7 @@
 //   logout, state          session end; the signed-in user's progress
 //   log, done, flag, reset record an attempt / a graded attempt / the "not sure" and "read" flags / forget a ticket
 //   words                  the personal dictionary: add (with an AI lookup), update, remove, grade, lookup
+//   lab                    lab progress: code, test results, solution opened; reset
 //   plan                   the schedule as a whole: after a break, pause/resume, start over (lib/srs.js planAction)
 //   exams, check, explain  exam attempts; AI grading of an answer; AI explanation of a statement
 //   push, remind           push subscription; the morning reminder (Vercel Cron, CRON_SECRET)
@@ -10,6 +11,7 @@
 // Any Google account can sign in. AI calls (check, explain) are limited per user per day, except for the owner.
 import { checkPrompt, parseJson, GRADE_BODY, WORD_BODY } from "./_grade.js";
 import { applyLookup, wordKey, wordOp } from "../lib/words.js";
+import { applyLab, resetLab } from "../lib/labs.js";
 import { applyHit, migrate, planAction, resetTicket, setFlags } from "../lib/srs.js";
 import { createStore } from "./_store.js";
 import { addSub, cleanSub, dayIn, reminder, removeSubs } from "./_push.js";
@@ -236,6 +238,13 @@ export default async function handler(req, res) {
       if ("doubt" in body) flags.doubt = !!body.doubt;
       if ("read" in body) flags.read = !!body.read;
       const { db } = await update((d) => setFlags(d, body.n, flags, body.d));
+      return res.status(200).json(out(db, user));
+    }
+    if (route === "lab") {
+      if (!post) return res.status(405).json({ error: "method" });
+      const { db } = await update((d) =>
+        body.reset ? resetLab(d, String(body.id)) : applyLab(d, body, body.d),
+      );
       return res.status(200).json(out(db, user));
     }
     if (route === "words") {

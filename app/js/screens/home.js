@@ -23,6 +23,7 @@ import { fmtDate, frame, kbd, ticketRow, ui } from "../ui.js";
 import { sessionPlan } from "../games/session.js";
 import { lessonIndex } from "./learn.js";
 import { openResetPlan } from "./settings.js";
+import { labIndex } from "./labs.js";
 
 /** What a ticket in the list needs, in words: no day counts, no guilt. */
 function why(n) {
@@ -72,6 +73,7 @@ export function home() {
   const wd = words().length ? wordsDue().length : 0;
   if (wd)
     h += `<a class="card promo words" href="#wplay"><span class="pi">${icon.book}</span><span class="pt"><b>${ui().wordsCard(Math.min(wd, 15))}</b><small>${ui().wordsCardSub}</small></span>${icon.chev}</a>`;
+  h += `<div id="labHere"></div>`;
   h += `<a class="card promo" href="#interview"><span class="pi">${icon.mic}</span><span class="pt"><b>${ui().interview}</b><small>${ui().interviewd}</small></span>${icon.chev}</a>`;
   frame(h);
   if (plan.kind === "new")
@@ -80,6 +82,14 @@ export function home() {
       const w = idx[plan.ticket.n]?.[state.lang]?.words;
       if (el && w) el.textContent = ` · ${ui().lessonFirst} ${lessonLabel(w, state.lang === "ru")}`;
     });
+  // a lab started and not finished yet: one tap back into it
+  labIndex().then((idx) => {
+    const l = idx.labs.find((x) => state.db.labs?.[x.id] && !state.db.labs[x.id].green);
+    const el = document.getElementById("labHere");
+    if (!l || !el) return;
+    const r = state.db.labs[l.id];
+    el.innerHTML = `<a class="card promo lab" href="#lab/${l.id}"><span class="pi">${icon.pen}</span><span class="pt"><b>${ui().labContinue(l.id, l.title)}</b><small>${ui().labTests(r.passed || 0, r.total || l.total)}</small></span>${icon.chev}</a>`;
+  });
   const go = () => (location.hash = plan.href);
   document.getElementById("go").onclick = go;
   const su = document.getElementById("showUnread");

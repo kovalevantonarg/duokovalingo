@@ -20,6 +20,7 @@ import {
 import { MODE_ICON, fmtDate, frame, ticketRow, ui } from "../ui.js";
 import { $, TODAY, days, esc } from "../util.js";
 import { drawTicket } from "./exam.js";
+import { labRow, labsForTicket } from "./labs.js";
 import { lessonIndex } from "./learn.js";
 import { lessonLabel } from "../timing.js";
 import { openSheet, closeSheet } from "./settings.js";
@@ -133,6 +134,7 @@ export async function hub(n) {
       <div class="${stepCls(2, practiced)}"><span class="k">${practiced ? icon.check : 2}</span><span class="tt"><b>${ui().step2}</b><small>${r.drill ? ui().lastPractice(`${r.drill.c}/${r.drill.t}`, r.drill.d === TODAY ? ui().todayW : `${days(r.drill.d)}${ui().days} ${ui().ago}`) : ui().step2d}</small><span class="chips">${chip("tf", ui().tf)}${drills.cloze ? chip("gap", ui().gap) : ""}${drills.steps ? chip("order", ui().order) : ""}</span></span></div>
       <a class="${stepCls(3, examined)}" href="#exam/${n}"><span class="k">${examined ? icon.check : 3}</span><span class="tt"><b>${ui().step3}</b><small>${ui().step3d}</small></span>${icon.chev}</a>
     </div>
+    <div id="labsHere"></div>
     <div class="sec"><span>${ui().questions}</span></div>
     <div class="card qlist"><ol>${d.qs.map((q) => `<li>${esc(q)}</li>`).join("")}</ol><a class="reflink" href="#ref/${n}">${ui().refSources}</a></div>
     <div class="sec"><span>${ui().scores}</span><span class="r" id="avg"></span></div>
@@ -141,6 +143,12 @@ export async function hub(n) {
     ${st !== "new" || r.doubt ? `<button class="btn line full reset" id="reset">${ui().resetBtn}</button>` : ""}`,
     { back: { href: "tickets", label: ui().tabs.tickets } },
   );
+  // labs that practise this ticket in code
+  labsForTicket(n).then((ls) => {
+    const el = $("#labsHere");
+    if (el && ls.length)
+      el.innerHTML = `<div class="sec"><span>${ui().labsPractice}</span></div><div class="card labcard">${ls.map(labRow).join("")}</div>`;
+  });
   document.title = `${n}. ${d.topic}`;
   if (!read)
     lessonIndex().then((idx) => {

@@ -1,4 +1,5 @@
-// Hash router. Tabs: #home, #tickets, #learn, #words, #progress. Inside them: #t/<n> (ticket), #ref/<n>, #learn/<n>.
+// Hash router. Tabs: #home, #tickets, #learn, #words, #progress. Inside them: #t/<n> (ticket), #ref/<n>, #learn/<n>,
+// #labs and #lab/<id> (code practice).
 // My words: #words (?w=<word> opens one). Full-screen rounds: #exam/<n>, #play/<n>/<tf|gap|order|voice>, #session, #interview, #wplay.
 import { ticketOfItem } from "../lib/srs.js";
 import { playGap } from "./games/fill-gap.js";
@@ -9,6 +10,7 @@ import { playTF } from "./games/true-false.js";
 import { playVoice } from "./games/voice.js";
 import { drawTicket, examScreen } from "./screens/exam.js";
 import { home } from "./screens/home.js";
+import { labScreen, labsIndex } from "./screens/labs.js";
 import { lessonScreen, lessonsIndex } from "./screens/learn.js";
 import { loginScreen } from "./screens/login.js";
 import { progress } from "./screens/progress.js";
@@ -79,6 +81,10 @@ export function route() {
       return tk(a) ? examScreen(+a) : ticketList();
     case "learn":
       return a && tk(a) ? lessonScreen(+a) : lessonsIndex();
+    case "labs":
+      return labsIndex();
+    case "lab":
+      return /^\d\d$/.test(a || "") ? labScreen(a) : labsIndex();
     case "progress":
       return progress();
     case "words":

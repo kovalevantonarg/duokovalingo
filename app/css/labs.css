@@ -1,0 +1,863 @@
+/* Labs: the Lessons | Labs switch, lab rows (lessons index, ticket page, home), and the lab page (.v-lab). */
+
+/* ---- switch and rows (used inside .v-learn and .v-app) ---- */
+.lswitch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 20px 0 8px;
+  width: max-content;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel2);
+}
+.lswitch a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  color: var(--dim);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.lswitch a svg {
+  width: 15px;
+  height: 15px;
+}
+.lswitch a.on {
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 1px 0 var(--line);
+}
+.labs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.labrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--fg) !important;
+  text-decoration: none;
+  line-height: 1.35;
+}
+.labrow:hover {
+  border-color: var(--dim3);
+}
+.labcard .labrow {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.labcard .labrow + .labrow {
+  border-top: 1px solid var(--line);
+}
+.labrow .lnum {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  width: 26px;
+  flex: none;
+}
+.labrow .ltt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.labrow .ltt b {
+  font-size: 15.5px;
+}
+.labrow .ltt small {
+  color: var(--dim);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.labrow .lbar {
+  height: 4px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.labrow .lbar i {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+}
+.labrow .lbar i.g {
+  background: var(--green);
+}
+.labrow .lst {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--dim2);
+  white-space: nowrap;
+}
+.labrow .lst.g {
+  color: var(--green);
+}
+.labrow .lst.y {
+  color: var(--amber);
+}
+.labrow .lst svg {
+  width: 14px;
+  height: 14px;
+}
+.labrow > svg:last-child {
+  flex: none;
+  color: var(--dim3);
+}
+@media (max-width: 700px) {
+  .v-lab .lhead .tchips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-right: calc(-1 * var(--gut));
+    padding-right: var(--gut);
+  }
+  .v-lab .tchip {
+    white-space: nowrap;
+  }
+  .v-lab h1 {
+    font-size: 26px;
+  }
+}
+@media (max-width: 520px) {
+  .labrow .lst {
+    display: none;
+  }
+}
+.v-app .promo.lab .pi {
+  background: rgba(122, 162, 255, 0.14);
+  color: #7aa2ff;
+}
+.v-app .promo.lab + .promo {
+  margin-top: 10px;
+}
+
+/* ---- the lab page ---- */
+.v-lab {
+  color: var(--fg);
+  font-family:
+    "Golos Text",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.v-lab *,
+.v-lab {
+  box-sizing: border-box;
+}
+.v-lab .lab {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px var(--gut) 48px;
+}
+.v-lab .lload,
+.v-lab .lerr {
+  padding: 40px 0;
+  color: var(--dim);
+}
+.v-lab h1 {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1.15;
+  margin: 4px 0 12px;
+  letter-spacing: -0.01em;
+}
+.v-lab h2 {
+  font-size: 13px;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+.v-lab .kick {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+.v-lab .sub {
+  color: var(--dim);
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.v-lab code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.v-lab a {
+  color: #7aa2ff;
+}
+.v-lab .tchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.v-lab .tchip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--dim);
+  font-size: 13px;
+  text-decoration: none;
+}
+.v-lab .tchip b {
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.v-lab .tchip:hover {
+  border-color: var(--dim3);
+  color: var(--fg);
+}
+.v-lab .lprog {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--dim);
+}
+.v-lab .lprog > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.v-lab .lprog svg {
+  width: 14px;
+  height: 14px;
+  color: var(--green);
+}
+.v-lab .ptrack {
+  flex: 1;
+  max-width: 320px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.v-lab .ptrack i {
+  display: block;
+  height: 100%;
+  background: var(--dim3);
+  transition: width 300ms;
+}
+.v-lab .ptrack i.y {
+  background: var(--amber);
+}
+.v-lab .ptrack i.g {
+  background: var(--green);
+}
+.v-lab .solseen {
+  font-size: 12px;
+  color: var(--amber) !important;
+  font-weight: 600;
+}
+
+/* panes: tabs on phones, all at once on wide screens */
+.v-lab .lpanes {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  margin: 16px calc(-1 * var(--gut)) 0;
+  padding: 8px var(--gut);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.v-lab .lpanes button {
+  flex: 1;
+  padding: 9px 4px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.v-lab .lpanes button.on {
+  background: var(--panel);
+  color: var(--fg);
+}
+.v-lab .pbadge:not(:empty) {
+  margin-left: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim2);
+}
+.v-lab .lab:not([data-pane="all"]) [data-pane]:not(.lab) {
+  display: none;
+}
+.v-lab .lab.lab[data-pane="task"] [data-pane="task"],
+.v-lab .lab.lab[data-pane="code"] [data-pane="code"],
+.v-lab .lab.lab[data-pane="tests"] [data-pane="tests"],
+.v-lab .lab.lab[data-pane="talk"] [data-pane="talk"] {
+  display: block;
+}
+.v-lab .lab.lab[data-pane="code"] .ledit[data-pane="code"] {
+  display: flex;
+}
+.v-lab .lgrid {
+  margin-top: 18px;
+}
+.v-lab .lab[data-pane="all"] .lpanes {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .v-lab .lgrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-areas: "mat work" "prod work";
+    grid-template-rows: auto 1fr;
+    gap: 0 32px;
+    align-items: start;
+  }
+  .v-lab .lmat {
+    grid-area: mat;
+  }
+  .v-lab .lprod {
+    grid-area: prod;
+  }
+  .v-lab .lwork {
+    grid-area: work;
+    position: sticky;
+    top: 12px;
+    height: calc(100vh - 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .v-lab .lab[data-pane="all"] .ledit {
+    display: flex;
+    flex: 1.3;
+    min-height: 0;
+  }
+  .v-lab .lab[data-pane="all"] .lres {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+/* material */
+.v-lab .lsec {
+  margin: 0 0 28px;
+}
+.v-lab .md p {
+  margin: 0 0 10px;
+}
+.v-lab .md ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+.v-lab .md blockquote {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--line);
+  color: var(--dim);
+}
+.v-lab pre {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow: auto;
+  white-space: pre;
+}
+.v-lab pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+  white-space: pre;
+}
+.v-lab pre .lang {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--dim2);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.v-lab .edges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.v-lab .edges li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.v-lab .edges .en {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 122, 89, 0.14);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.v-lab .edges b {
+  display: block;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.v-lab .edges p {
+  margin: 4px 0 0;
+  color: var(--dim);
+  font-size: 14.5px;
+}
+.v-lab .lnote {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(122, 162, 255, 0.08);
+  border: 1px solid rgba(122, 162, 255, 0.25);
+}
+.v-lab .lnote .lbl {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7aa2ff;
+  margin-bottom: 4px;
+}
+.v-lab .lnote p {
+  margin: 0;
+}
+.v-lab .lexp summary {
+  cursor: pointer;
+  list-style: none;
+}
+.v-lab .lexp summary::-webkit-details-marker {
+  display: none;
+}
+.v-lab .lexp summary h2 {
+  display: inline;
+}
+.v-lab .lexp summary h2::after {
+  content: " ▾";
+}
+.v-lab .lexp summary .sub {
+  display: block;
+  margin-top: 4px;
+}
+
+/* editor */
+.v-lab .ledit {
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #0e1526;
+  overflow: hidden;
+  position: relative;
+}
+.v-lab .lab:not([data-pane="all"]) .ledit {
+  height: calc(100dvh - 190px);
+  min-height: 360px;
+}
+.v-lab .lbar2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 6px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.v-lab .ftabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.v-lab .ftabs button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.v-lab .ftabs button.ro:not(.on) {
+  color: var(--dim2);
+}
+.v-lab .ftabs button.on {
+  background: var(--panel2);
+  color: var(--fg);
+}
+.v-lab .ftabs button.sol {
+  color: var(--amber);
+}
+.v-lab .lbar2 .sp {
+  flex: 1;
+}
+.v-lab .lsaved {
+  font-size: 11.5px;
+  color: var(--dim3);
+  white-space: nowrap;
+}
+.v-lab .lbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a0a05;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.v-lab .lbtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.v-lab .lbtn.ghost {
+  background: none;
+  border-color: var(--line);
+  color: var(--fg);
+}
+.v-lab .lbtn.ghost.rec {
+  border-color: var(--red);
+  color: var(--red);
+}
+.v-lab .lbtn.run svg {
+  width: 14px;
+  height: 14px;
+}
+.v-lab .lmenu {
+  position: absolute;
+  right: 8px;
+  top: 52px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--dim3);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.v-lab .lmenu[hidden] {
+  display: none;
+}
+.v-lab .lmenu button {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.v-lab .lmenu button:hover {
+  background: var(--panel2);
+}
+.v-lab .cm {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.v-lab .cm > .cm-editor {
+  height: 100%;
+}
+.v-lab .lkeys {
+  padding: 4px 12px 6px;
+  font-size: 11.5px;
+  color: var(--dim3);
+  border-top: 1px solid var(--line);
+}
+@media (hover: none) {
+  .v-lab .lkeys {
+    display: none;
+  }
+}
+
+/* test results */
+.v-lab .lres {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 12px 14px;
+}
+.v-lab .lab:not([data-pane="all"]) .lres {
+  margin-top: 0;
+}
+.v-lab .rspec {
+  margin: 0 0 6px;
+  color: var(--dim);
+  font-size: 14px;
+}
+.v-lab .rsum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+.v-lab .rsum b {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.v-lab .rsum span {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+.v-lab .rsum.g {
+  background: rgba(88, 214, 141, 0.14);
+  color: var(--green);
+}
+.v-lab .rsum.y {
+  background: rgba(255, 193, 77, 0.12);
+  color: var(--amber);
+}
+.v-lab .rsum.r {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--red);
+}
+.v-lab .rerr {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ffb3b3;
+  font-size: 14px;
+}
+.v-lab .rerr pre {
+  margin: 6px 0 0;
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  white-space: pre-wrap;
+}
+.v-lab .rlogs {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.v-lab .rlogs pre {
+  margin-top: 6px;
+  max-height: 200px;
+}
+.v-lab .rgroup h3 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--dim2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.v-lab .rt summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.v-lab .rt summary::-webkit-details-marker {
+  display: none;
+}
+.v-lab .rt summary:hover {
+  background: var(--panel2);
+}
+.v-lab .rt .dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--dim3);
+}
+.v-lab .rt.ok .dot {
+  background: var(--green);
+}
+.v-lab .rt.bad .dot {
+  background: var(--red);
+}
+.v-lab .rt.ok .rn {
+  color: var(--dim);
+}
+.v-lab .rt.n summary {
+  cursor: default;
+}
+.v-lab .rerrtxt {
+  margin: 4px 0 6px 20px;
+  white-space: pre-wrap;
+  color: #ffb3b3;
+  background: rgba(255, 107, 107, 0.07);
+  border-color: rgba(255, 107, 107, 0.25);
+}
+.v-lab .rsrc {
+  margin: 0 0 8px 20px;
+}
+.v-lab .rsrc summary {
+  font-size: 12.5px;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 2px 0 6px;
+}
+
+/* production scenario */
+.v-lab .lprod {
+  margin-bottom: 28px;
+}
+.v-lab .lprod blockquote {
+  margin: 0 0 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.v-lab .lprod textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+}
+.v-lab .lprod textarea:focus {
+  outline: none;
+  border-color: var(--dim3);
+}
+.v-lab .prow {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+.v-lab .prow svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* confirm sheet */
+.v-lab .lback {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 9, 18, 0.66);
+}
+.v-lab .lsh {
+  width: min(420px, 100%);
+  padding: 20px;
+  border: 1px solid var(--dim3);
+  border-radius: 16px;
+  background: var(--panel);
+}
+.v-lab .lsh h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.v-lab .lsh p {
+  margin: 0 0 16px;
+  color: var(--dim);
+  font-size: 14.5px;
+}
+.v-lab .lshb {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.v-lab .gocode {
+  width: 100%;
+  height: 48px;
+  margin: -8px 0 28px;
+  font-size: 15px;
+}
+.v-lab .gocode svg {
+  width: 15px;
+  height: 15px;
+}
+.v-lab .lab[data-pane="all"] .gocode {
+  display: none;
+}
