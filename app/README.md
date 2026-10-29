@@ -4,9 +4,9 @@ Static SPA + one Vercel function (`api/[route].js`), multi-user with Google sign
 
 ## The app
 
-One page (`index.html`), five tabs in a bottom bar: **Сегодня** (Start: what's due, or the next new ticket),
+One page (`index.html`), six tabs in a bottom bar: **Сегодня** (Start: what's due, or the next new ticket),
 **Билеты** (search, filters, a ticket's path: lesson → practice → exam), **Разборы** (from-zero lessons, read
-aloud), **Слова** (the personal dictionary), **Прогресс** (readiness per track, exam score history, activity). Settings (language, sound,
+aloud), **Практика** (labs in code), **Слова** (the personal dictionary), **Прогресс** (readiness per track, exam score history, activity). Settings (language, sound,
 reminders, lessons offline, sign out) open in a sheet from the header.
 
 The unit of progress is the **ticket**. Each has a status (new / red / yellow / green) and an interval
@@ -20,7 +20,7 @@ break, do a soft restart (forgotten tickets drop a level) or start over (`planAc
 schedule can also be paused. Time estimates (`js/timing.js`) start from a study pace for new material and switch
 to the person's own measured pace after a few lessons and sessions.
 
-**Labs** (`#labs`, `#lab/<id>`, a switch at the top of the Lessons tab). Practice for the tickets in code: a small
+**Labs** (the **Практика** tab: `#labs`, `#lab/<id>`). Practice for the tickets in code: a small
 TypeScript task per lab with ready failing tests for the edge cases that break LLM products in production. The
 sources live in `labs/` at the repo root (a normal vitest project, `npm test` there works too);
 `node scripts/build-labs.mjs` turns them into `app/labs/*.json`. In the app the code is edited in CodeMirror and the
@@ -129,3 +129,9 @@ publish it to "In production"; in "Testing" only the test users you list can sig
 
 Database: run `supabase/migrations/20261006_versioned_state_and_exams.sql`, then `20261007_users.sql`, in the
 Supabase SQL Editor before deploying this version.
+
+## Analytics
+
+Vercel Web Analytics (enable it in the project's Analytics tab). `index.html` loads `/_vercel/insights/script.js`
+with auto tracking off; `js/router.js` sends one page view per screen with the hash path (query parts dropped) and
+the route with ids folded (`/#t/[n]`). Nothing is sent from localhost.

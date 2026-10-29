@@ -6,7 +6,6 @@ import { flagRead, isRead, tickets } from "../store.js";
 import { frame, setLang } from "../ui.js";
 import { markWords } from "../vocab.js";
 import { keepAwake } from "../wake.js";
-import { learnSwitch } from "./labs.js";
 import { lessonDone, lessonLabel, lessonPos, setLessonPos, trackLesson } from "../timing.js";
 import { $, esc } from "../util.js";
 
@@ -156,7 +155,7 @@ export async function lessonsIndex() {
   if (!view.isConnected) return;
   const have = T.filter((t) => idx[t.n]),
     done = have.filter((t) => rd.has(t.n)).length;
-  let h = `${learnSwitch("learn")}<h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
+  let h = `<div class="kick">${have.length} / ${T.length}</div><h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
     <div class="sumbar"><div class="track"><div class="fill" style="width:${have.length ? Math.round((done / have.length) * 100) : 0}%"></div></div><span>${done}/${have.length} ${L().read}</span></div>`;
   for (const sec of ORDER) {
     const ts = T.filter((t) => t.sec === sec);

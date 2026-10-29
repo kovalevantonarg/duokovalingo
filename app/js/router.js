@@ -46,6 +46,17 @@ export function upgradeOldLink() {
   history.replaceState(null, "", "/#" + hash);
 }
 
+// one analytics page view per screen: the path without query parts (no dictionary words leave the app),
+// the route with ids folded ("/#t/12" → "/#t/[n]") so the dashboard groups screens of one kind
+let lastView = "";
+function pageview(path) {
+  const clean = "/#" + path.split("?")[0];
+  if (clean === lastView) return;
+  lastView = clean;
+  const route = clean.replace(/\/\d+(?=\/|$)/g, "/[n]");
+  window.va?.("pageview", { route, path: clean });
+}
+
 export function route() {
   closeSheet();
   state.leave?.(); // the screen being left saves what it tracks (lesson time, reading position)
@@ -56,6 +67,7 @@ export function route() {
   if (state.needLogin) return loginScreen();
   const h = location.hash.slice(1) || "home";
   const [path, query] = h.split("?");
+  pageview(path);
   const [scr, a, b] = path.split("/");
   // a round remembers where it was opened from, and returns there
   if (ROUNDS.has(scr) && !ROUNDS.has(prev.split("/")[0])) state.back = prev || "home";

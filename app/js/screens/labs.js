@@ -1,4 +1,4 @@
-// Labs (#labs, #lab/<id>): practice for the tickets in code. Each lab is a small TypeScript task with failing
+// Practice tab: labs (#labs, #lab/<id>), practice for the tickets in code. Each lab is a small TypeScript task with failing
 // tests for the edge cases that break LLM products in production; the tests run in the browser (js/labs/run.js),
 // the code and the results sync with the rest of progress (lib/labs.js). Sources: labs/ → scripts/build-labs.mjs.
 import { icon } from "../icons.js";
@@ -12,9 +12,8 @@ import { checkAnswer, gradeHtml } from "./exam.js";
 
 const UI = {
   ru: {
-    tabLessons: "Разборы",
-    tabLabs: "Лабы",
-    h1: "Лабы",
+    h1: "Практика",
+    kick: "Лабы на TypeScript",
     lead: "Практика к билетам кодом. В каждой лабе маленькая задача на TypeScript и готовые тесты на пограничные случаи, которые ломают LLM-продукты в проде. Твоя задача: сделать тесты зелёными. Код пишешь и запускаешь прямо здесь, сеть и API-ключ не нужны: модель в тестах скриптованная.",
     lab: "Лаба",
     tests: (n) => `${n} ${plural(n, "тест", "теста", "тестов")}`,
@@ -76,9 +75,8 @@ const UI = {
     toCode: "Писать код",
   },
   en: {
-    tabLessons: "Lessons",
-    tabLabs: "Labs",
-    h1: "Labs",
+    h1: "Practice",
+    kick: "TypeScript labs",
     lead: "Hands-on practice for the tickets. Each lab is a small TypeScript task with ready tests for the edge cases that break LLM products in production. Your job: make the tests green. You write and run the code right here; no network or API key needed, the model in the tests is scripted. Lab texts are in Russian.",
     lab: "Lab",
     tests: (n) => `${n} ${n === 1 ? "test" : "tests"}`,
@@ -184,10 +182,6 @@ export function labRow(l) {
   return `<a class="labrow" href="#lab/${l.id}"><span class="lnum">${l.id}</span><span class="ltt"><b>${esc(l.title)}</b><small>${l.tickets.map((n) => `${n}. ${esc(tk(n)?.[state.lang].topic || "")}`).join(" · ")}</small><span class="lbar"><i class="${s.cls}" style="width:${s.pct}%"></i></span></span><span class="lst ${s.cls}">${s.cls === "g" && s.pct === 100 ? icon.check : ""}${esc(s.txt)}</span>${icon.chev}</a>`;
 }
 
-/** The Lessons | Labs switch at the top of both lists. */
-export const learnSwitch = (on) =>
-  `<nav class="lswitch" aria-label="${L().h1}"><a href="#learn" class="${on === "learn" ? "on" : ""}">${icon.book}${L().tabLessons}</a><a href="#labs" class="${on === "labs" ? "on" : ""}">${icon.pen}${L().tabLabs}</a></nav>`;
-
 // ---- #labs ----
 
 export async function labsIndex() {
@@ -196,7 +190,8 @@ export async function labsIndex() {
   const idx = await labIndex();
   if (!view.isConnected) return;
   const done = idx.labs.filter((l) => labRec(l.id)?.green).length;
-  $("#main").innerHTML = `${learnSwitch("labs")}<h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
+  $("#main").innerHTML =
+    `<div class="kick">${L().kick}</div><h1 class="big">${L().h1}</h1><p class="lead">${L().lead}</p>
     <div class="sumbar"><div class="track"><div class="fill" style="width:${idx.labs.length ? Math.round((done / idx.labs.length) * 100) : 0}%"></div></div><span>${done}/${idx.labs.length} ${L().green}</span></div>
     ${idx.block ? `<div class="sech"><span>${esc(idx.block)}</span><span>${L().tests(idx.labs.reduce((a, l) => a + l.total, 0))}</span></div>` : ""}
     <div class="labs">${idx.labs.map(labRow).join("")}</div>`;
@@ -247,7 +242,7 @@ export async function labScreen(id) {
   const rec = labRec(id);
   const draft = readDraft(id);
   let code = draft && (!rec?.code || draft.at > (rec.at || 0)) ? draft.code : rec?.code || lab.stub;
-  let synced = rec?.code || "";
+  let synced = rec?.code || lab.stub; // just opening a lab doesn't start it
   let solSeen = !!rec?.sol;
   let results = null; // last run
   const wide = matchMedia("(min-width: 1100px)");
@@ -497,7 +492,7 @@ export async function labScreen(id) {
     menu.hidden = true;
     sheet(T.resetTitle, T.resetBody, T.resetYes, T.cancel, async () => {
       code = lab.stub;
-      synced = "";
+      synced = lab.stub;
       results = null;
       solSeen = false;
       writeDraft(id, code);

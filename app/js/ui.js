@@ -26,7 +26,8 @@ export const kbd = (k, dk) => `<span class="kbd${dk ? " dk" : ""}">${k}</span>`;
 export const TABS = [
   { id: "home", icon: "today", match: ["home"] },
   { id: "tickets", icon: "deck", match: ["tickets", "t", "exam", "interview"] },
-  { id: "learn", icon: "book", match: ["learn", "labs", "lab"] },
+  { id: "learn", icon: "book", match: ["learn"] },
+  { id: "labs", icon: "code", match: ["labs", "lab"] },
   { id: "words", icon: "lang", match: ["words"] },
   { id: "progress", icon: "chart", match: ["progress"] },
 ];
