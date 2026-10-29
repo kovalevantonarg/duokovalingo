@@ -134,4 +134,6 @@ Supabase SQL Editor before deploying this version.
 
 Vercel Web Analytics (enable it in the project's Analytics tab). `index.html` loads `/_vercel/insights/script.js`
 with auto tracking off; `js/router.js` sends one page view per screen with the hash path (query parts dropped) and
-the route with ids folded (`/#t/[n]`). Nothing is sent from localhost.
+the route with ids folded (`/#t/[n]`). Speed Insights (`/_vercel/speed-insights/script.js`, enable it in the
+Speed Insights tab) reports Core Web Vitals from real visits; the router keeps its `data-route` on the current
+screen so the vitals are grouped the same way. Nothing is sent from localhost.

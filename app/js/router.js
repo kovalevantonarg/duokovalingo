@@ -46,7 +46,7 @@ export function upgradeOldLink() {
   history.replaceState(null, "", "/#" + hash);
 }
 
-// one analytics page view per screen: the path without query parts (no dictionary words leave the app),
+// one analytics page view per screen (Vercel Web Analytics, Speed Insights gets the same route): the path without query parts (no dictionary words leave the app),
 // the route with ids folded ("/#t/12" → "/#t/[n]") so the dashboard groups screens of one kind
 let lastView = "";
 function pageview(path) {
@@ -55,6 +55,9 @@ function pageview(path) {
   lastView = clean;
   const route = clean.replace(/\/\d+(?=\/|$)/g, "/[n]");
   window.va?.("pageview", { route, path: clean });
+  // Speed Insights reads the route from its script tag when it reports (INP and CLS come in on leaving)
+  const si = document.getElementById("si");
+  if (si) si.dataset.route = route;
 }
 
 export function route() {

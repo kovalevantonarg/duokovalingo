@@ -43,5 +43,14 @@
         };
     </script>
     <script defer src="/_vercel/insights/script.js" data-disable-auto-track="1"></script>
+    <!-- Vercel Speed Insights: Core Web Vitals from real visits; the router keeps data-route on the current screen. -->
+    <script>
+      window.si =
+        window.si ||
+        function () {
+          (window.siq = window.siq || []).push(arguments);
+        };
+    </script>
+    <script defer id="si" src="/_vercel/speed-insights/script.js" data-route="/"></script>
   </body>
 </html>
